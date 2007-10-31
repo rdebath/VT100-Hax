@@ -346,7 +346,7 @@ PrintList(char *text)
 	case LIST_WORDS:
 		fprintf(list, "     %02x%02x        %s\n", b2, b1, text);
 		fprintf(list, "     ");
-		while (LStack->next) {	/* don't count last byte/word */
+		while(LStack->next) {	/* don't count last byte/word */
 			if (type == LIST_BYTES) {
 				fprintf(list, "%02x ", LStack->word);
 				space += 3;
@@ -367,12 +367,17 @@ PrintList(char *text)
 		/* always keep the stack root */
 		LStack = ByteWordStack;
 		DLStack = LStack = (STACK *) LStack->next;
-		do {
-			LStack = (STACK *) LStack->next;
-			free(DLStack);
-			DLStack = LStack;
+		if(LStack)
+		{
+			do {
+				LStack = (STACK *) LStack->next;
+				free(DLStack);
+				DLStack = LStack;
+			}
+			while (LStack);
+			LStack = ByteWordStack;
+			LStack->next = NULL;
 		}
-		while (LStack);
 		break;
 	case PROCESSED_END:
 		fprintf(list, "                 %s\n", text);
@@ -982,6 +987,10 @@ DB_proc(char *label, char *equation)
 			{
 				value = DB(equation);
 				equation = AdvancePast(equation,',');
+			}else if(*equation == '(')
+			{
+				value = DB(equation);
+				equation = AdvancePast(equation,',');
 			}else
 			{
 				Local = FindLabel(equation);
@@ -1057,7 +1066,7 @@ DW_proc(char *label, char *equation)
 			equation++;
 			break;
 		case '$':
-			value = addr;
+			value = ExpressionParser(equation);
 			equation = AdvancePast(equation,',');
 			break;
 		default:
