@@ -79,10 +79,10 @@ STACK          *ByteWordStack;
  * code can be optimized.
  * 
  * Just noticed that the bin dumper is not implemented....TBD.
- *
- * The assembler assumes that the left column is a lable the 
- * mid column is an opcode and the right column is an equation.
- *
+ * 
+ * The assembler assumes that the left column is a lable the mid column is an
+ * opcode and the right column is an equation.
+ * 
  */
 int
 main(int argv, char *argc[])
@@ -130,7 +130,6 @@ OpenFiles(char *name)
 		perror("Open input failed");
 		exit(1);
 	}
-	
 	/* may not be needed, but */
 	remove(list_file);
 	remove(bin_file);
@@ -178,14 +177,13 @@ EmitHelp()
 {
 }
 
-/* Label processing.  
-
-	FindLabel:
-	AddLabel:
-
-	Linked list, linear search, string compare
-	real dumb.
-*/
+/*
+ * Label processing.
+ * 
+ * FindLabel: AddLabel:
+ * 
+ * Linked list, linear search, string compare real dumb.
+ */
 
 SYMBOL         *
 FindLabel(char *text)
@@ -403,15 +401,8 @@ DumpBin()
  * 
  * (expression) -- (stack) = (expression) [op] (expression)
  * 
- * [op] can be: +add 
- *		-subtract 
- *		* multiply	
- *		/ divide 
- *		<<shift	left
- *		>>shift right 
- *		|or		
- *		&and 
- *		$current  address counter.
+ * [op] can be: +add -subtract * multiply	/ divide <<shift	left >>shift
+ * right |or		&and $current  address counter.
  * 
  * 
  * expression can have strings, numbers or lables.
@@ -421,14 +412,10 @@ DumpBin()
  * 
  * at the end of the process, return (stack)
  * 
- * a typical expression that is seen in assembly is, 
- * 	LXI	HL,("EV" + * STARTOFTABLE)/4 
- * So, this breaks down to 
- *	(stack) = (/ operator) 
- *	(stack) = 4
- * 	(stack) = (+ operator) 
- *	(stack) = STARTOFTABLE 	(the value of )
- * 	(stack push) = "EV"		(as a value)
+ * a typical expression that is seen in assembly is, LXI	HL,("EV" + *
+ * STARTOFTABLE)/4 So, this breaks down to (stack) = (/ operator) (stack) = 4
+ * (stack) = (+ operator) (stack) = STARTOFTABLE 	(the value of )
+ * (stack push) = "EV"		(as a value)
  * 
  * For the curious, this is an RPN stack parser.
  * 
@@ -513,7 +500,7 @@ SwapRPN()
 	stack.word[1] = value;
 }
 
-/*  Warning:  recursive parseing */
+/* Warning:  recursive parseing */
 
 int
 RPN(char *text)
@@ -549,7 +536,9 @@ RPN(char *text)
 					break;
 				case '-':
 					PushRPN(SUB);
-					text++; break; case '<':
+					text++;
+					break;
+				case '<':
 					PushRPN(LSHIFT);
 					text++;
 					text++;
@@ -777,9 +766,14 @@ DAC_proc(char *label, char *equation)
 char           *
 AdvanceTo(char *text, char x)
 {
-	while (*text != x)
-		text++;
-	return text;
+	while (*text)
+	{
+		if(*text != x)
+			text++;
+		else
+			return text;
+	}
+	return text--;
 }
 char           *
 AdvancePast(char *text, char x)
@@ -835,12 +829,8 @@ DW(char *text)
 		tmp = *text << 8;
 		text++;
 		tmp |= *text;
-	} else			/* if (*text == '$')  { */
-		/* tmp = ProcDollar(text); */
+	} else
 		tmp = ExpressionParser(text);
-	/*
-	 * } else tmp = DB(text);
-	 */
 	return tmp;
 }
 int
@@ -869,18 +859,39 @@ DB(char *text)
 				return accum;
 			break;
 		case ',':
-			text++;
+			return accum;
 			break;
 		}
 		accum = accum * (dec ? 10 : 16);
-		if (isdigit(*text)) {
-			accum += *text++ - '0';
-			if (toupper(*text) == 'X') {
+		switch(toupper(*text))
+		{
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				accum += *text++ - '0';
+				break;
+			case 'A':
+			case 'B':
+			case 'C':
+			case 'D':
+			case 'E':
+			case 'F':
+				accum += (toupper(*text++) - 'A') + 10;
+				break;
+			case 'X':
 				dec = 0;
 				text++;
-			}
-		} else
-			text++;
+				break;
+			default:
+				return accum; /* punt */
+		} 
 	}
 
 	return accum;
@@ -928,6 +939,7 @@ DB_proc(char *label, char *equation)
 {
 	SYMBOL         *Local;
 	STACK          *LStack = ByteWordStack;
+	int             value;
 
 	Local = FindLabel(label);
 	/* record the address of the label */
@@ -935,58 +947,147 @@ DB_proc(char *label, char *equation)
 		Local->Symbol_Value = addr;
 	b1 = addr & 0x00ff;
 	b2 = (addr & 0xff00) >> 8;
+	value = 0;
 
-	while (1) {
+	/* the list could be strings, labels, or digits */
+
+	while (*equation) { /* go to the end of the string */
 		switch (*equation) {
-		case ',':
+		case '\'':
+		case '"':
+			/* characters */
 			equation++;
-			break;
-		case '\"':
-			equation++;
-			while (!iscntrl(*equation)) {
-				if (*equation == '\"') {
-					equation++;
+			while(*equation)
+			{
+				if(*equation == '\'')
 					break;
-				}
-				/*
-				 * accumulate a stack of 8 bit values to be
-				 * printed by the lister
-				 */
+				else if(*equation == '"')
+					break;
 				LStack->word = *equation++;
 				LStack->next = (STACK *) calloc(1, sizeof(STACK));
 				LStack = (STACK *) LStack->next;
 			}
-			break;
-		case '\t':
 			equation++;
 			break;
-		case '\n':
-		case '\0':
-			return LIST_BYTES;
+		case ',':
+			equation++;
+			break;
+		case '$':
+			value = addr;
+			equation = AdvancePast(equation,',');
 			break;
 		default:
-			if (isdigit(*equation)) {	/* could be a number */
-				equation = Evaluate(equation, LStack);
+			/* could be numbers, or a label */
+			if(isdigit(*equation))
+			{
+				value = DB(equation);
+				equation = AdvancePast(equation,',');
+			}else
+			{
+				Local = FindLabel(equation);
+				if(Local)
+					value = Local->Symbol_Value;
+				else
+					fprintf(list,"label not found %s\n",equation);
+				equation = AdvancePast(equation,',');
 			}
-			equation++;
+		/*
+		 * accumulate a stack of 8 bit 
+		 * values to be printed by the
+		 * lister
+		 */
+		LStack->word = value;
+		LStack->next = (STACK *) calloc(1, sizeof(STACK));
+		LStack = (STACK *) LStack->next;
 			break;
+
 		}
 	}
+	return LIST_BYTES;
 }
 int
 DW_proc(char *label, char *equation)
 {
 	SYMBOL         *Local;
+	STACK          *LStack = ByteWordStack;
+	int             value;
+
 	Local = FindLabel(label);
 	/* record the address of the label */
 	if (Local)
 		Local->Symbol_Value = addr;
-
 	b1 = addr & 0x00ff;
-	b2 = (addr) >> 8;
+	b2 = (addr & 0xff00) >> 8;
+	value = 0;
 
+	/* the list could be strings, labels, or digits */
+
+	while (*equation) { /* go to the end of the string */
+		switch (*equation) {
+		case '\'':
+		case '"':
+			/* characters */
+			equation++;
+			while(*equation)
+			{
+				if(*equation == '\'')
+					break;
+				else if(*equation == '"')
+					break;
+				LStack->word = (*equation++)<<8;
+				if(*equation == '\'')
+				{
+					LStack->next = (STACK *) calloc(1, sizeof(STACK));
+					LStack = (STACK *) LStack->next;
+					break;
+				}
+				else if(*equation == '"')
+				{
+					LStack->next = (STACK *) calloc(1, sizeof(STACK));
+					LStack = (STACK *) LStack->next;
+					break;
+				}
+				LStack->word += *equation++;
+				LStack->next = (STACK *) calloc(1, sizeof(STACK));
+				LStack = (STACK *) LStack->next;
+			}
+			equation++;
+			break;
+		case ',':
+			equation++;
+			break;
+		case '$':
+			value = addr;
+			equation = AdvancePast(equation,',');
+			break;
+		default:
+			/* could be numbers, or a label */
+			if(isdigit(*equation))
+			{
+				value = DB(equation);
+				equation = AdvancePast(equation,',');
+			}else
+			{
+				Local = FindLabel(equation);
+				if(Local)
+					value = Local->Symbol_Value;
+				else
+					fprintf(list,"label not found %s\n",equation);
+				equation = AdvancePast(equation,',');
+			}
+		/*
+		 * accumulate a stack of 8 bit 
+		 * values to be printed by the
+		 * lister
+		 */
+		LStack->word = value;
+		LStack->next = (STACK *) calloc(1, sizeof(STACK));
+		LStack = (STACK *) LStack->next;
+			break;
+
+		}
+	}
 	return LIST_WORDS;
-
 }
 int
 END_proc(char *label, char *equation)
