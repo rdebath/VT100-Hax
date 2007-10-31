@@ -41,4 +41,4 @@ clean:
 
 # Enable dependency checking
 .KEEP_STATE:
-.KEEP_STATE_FILE: /export/home/ASM8080/src/.make.state.Makefile.jacotton.src
+.KEEP_STATE_FILE: /export/home/asm8080/src/.make.state.Makefile.jacotton.src
