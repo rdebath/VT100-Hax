@@ -26,6 +26,7 @@ LAB1	EQU	$
 ;
 START	NOP		; first line
 	JMP	START	; line 2
+	JMP	FORWARD	; refer ahead
 LAB2	EQU	$
 STORAGE	DAC	0x1000	
 STRING	DB	"This is a test"
@@ -36,4 +37,6 @@ CMD	DB	"TEST",59
 	DB	"LARGE",17
 	DW	$+9
 TABLE	DW	$,STORAGE,STRING
+FORWARD	NOP
+	HLT
 	END
