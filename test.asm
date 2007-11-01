@@ -27,7 +27,7 @@ LAB1	EQU	$
 START	NOP		; first line
 	JMP	START	; line 2
 LAB2	EQU	$
-STORAGE	DAC	$
+STORAGE	DAC	0x1000	
 STRING	DB	"This is a test"
 BYTES	DB	0x34,0x93,120,17,0x0d
 	DB	STRING,"Test",(5*4)+3,LAB2
