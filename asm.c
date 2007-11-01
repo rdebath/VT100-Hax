@@ -755,9 +755,7 @@ DAC_proc(char *label, char *equation)
 	STACK          *LStack = ByteWordStack;
 
 	Local = FindLabel(label);
-	if (*equation == '$')
-		Local->Symbol_Value = ProcDollar(equation);
-
+	addr = Local->Symbol_Value = ExpressionParser(equation);
 	b1 = Local->Symbol_Value & 0x00ff;
 	b2 = (Local->Symbol_Value & 0xff00) >> 8;
 	return TEXT;
