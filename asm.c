@@ -642,16 +642,30 @@ RegPare(char *text)
 		text++;
 		text++;
 		return text;
+	}else if(*text == 'B')
+	{
+		text++;
+		return text;
 	}
 	if (!strncmp("DE", text, 2)) {
 		b1 += 0x10;
 		text++;
 		text++;
 		return text;
+	}else if (*text == 'D')
+	{
+		b1 += 0x10;
+		text++;
+		return text;
 	}
 	if (!strncmp("HL", text, 2)) {
 		b1 += 0x20;
 		text++;
+		text++;
+		return text;
+	}else if (*text == 'H')
+	{
+		b1 += 0x20;
 		text++;
 		return text;
 	}
