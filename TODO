@@ -1,11 +1,5 @@
 O.k. so here is the deal.
 
-asm8080 os a single pass assember.  This means that if you reference
-an identifier that is declared latter in the text, the assembler will
-get an error.  So, the todo is to fix the assembler so it will do
-multi pass.  This is not as hard as it sounds, but will take a few
-days of work.
-
 The Expression parser is slightly schezo, you need to brace all
 the expressions, but don't over brace them... in fact the parser
 could use work to just make it work better.
