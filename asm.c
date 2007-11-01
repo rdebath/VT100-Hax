@@ -51,6 +51,7 @@ FILE           *bin;
 
 /* Global storage for assembler */
 
+int             pass;		/* assembler pass */
 int             addr;
 int             b1;
 int             b2;
@@ -96,16 +97,28 @@ main(int argv, char *argc[])
 
 	if (argv > 1) {
 		OpenFiles(argc[1]);
-		Asm();
+		Pass1();
+		Pass2();
 		CloseFiles();
-		exit(0);
-	}
-	if (argv == 1) {
-		Asm();
 		exit(0);
 	}
 	EmitHelp();
 	return 0;
+}
+void
+Pass1()
+{
+	pass = 0;
+	Asm();
+
+}
+void
+Pass2()
+{
+	RewindFiles();
+	addr = 0; 
+	pass = 1;
+	Asm();
 }
 void
 OpenFiles(char *name)
@@ -139,6 +152,11 @@ OpenFiles(char *name)
 
 }
 void
+RewindFiles()
+{
+	fseek(in, 0, SEEK_SET);
+}
+void
 CloseFiles()
 {
 	fclose(in);
@@ -155,7 +173,6 @@ Asm()
 	while (1) {
 		EmitBin = 0;
 		if (!fgets(text, 128, in)) {
-			printf("unexpected EOF\n");
 			return;
 		}
 		/* trim text */
@@ -164,9 +181,10 @@ Asm()
 		EmitBin = Parse(text);
 		PrintList(text);
 		if (EmitBin == BINARY_TO_DUMP)
-			DumpBin();
-		else if (EmitBin == PROCESSED_END)
-			return;	/* processed END */
+			if (pass)
+				DumpBin();
+			else if (EmitBin == PROCESSED_END)
+				return;	/* processed END */
 	}
 }
 
@@ -210,12 +228,14 @@ AddLabel(char *text)
 	int             i = 0;
 	SYMBOL         *Local = Symbols;
 
+	if(pass) return;
+
 	while (isalnum(*text))
 		label[i++] = *text++;
 	label[i] = '\0';
 
-	if (FindLabel(label)) {
-		fprintf(list, "\nDuplicate Lable: %s\n", label);
+	if (FindLabel(label) ) {
+		fprintf(list, "\nDuplicate Label: %s\n", label);
 		return;
 	}
 	/* now add it to the list */
@@ -315,28 +335,34 @@ PrintList(char *text)
 	int             space = 0;
 	switch (type) {
 	case COMMENT:
-		fprintf(list, "                 %s\n", text);
+		if (pass)
+			fprintf(list, "                 %s\n", text);
 		break;
 	case TEXT:
 		switch (opcode_bytes) {
 		case 1:
-			fprintf(list, "%04x %02x          %s\n", addr, b1, text);
+			if (pass)
+				fprintf(list, "%04x %02x          %s\n", addr, b1, text);
 			addr += 1;
 			break;
 		case 2:
-			fprintf(list, "%04x %02x %02x       %s\n", addr, b1, b2, text);
+			if (pass)
+				fprintf(list, "%04x %02x %02x       %s\n", addr, b1, b2, text);
 			addr += 2;
 			break;
 		case 3:
-			fprintf(list, "%04x %02x %02x %02x    %s\n", addr, b1, b2, b3, text);
+			if (pass)
+				fprintf(list, "%04x %02x %02x %02x    %s\n", addr, b1, b2, b3, text);
 			addr += 3;
 			break;
 		case 4:
-			fprintf(list, "%04x %02x %02x %02x %02x %s\n", addr, b1, b2, b3, b4, text);
+			if (pass)
+				fprintf(list, "%04x %02x %02x %02x %02x %s\n", addr, b1, b2, b3, b4, text);
 			addr += 4;
 			break;
 		default:	/* 0 */
-			fprintf(list, "     %02x%02x        %s\n", b2, b1, text);
+			if (pass)
+				fprintf(list, "     %02x%02x        %s\n", b2, b1, text);
 			break;
 		}
 		break;
@@ -344,31 +370,36 @@ PrintList(char *text)
 		break;
 	case LIST_BYTES:
 	case LIST_WORDS:
-		fprintf(list, "     %02x%02x        %s\n", b2, b1, text);
-		fprintf(list, "     ");
-		while(LStack->next) {	/* don't count last byte/word */
+		if (pass)
+			fprintf(list, "     %02x%02x        %s\n", b2, b1, text);
+		if (pass)
+			fprintf(list, "     ");
+		while (LStack->next) {	/* don't count last byte/word */
 			if (type == LIST_BYTES) {
-				fprintf(list, "%02x ", LStack->word);
+				if (pass)
+					fprintf(list, "%02x ", LStack->word);
 				space += 3;
 				addr++;
 			} else {
-				fprintf(list, "%04x ", LStack->word);
+				if (pass)
+					fprintf(list, "%04x ", LStack->word);
 				space += 5;
 				addr += 2;
 			}
 			LStack = (STACK *) LStack->next;
 			if (space > 16) {
-				fprintf(list, "\n     ");
+				if (pass)
+					fprintf(list, "\n     ");
 				space = 0;
 			}
 		}
-		fprintf(list, "\n");
+		if (pass)
+			fprintf(list, "\n");
 
 		/* always keep the stack root */
 		LStack = ByteWordStack;
 		DLStack = LStack = (STACK *) LStack->next;
-		if(LStack)
-		{
+		if (LStack) {
 			do {
 				LStack = (STACK *) LStack->next;
 				free(DLStack);
@@ -380,18 +411,21 @@ PrintList(char *text)
 		}
 		break;
 	case PROCESSED_END:
-		fprintf(list, "                 %s\n", text);
-		do {
-			fprintf(list, "%s\t%04x\n", Local->Symbol_Name, Local->Symbol_Value);
-			Local = (SYMBOL *) Local->next;
-		}
-		while (Local);
+		if (pass)
+			fprintf(list, "                 %s\n", text);
+		if (pass)
+			do {
+				fprintf(list, "%s\t%04x\n", Local->Symbol_Name, Local->Symbol_Value);
+				Local = (SYMBOL *) Local->next;
+			}
+			while (Local);
 		break;
 	}
 	opcode_bytes = b1 = b2 = b3 = b4 = 0;
 
 	/* remove after debug */
-	fflush(list);
+	if (pass)
+		fflush(list);
 }
 void
 DumpBin()
@@ -435,9 +469,6 @@ ExpressionParser(char *text)
 	stack.level = 0;
 	RPN(text);
 	return stack.word[0];
-	/*
-	 * return ProcDollar(text);
-	 */
 }
 void
 EvalRPN()
@@ -669,7 +700,8 @@ DestReg(char *text)
 		b1 += 0x6 << 3;
 		break;
 	default:
-		fprintf(list, "Bad destination register: %s\n", text);
+		if (pass)
+			fprintf(list, "Bad destination register: %s\n", text);
 		break;
 	}
 	text++;
@@ -678,11 +710,6 @@ DestReg(char *text)
 char           *
 SourceReg(char *text)
 {
-	/*
-	 * while(*text != ',') { switch(*text) { case '\t': case ' ': text++;
-	 * break; case '\n': case '\0': fprintf(list,"Hit EOL\n"); return
-	 * NULL; break; } } text++;
-	 */
 	while (isspace(*text))
 		text++;
 
@@ -712,7 +739,8 @@ SourceReg(char *text)
 		b1 += 0x6;
 		break;
 	default:
-		fprintf(list, "Bad source register: %s\n", text);
+		if (pass)
+			fprintf(list, "Bad source register: %s\n", text);
 		break;
 	}
 	text++;
@@ -769,9 +797,8 @@ DAC_proc(char *label, char *equation)
 char           *
 AdvanceTo(char *text, char x)
 {
-	while (*text)
-	{
-		if(*text != x)
+	while (*text) {
+		if (*text != x)
 			text++;
 		else
 			return text;
@@ -866,35 +893,34 @@ DB(char *text)
 			break;
 		}
 		accum = accum * (dec ? 10 : 16);
-		switch(toupper(*text))
-		{
-			case '0':
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-			case '8':
-			case '9':
-				accum += *text++ - '0';
-				break;
-			case 'A':
-			case 'B':
-			case 'C':
-			case 'D':
-			case 'E':
-			case 'F':
-				accum += (toupper(*text++) - 'A') + 10;
-				break;
-			case 'X':
-				dec = 0;
-				text++;
-				break;
-			default:
-				return accum; /* punt */
-		} 
+		switch (toupper(*text)) {
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			accum += *text++ - '0';
+			break;
+		case 'A':
+		case 'B':
+		case 'C':
+		case 'D':
+		case 'E':
+		case 'F':
+			accum += (toupper(*text++) - 'A') + 10;
+			break;
+		case 'X':
+			dec = 0;
+			text++;
+			break;
+		default:
+			return accum;	/* punt */
+		}
 	}
 
 	return accum;
@@ -954,17 +980,16 @@ DB_proc(char *label, char *equation)
 
 	/* the list could be strings, labels, or digits */
 
-	while (*equation) { /* go to the end of the string */
+	while (*equation) {	/* go to the end of the string */
 		switch (*equation) {
 		case '\'':
 		case '"':
 			/* characters */
 			equation++;
-			while(*equation)
-			{
-				if(*equation == '\'')
+			while (*equation) {
+				if (*equation == '\'')
 					break;
-				else if(*equation == '"')
+				else if (*equation == '"')
 					break;
 				LStack->word = *equation++;
 				LStack->next = (STACK *) calloc(1, sizeof(STACK));
@@ -977,35 +1002,31 @@ DB_proc(char *label, char *equation)
 			break;
 		case '$':
 			value = addr;
-			equation = AdvancePast(equation,',');
+			equation = AdvancePast(equation, ',');
 			break;
 		default:
 			/* could be numbers, or a label */
-			if(isdigit(*equation))
-			{
+			if (isdigit(*equation)) {
 				value = DB(equation);
-				equation = AdvancePast(equation,',');
-			}else if(*equation == '(')
-			{
+				equation = AdvancePast(equation, ',');
+			} else if (*equation == '(') {
 				value = DB(equation);
-				equation = AdvancePast(equation,',');
-			}else
-			{
+				equation = AdvancePast(equation, ',');
+			} else {
 				Local = FindLabel(equation);
-				if(Local)
+				if (Local)
 					value = Local->Symbol_Value;
 				else
-					fprintf(list,"label not found %s\n",equation);
-				equation = AdvancePast(equation,',');
+					fprintf(list, "label not found %s\n", equation);
+				equation = AdvancePast(equation, ',');
 			}
-		/*
-		 * accumulate a stack of 8 bit 
-		 * values to be printed by the
-		 * lister
-		 */
-		LStack->word = value;
-		LStack->next = (STACK *) calloc(1, sizeof(STACK));
-		LStack = (STACK *) LStack->next;
+			/*
+			 * accumulate a stack of 8 bit values to be printed
+			 * by the lister
+			 */
+			LStack->word = value;
+			LStack->next = (STACK *) calloc(1, sizeof(STACK));
+			LStack = (STACK *) LStack->next;
 			break;
 
 		}
@@ -1029,27 +1050,23 @@ DW_proc(char *label, char *equation)
 
 	/* the list could be strings, labels, or digits */
 
-	while (*equation) { /* go to the end of the string */
+	while (*equation) {	/* go to the end of the string */
 		switch (*equation) {
 		case '\'':
 		case '"':
 			/* characters */
 			equation++;
-			while(*equation)
-			{
-				if(*equation == '\'')
+			while (*equation) {
+				if (*equation == '\'')
 					break;
-				else if(*equation == '"')
+				else if (*equation == '"')
 					break;
-				LStack->word = (*equation++)<<8;
-				if(*equation == '\'')
-				{
+				LStack->word = (*equation++) << 8;
+				if (*equation == '\'') {
 					LStack->next = (STACK *) calloc(1, sizeof(STACK));
 					LStack = (STACK *) LStack->next;
 					break;
-				}
-				else if(*equation == '"')
-				{
+				} else if (*equation == '"') {
 					LStack->next = (STACK *) calloc(1, sizeof(STACK));
 					LStack = (STACK *) LStack->next;
 					break;
@@ -1065,31 +1082,28 @@ DW_proc(char *label, char *equation)
 			break;
 		case '$':
 			value = ExpressionParser(equation);
-			equation = AdvancePast(equation,',');
+			equation = AdvancePast(equation, ',');
 			break;
 		default:
 			/* could be numbers, or a label */
-			if(isdigit(*equation))
-			{
+			if (isdigit(*equation)) {
 				value = DB(equation);
-				equation = AdvancePast(equation,',');
-			}else
-			{
+				equation = AdvancePast(equation, ',');
+			} else {
 				Local = FindLabel(equation);
-				if(Local)
+				if (Local)
 					value = Local->Symbol_Value;
 				else
-					fprintf(list,"label not found %s\n",equation);
-				equation = AdvancePast(equation,',');
+					fprintf(list, "label not found %s\n", equation);
+				equation = AdvancePast(equation, ',');
 			}
-		/*
-		 * accumulate a stack of 8 bit 
-		 * values to be printed by the
-		 * lister
-		 */
-		LStack->word = value;
-		LStack->next = (STACK *) calloc(1, sizeof(STACK));
-		LStack = (STACK *) LStack->next;
+			/*
+			 * accumulate a stack of 8 bit values to be printed
+			 * by the lister
+			 */
+			LStack->word = value;
+			LStack->next = (STACK *) calloc(1, sizeof(STACK));
+			LStack = (STACK *) LStack->next;
 			break;
 
 		}
