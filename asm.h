@@ -23,9 +23,12 @@
 /* 8080 asmbler header */
 
 void            OpenFiles(char *);
+void		Pass1();
+void		Pass2();
 void            Asm();
 void            CloseFiles();
 void            EmitHelp();
+void		RewindFiles();
 
 int             Parse(char *);
 void            PrintList(char *);
