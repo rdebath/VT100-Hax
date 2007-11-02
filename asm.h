@@ -201,5 +201,6 @@ INSTRUCTIONS    OpCodes[] =
 	{"IN", IN_proc}, {"OUT", OUT_proc}, {"EI", EI_proc},
 	{"DI", DI_proc}, {"HLT", HLT_proc}, {"NOP", NOP_proc},
 	{"EQU", EQU_proc}, {"DAC", DAC_proc}, {"DB", DB_proc},
-	{"DW", DW_proc}, {"END", END_proc},{"ANOP",ANOP_proc}, {0, NULL}
+	{"DW", DW_proc}, {"END", END_proc},{"ANOP",ANOP_proc}, 
+	{0, NULL}
 };

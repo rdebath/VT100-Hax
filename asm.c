@@ -212,6 +212,8 @@ FindLabel(char *text)
 	char            tmp[80];
 	int             i = 0;
 
+	if(*text == '&') tmp[i++] = *text++;
+	if(*text == '%') tmp[i++] = *text++;
 	while (isalnum(*text))
 		tmp[i++] = *text++;
 	tmp[i] = '\0';
@@ -231,6 +233,9 @@ AddLabel(char *text)
 	SYMBOL         *Local = Symbols;
 
 	if(pass) return;
+
+	if(*text == '&') label[i++] = *text++;
+	if(*text == '%') label[i++] = *text++;
 
 	while (isalnum(*text))
 		label[i++] = *text++;
@@ -277,8 +282,10 @@ Parse(char *text)
 
 		memset(opcode, 0, 6);
 		memset(Label, 0, 32);
-		if (isalnum(text[0])) {
+		if (isascii(text[0])) {
 			AddLabel(text);
+			if(*text == '&')Label[i++] = *text++;
+			if(*text == '%')Label[i++] = *text++;
 			while (isalnum(*text))
 				Label[i++] = *text++;
 			Label[i] = '\0';
@@ -293,13 +300,15 @@ Parse(char *text)
 		opcode[i] = '\0';
 
 		/* copy next section to equation buffer */
-
+	
+		if(*text)
+		{
 		memset(Equation, 0, 80);
 		while (isspace(*text))
 			text++;
 		while (!iscntrl(*text))
 			*Equa++ = *text++;
-
+		}
 		/* lookup opcode and call proc */
 
 		while (Local->Name) {
@@ -766,7 +775,19 @@ SourceReg(char *text)
 int
 ANOP_proc(char *label, char *equation)
 {
-	return EQU_proc(label, equation);
+	SYMBOL         *Local, *Local2;
+	/* handle the EQU command. */
+
+	Local = FindLabel(label);	/* things are very broken if not
+					 * found */
+	if (!Local)
+		return LIST_ONLY;
+
+	Local->Symbol_Value = addr;
+
+	b1 = Local->Symbol_Value & 0x00ff;
+	b2 = (Local->Symbol_Value & 0xff00) >> 8;
+	return TEXT;
 }
 int
 EQU_proc(char *label, char *equation)
@@ -875,6 +896,7 @@ int
 DW(char *text)
 {
 	int             tmp;
+	if(*text == '%') return 0;
 	if (*text == '\"') {
 		text++;
 		tmp = *text << 8;
