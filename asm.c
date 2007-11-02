@@ -175,10 +175,12 @@ Asm()
 		if (!fgets(text, 128, in)) {
 			return;
 		}
+		if(strlen(text) == 1) goto Skip;
 		/* trim text */
 		text[strlen(text) - 1] = '\0';
 
 		EmitBin = Parse(text);
+Skip:
 		PrintList(text);
 		if (EmitBin == BINARY_TO_DUMP)
 			if (pass)
@@ -761,6 +763,11 @@ SourceReg(char *text)
 	return (text);
 }
 
+int
+ANOP_proc(char *label, char *equation)
+{
+	return EQU_proc(label, equation);
+}
 int
 EQU_proc(char *label, char *equation)
 {
