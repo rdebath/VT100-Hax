@@ -231,17 +231,21 @@ AddLabel(char *text)
 	char            label[16];
 	int             i = 0;
 	SYMBOL         *Local = Symbols;
+	int		phantom = 0;
 
 	if(pass) return;
 
+	if(isspace(*text)) return;
+
 	if(*text == '&') label[i++] = *text++;
-	if(*text == '%') label[i++] = *text++;
+	if(*text == '%'){ label[i++] = *text++; phantom++;}
 
 	while (isalnum(*text))
 		label[i++] = *text++;
 	label[i] = '\0';
 
 	if (FindLabel(label) ) {
+		if(!phantom)
 		fprintf(list, "\nDuplicate Label: %s\n", label);
 		return;
 	}
@@ -325,6 +329,7 @@ Parse(char *text)
 			type = TEXT;
 		} else {
 			type = COMMENT;
+			if(isalpha(opcode[0]))
 			fprintf(list, "\nCan't find OpCode %s\n", opcode);
 		}
 	}
