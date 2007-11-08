@@ -79,8 +79,10 @@ typedef struct Symbol {
 int             EQU_proc(char *, char *);
 int             ANOP_proc(char *, char *);
 int             DAC_proc(char *, char *);
+int             ORG_proc(char *, char *);
 int             DB_proc(char *, char *);
 int             DW_proc(char *, char *);
+int             DS_proc(char *, char *);
 int             END_proc(char *, char *);
 int             MOV_proc(char *, char *);
 int             MVI_proc(char *, char *);
@@ -202,5 +204,6 @@ INSTRUCTIONS    OpCodes[] =
 	{"DI", DI_proc}, {"HLT", HLT_proc}, {"NOP", NOP_proc},
 	{"EQU", EQU_proc}, {"DAC", DAC_proc}, {"DB", DB_proc},
 	{"DW", DW_proc}, {"END", END_proc},{"ANOP",ANOP_proc}, 
+	{"ORG",ORG_proc},{"DS",DS_proc},
 	{0, NULL}
 };

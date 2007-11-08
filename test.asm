@@ -25,6 +25,15 @@
 LAB1	EQU	$
 ;
 START	NOP		; first line
+	DB	(CMD > 8), CMD
+	DB	(CMD > 8) & 0XFF, CMD & 0XFF
+	DB	((CMD > 8) & 0XFF), (CMD & 0XFF)
+	CPI	'9'+1
+	CPI	'X'-0X40
+	DB	'X'-0x40
+	DB	0XD
+	MVI	A,0XD
+	DB	'TEST',0XD
 	JMP	START	; line 2
 	JMP	FORWARD	; refer ahead
 LAB2	EQU	$

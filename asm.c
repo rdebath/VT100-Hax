@@ -116,7 +116,7 @@ void
 Pass2()
 {
 	RewindFiles();
-	addr = 0; 
+	addr = 0;
 	pass = 1;
 	Asm();
 }
@@ -168,6 +168,7 @@ Asm()
 {
 	char            text[128];
 	int             EmitBin;
+	int             i;
 
 	/* until EOF */
 	while (1) {
@@ -175,9 +176,16 @@ Asm()
 		if (!fgets(text, 128, in)) {
 			return;
 		}
-		if(strlen(text) == 1) goto Skip;
+		if (strlen(text) == 1)
+			goto Skip;
 		/* trim text */
 		text[strlen(text) - 1] = '\0';
+		i = 0;
+		while (i < 128) {
+			if (islower(text[i]))
+				text[i] = text[i] - 0x20;
+			i++;
+		}
 
 		EmitBin = Parse(text);
 Skip:
@@ -212,8 +220,11 @@ FindLabel(char *text)
 	char            tmp[80];
 	int             i = 0;
 
-	if(*text == '&') tmp[i++] = *text++;
-	if(*text == '%') tmp[i++] = *text++;
+	while(isspace(*text))text++;
+	if (*text == '&')
+		tmp[i++] = *text++;
+	if (*text == '%')
+		tmp[i++] = *text++;
 	while (isalnum(*text))
 		tmp[i++] = *text++;
 	tmp[i] = '\0';
@@ -231,22 +242,27 @@ AddLabel(char *text)
 	char            label[16];
 	int             i = 0;
 	SYMBOL         *Local = Symbols;
-	int		phantom = 0;
+	int             phantom = 0;
 
-	if(pass) return;
+	if (pass)
+		return;
 
-	if(isspace(*text)) return;
+	if (isspace(*text))
+		return;
 
-	if(*text == '&') label[i++] = *text++;
-	if(*text == '%'){ label[i++] = *text++; phantom++;}
-
+	if (*text == '&')
+		label[i++] = *text++;
+	if (*text == '%') {
+		label[i++] = *text++;
+		phantom++;
+	}
 	while (isalnum(*text))
 		label[i++] = *text++;
 	label[i] = '\0';
 
-	if (FindLabel(label) ) {
-		if(!phantom)
-		fprintf(list, "\nDuplicate Label: %s\n", label);
+	if (FindLabel(label)) {
+		if (!phantom)
+			fprintf(list, "\nDuplicate Label: %s\n", label);
 		return;
 	}
 	/* now add it to the list */
@@ -288,10 +304,13 @@ Parse(char *text)
 		memset(Label, 0, 32);
 		if (isascii(text[0])) {
 			AddLabel(text);
-			if(*text == '&')Label[i++] = *text++;
-			if(*text == '%')Label[i++] = *text++;
-			while (isalnum(*text))
+			if (*text == '&')
 				Label[i++] = *text++;
+			if (*text == '%')
+				Label[i++] = *text++;
+			while (isalnum(*text)) {
+				Label[i++] = toupper(*text++);
+			}
 			Label[i] = '\0';
 		}
 		/* then find an op symbol */
@@ -300,18 +319,17 @@ Parse(char *text)
 			text++;
 		i = 0;
 		while (isalnum(*text))
-			opcode[i++] = *text++;
+			opcode[i++] = toupper(*text++);
 		opcode[i] = '\0';
 
 		/* copy next section to equation buffer */
-	
-		if(*text)
-		{
-		memset(Equation, 0, 80);
-		while (isspace(*text))
-			text++;
-		while (!iscntrl(*text))
-			*Equa++ = *text++;
+
+		if (*text) {
+			memset(Equation, 0, 80);
+			while (isspace(*text))
+				text++;
+			while (!iscntrl(*text))
+				*Equa++ = toupper(*text++);
 		}
 		/* lookup opcode and call proc */
 
@@ -329,8 +347,8 @@ Parse(char *text)
 			type = TEXT;
 		} else {
 			type = COMMENT;
-			if(isalpha(opcode[0]))
-			fprintf(list, "\nCan't find OpCode %s\n", opcode);
+			if (isalpha(opcode[0]))
+				fprintf(list, "\nCan't find OpCode %s\n", opcode);
 		}
 	}
 	type = status;
@@ -387,13 +405,13 @@ PrintList(char *text)
 	case LIST_BYTES:
 	case LIST_WORDS:
 		if (pass)
-			fprintf(list, "     %02x%02x        %s\n", b2, b1, text);
+			fprintf(list, "%04x             %s\n", addr, text);
 		if (pass)
 			fprintf(list, "     ");
 		while (LStack->next) {	/* don't count last byte/word */
 			if (type == LIST_BYTES) {
 				if (pass)
-					fprintf(list, "%02x ", LStack->word);
+					fprintf(list, "%02x ", (LStack->word & 0xff));
 				space += 3;
 				addr++;
 			} else {
@@ -559,7 +577,14 @@ RPN(char *text)
 {
 	while (1) {
 		switch (*text) {
-			case '(':
+			case '\'':
+			{
+				text++;
+				PushRPN(*text++);
+				text++;
+				break;
+			}
+		case '(':
 			{
 				text++;
 				RPN(text);
@@ -640,6 +665,7 @@ RPN(char *text)
 		case '\0':
 		case '\n':
 				EvalRPN();
+		case ',':
 				return stack.word[0];
 			}
 		}
@@ -658,8 +684,7 @@ RegPare(char *text)
 		text++;
 		text++;
 		return text;
-	}else if(*text == 'B')
-	{
+	} else if (*text == 'B') {
 		text++;
 		return text;
 	}
@@ -668,8 +693,7 @@ RegPare(char *text)
 		text++;
 		text++;
 		return text;
-	}else if (*text == 'D')
-	{
+	} else if (*text == 'D') {
 		b1 += 0x10;
 		text++;
 		return text;
@@ -679,8 +703,7 @@ RegPare(char *text)
 		text++;
 		text++;
 		return text;
-	}else if (*text == 'H')
-	{
+	} else if (*text == 'H') {
 		b1 += 0x20;
 		text++;
 		return text;
@@ -824,6 +847,38 @@ EQU_proc(char *label, char *equation)
 	return TEXT;
 }
 int
+ORG_proc(char *label, char *equation)
+{
+	SYMBOL         *Local;
+	STACK          *LStack = ByteWordStack;
+
+	Local = FindLabel(label);
+	if (Local)
+		addr = Local->Symbol_Value = ExpressionParser(equation);
+	else
+		addr = ExpressionParser(equation);
+
+	b1 = addr & 0x00ff;
+	b2 = (addr & 0xff00) >> 8;
+	return TEXT;
+}
+int
+DS_proc(char *label, char *equation)
+{
+	SYMBOL         *Local;
+	STACK          *LStack = ByteWordStack;
+
+	b1 = addr & 0x00ff;
+	b2 = (addr & 0xff00) >> 8;
+	Local = FindLabel(label);
+	if (Local) {
+		Local->Symbol_Value = addr;
+		addr += ExpressionParser(equation);
+	} else
+		addr += ExpressionParser(equation);
+	return TEXT;
+}
+int
 DAC_proc(char *label, char *equation)
 {
 	SYMBOL         *Local;
@@ -901,7 +956,8 @@ int
 DW(char *text)
 {
 	int             tmp;
-	if(*text == '%') return 0;
+	if (*text == '%')
+		return 0;
 	if (*text == '\"') {
 		text++;
 		tmp = *text << 8;
@@ -919,6 +975,12 @@ DB(char *text)
 
 	while (*text) {
 		switch (*text) {
+		case '+':
+			text++;
+			break;
+		case '-':
+			text++;
+			break;
 		case '\'':
 			{
 				text++;
@@ -972,7 +1034,6 @@ DB(char *text)
 	}
 
 	return accum;
-
 }
 char           *
 Evaluate(char *text, STACK * LStack)
@@ -1017,6 +1078,7 @@ DB_proc(char *label, char *equation)
 	SYMBOL         *Local;
 	STACK          *LStack = ByteWordStack;
 	int             value;
+	int             instring = 0;
 
 	Local = FindLabel(label);
 	/* record the address of the label */
@@ -1034,50 +1096,76 @@ DB_proc(char *label, char *equation)
 		case '"':
 			/* characters */
 			equation++;
+			instring++;
 			while (*equation) {
-				if (*equation == '\'')
+				if (*equation == '\'') {
+					instring = 0;
 					break;
-				else if (*equation == '"')
+				} else if (*equation == '"') {
+					instring = 0;
 					break;
+				}
 				LStack->word = *equation++;
-				LStack->next = (STACK *) calloc(1, sizeof(STACK));
-				LStack = (STACK *) LStack->next;
+
+				/* could be a single quoted character */
+				if (instring) {
+					if (*equation == '\'')
+						break;
+					else if (*equation == '"')
+						break;
+					else {
+						LStack->next = (STACK *) calloc(1, sizeof(STACK));
+						LStack = (STACK *) LStack->next;
+					}
+				}
 			}
 			equation++;
 			break;
-		case ',':
+		case ',':	/* means we are done with this byte. */
+			LStack->next = (STACK *) calloc(1, sizeof(STACK));
+			LStack = (STACK *) LStack->next;
 			equation++;
 			break;
 		case '$':
 			value = addr;
-			equation = AdvancePast(equation, ',');
+			equation = AdvanceTo(equation, ',');
 			break;
 		default:
 			/* could be numbers, or a label */
 			if (isdigit(*equation)) {
-				value = DB(equation);
-				equation = AdvancePast(equation, ',');
+				value = ExpressionParser(equation);
+				equation = AdvanceTo(equation, ',');
+			} else if (*equation == '+') {
+				value += ExpressionParser(equation);
+				equation = AdvanceTo(equation, ',');
+			} else if (*equation == '-') {
+				value -= ExpressionParser(equation);
+				equation = AdvanceTo(equation, ',');
 			} else if (*equation == '(') {
-				value = DB(equation);
-				equation = AdvancePast(equation, ',');
+				value = ExpressionParser(equation);
+				equation = AdvanceTo(equation, ',');
 			} else {
 				Local = FindLabel(equation);
 				if (Local)
 					value = Local->Symbol_Value;
 				else
-					fprintf(list, "label not found %s\n", equation);
-				equation = AdvancePast(equation, ',');
+					if(pass)
+						fprintf(list, "label not found %s\n", equation);
+				equation = AdvanceTo(equation, ',');
 			}
 			/*
 			 * accumulate a stack of 8 bit values to be printed
 			 * by the lister
 			 */
-			LStack->word = value;
-			LStack->next = (STACK *) calloc(1, sizeof(STACK));
-			LStack = (STACK *) LStack->next;
+			LStack->word = value & 0xff;
+			value = 0;
 			break;
 
 		}
+	}
+	if (!LStack->next) {
+		LStack->next = (STACK *) calloc(1, sizeof(STACK));
+		LStack = (STACK *) LStack->next;
 	}
 	return LIST_BYTES;
 }
@@ -1135,13 +1223,14 @@ DW_proc(char *label, char *equation)
 		default:
 			/* could be numbers, or a label */
 			if (isdigit(*equation)) {
-				value = DB(equation);
+				value = ExpressionParser(equation);
 				equation = AdvancePast(equation, ',');
 			} else {
 				Local = FindLabel(equation);
 				if (Local)
 					value = Local->Symbol_Value;
 				else
+					if(pass)
 					fprintf(list, "label not found %s\n", equation);
 				equation = AdvancePast(equation, ',');
 			}
@@ -1202,7 +1291,7 @@ MVI_proc(char *label, char *equation)
 	if (Local2)
 		b2 = Local2->Symbol_Value;
 	else
-		b2 = DB(equation);
+		b2 = ExpressionParser(equation);
 	opcode_bytes = 2;
 	return TEXT;
 }
