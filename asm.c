@@ -180,21 +180,31 @@ Asm()
 			goto Skip;
 		/* trim text */
 		text[strlen(text) - 1] = '\0';
+/*
 		i = 0;
 		while (i < 128) {
 			if (islower(text[i]))
 				text[i] = text[i] - 0x20;
 			i++;
 		}
-
+*/
 		EmitBin = Parse(text);
 Skip:
 		PrintList(text);
+/*
 		if (EmitBin == BINARY_TO_DUMP)
 			if (pass)
+			{
+*/
+			if (pass)
 				DumpBin();
-			else if (EmitBin == PROCESSED_END)
+/*
+			}
+			else 
+*/
+				if (EmitBin == PROCESSED_END)
 				return;	/* processed END */
+		opcode_bytes = b1 = b2 = b3 = b4 = 0;
 	}
 }
 
@@ -411,12 +421,19 @@ PrintList(char *text)
 		while (LStack->next) {	/* don't count last byte/word */
 			if (type == LIST_BYTES) {
 				if (pass)
+				{
 					fprintf(list, "%02x ", (LStack->word & 0xff));
+					fputc(LStack->word&0xff,bin);
+				}
 				space += 3;
 				addr++;
 			} else {
 				if (pass)
+				{
 					fprintf(list, "%04x ", LStack->word);
+					fputc((LStack->word&0xff00)>>8,bin);
+					fputc((LStack->word&0xff),bin);
+				}
 				space += 5;
 				addr += 2;
 			}
@@ -455,7 +472,6 @@ PrintList(char *text)
 			while (Local);
 		break;
 	}
-	opcode_bytes = b1 = b2 = b3 = b4 = 0;
 
 	/* remove after debug */
 	if (pass)
@@ -464,6 +480,27 @@ PrintList(char *text)
 void
 DumpBin()
 {
+	switch(opcode_bytes)
+	{
+	case 1:
+	fputc(b1,bin);
+	break;
+	case 2:
+	fputc(b1,bin);
+	fputc(b2,bin);
+	break;
+	case 3:
+	fputc(b1,bin);
+	fputc(b2,bin);
+	fputc(b3,bin);
+	break;
+	case 4:
+	fputc(b1,bin);
+	fputc(b2,bin);
+	fputc(b3,bin);
+	fputc(b4,bin);
+	break;
+	}
 }
 
 /*
