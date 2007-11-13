@@ -2187,7 +2187,7 @@ CALL_proc(char *label, char *equation)
 	/* record the address of the label */
 	if (Local)
 		Local->Symbol_Value = addr;
-	b1 = 0xC3;
+	b1 = 0xCD;
 	/* now the value */
 	equation = AdvanceToAscii(equation);
 	Local2 = FindLabel(equation);
