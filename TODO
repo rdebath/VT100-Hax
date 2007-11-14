@@ -4,4 +4,6 @@ The Expression parser is slightly schezo, you need to brace all
 the expressions, but don't over brace them... in fact the parser
 could use work to just make it work better.
 
-
+Just found that the DS instructions are not generating any 
+zeros to use up space.  This will be a big problem, needs to be
+fixed.

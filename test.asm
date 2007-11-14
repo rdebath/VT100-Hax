@@ -26,8 +26,6 @@ LAB1	EQU	$
 ;
 START	NOP		; first line
 	DB	(CMD > 8), CMD
-	DB	(CMD > 8) & 0XFF, CMD & 0XFF
-	DB	((CMD > 8) & 0XFF), (CMD & 0XFF)
 	CPI	'9'+1
 	CPI	'X'-0X40
 	DB	'X'-0x40
