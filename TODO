@@ -7,3 +7,5 @@ could use work to just make it work better.
 Just found that the DS instructions are not generating any 
 zeros to use up space.  This will be a big problem, needs to be
 fixed.
+
+The DW command can't handle -100 etc.  Real problem
