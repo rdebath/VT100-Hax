@@ -180,30 +180,13 @@ Asm()
 			goto Skip;
 		/* trim text */
 		text[strlen(text) - 1] = '\0';
-/*
-		i = 0;
-		while (i < 128) {
-			if (islower(text[i]))
-				text[i] = text[i] - 0x20;
-			i++;
-		}
-*/
 		EmitBin = Parse(text);
 Skip:
 		PrintList(text);
-/*
-		if (EmitBin == BINARY_TO_DUMP)
-			if (pass)
-			{
-*/
-			if (pass)
-				DumpBin();
-/*
-			}
-			else 
-*/
-				if (EmitBin == PROCESSED_END)
-				return;	/* processed END */
+		if (pass)
+			DumpBin();
+		if (EmitBin == PROCESSED_END)
+			return;	/* processed END */
 		opcode_bytes = b1 = b2 = b3 = b4 = 0;
 	}
 }
@@ -230,7 +213,8 @@ FindLabel(char *text)
 	char            tmp[80];
 	int             i = 0;
 
-	while(isspace(*text))text++;
+	while (isspace(*text))
+		text++;
 	if (*text == '&')
 		tmp[i++] = *text++;
 	if (*text == '%')
@@ -319,7 +303,7 @@ Parse(char *text)
 			if (*text == '%')
 				Label[i++] = *text++;
 			while (isalnum(*text)) {
-				Label[i++] = toupper(*text++);
+				Label[i++] = *text++;
 			}
 			Label[i] = '\0';
 		}
@@ -329,7 +313,7 @@ Parse(char *text)
 			text++;
 		i = 0;
 		while (isalnum(*text))
-			opcode[i++] = toupper(*text++);
+			opcode[i++] = *text++;
 		opcode[i] = '\0';
 
 		/* copy next section to equation buffer */
@@ -339,7 +323,7 @@ Parse(char *text)
 			while (isspace(*text))
 				text++;
 			while (!iscntrl(*text))
-				*Equa++ = toupper(*text++);
+				*Equa++ = *text++;
 		}
 		/* lookup opcode and call proc */
 
@@ -420,19 +404,17 @@ PrintList(char *text)
 			fprintf(list, "     ");
 		while (LStack->next) {	/* don't count last byte/word */
 			if (type == LIST_BYTES) {
-				if (pass)
-				{
+				if (pass) {
 					fprintf(list, "%02x ", (LStack->word & 0xff));
-					fputc(LStack->word&0xff,bin);
+					fputc(LStack->word & 0xff, bin);
 				}
 				space += 3;
 				addr++;
 			} else {
-				if (pass)
-				{
+				if (pass) {
 					fprintf(list, "%04x ", LStack->word);
-					fputc((LStack->word&0xff00)>>8,bin);
-					fputc((LStack->word&0xff),bin);
+					fputc((LStack->word & 0xff00) >> 8, bin);
+					fputc((LStack->word & 0xff), bin);
 				}
 				space += 5;
 				addr += 2;
@@ -480,26 +462,25 @@ PrintList(char *text)
 void
 DumpBin()
 {
-	switch(opcode_bytes)
-	{
-	case 1:
-	fputc(b1,bin);
-	break;
+	switch (opcode_bytes) {
+		case 1:
+		fputc(b1, bin);
+		break;
 	case 2:
-	fputc(b1,bin);
-	fputc(b2,bin);
-	break;
+		fputc(b1, bin);
+		fputc(b2, bin);
+		break;
 	case 3:
-	fputc(b1,bin);
-	fputc(b2,bin);
-	fputc(b3,bin);
-	break;
+		fputc(b1, bin);
+		fputc(b2, bin);
+		fputc(b3, bin);
+		break;
 	case 4:
-	fputc(b1,bin);
-	fputc(b2,bin);
-	fputc(b3,bin);
-	fputc(b4,bin);
-	break;
+		fputc(b1, bin);
+		fputc(b2, bin);
+		fputc(b3, bin);
+		fputc(b4, bin);
+		break;
 	}
 }
 
@@ -708,10 +689,6 @@ RPN(char *text)
 		}
 	}
 }
-
-
-
-
 char           *
 RegPare(char *text)
 {
@@ -724,6 +701,9 @@ RegPare(char *text)
 	} else if (*text == 'B') {
 		text++;
 		return text;
+	} else if (*text == 'b') {
+		text++;
+		return text;
 	}
 	if (!strncmp("DE", text, 2)) {
 		b1 += 0x10;
@@ -731,6 +711,10 @@ RegPare(char *text)
 		text++;
 		return text;
 	} else if (*text == 'D') {
+		b1 += 0x10;
+		text++;
+		return text;
+	} else if (*text == 'd') {
 		b1 += 0x10;
 		text++;
 		return text;
@@ -744,6 +728,10 @@ RegPare(char *text)
 		b1 += 0x20;
 		text++;
 		return text;
+	} else if (*text == 'h') {
+		b1 += 0x20;
+		text++;
+		return text;
 	}
 	if (!strncmp("SP", text, 2)) {
 		b1 += 0x30;
@@ -751,7 +739,20 @@ RegPare(char *text)
 		text++;
 		return text;
 	}
+	if (!strncmp("sp", text, 2)) {
+		b1 += 0x30;
+		text++;
+		text++;
+		return text;
+	}
 	if (!strncmp("PSW", text, 3)) {
+		b1 += 0x30;
+		text++;
+		text++;
+		text++;
+		return text;
+	}
+	if (!strncmp("psw", text, 3)) {
 		b1 += 0x30;
 		text++;
 		text++;
@@ -766,27 +767,35 @@ DestReg(char *text)
 		text++;
 	switch (*text) {
 	case 'A':
+	case 'a':
 		b1 += 0x7 << 3;
 		break;
 	case 'B':
+	case 'b':
 		b1 += 0x0 << 3;
 		break;
 	case 'C':
+	case 'c':
 		b1 += 0x1 << 3;
 		break;
 	case 'D':
+	case 'd':
 		b1 += 0x2 << 3;
 		break;
 	case 'E':
+	case 'e':
 		b1 += 0x3 << 3;
 		break;
 	case 'H':
+	case 'h':
 		b1 += 0x4 << 3;
 		break;
 	case 'L':
+	case 'l':
 		b1 += 0x5 << 3;
 		break;
 	case 'M':
+	case 'm':
 		b1 += 0x6 << 3;
 		break;
 	default:
@@ -805,27 +814,35 @@ SourceReg(char *text)
 
 	switch (*text) {
 	case 'A':
+	case 'a':
 		b1 += 0x7;
 		break;
 	case 'B':
+	case 'b':
 		b1 += 0x0;
 		break;
 	case 'C':
+	case 'c':
 		b1 += 0x1;
 		break;
 	case 'D':
+	case 'd':
 		b1 += 0x2;
 		break;
 	case 'E':
+	case 'e':
 		b1 += 0x3;
 		break;
 	case 'H':
+	case 'h':
 		b1 += 0x4;
 		break;
 	case 'L':
+	case 'l':
 		b1 += 0x5;
 		break;
 	case 'M':
+	case 'm':
 		b1 += 0x6;
 		break;
 	default:
@@ -1185,9 +1202,8 @@ DB_proc(char *label, char *equation)
 				Local = FindLabel(equation);
 				if (Local)
 					value = Local->Symbol_Value;
-				else
-					if(pass)
-						fprintf(list, "label not found %s\n", equation);
+				else if (pass)
+					fprintf(list, "label not found %s\n", equation);
 				equation = AdvanceTo(equation, ',');
 			}
 			/*
@@ -1266,8 +1282,7 @@ DW_proc(char *label, char *equation)
 				Local = FindLabel(equation);
 				if (Local)
 					value = Local->Symbol_Value;
-				else
-					if(pass)
+				else if (pass)
 					fprintf(list, "label not found %s\n", equation);
 				equation = AdvancePast(equation, ',');
 			}
