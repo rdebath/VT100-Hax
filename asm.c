@@ -412,7 +412,7 @@ PrintList(char *text)
 				addr++;
 			} else {
 				if (pass) {
-					fprintf(list, "%04x ", LStack->word);
+					fprintf(list, "%04x ", LStack->word &0xffff);
 					fputc((LStack->word & 0xff00) >> 8, bin);
 					fputc((LStack->word & 0xff), bin);
 				}
@@ -1017,6 +1017,10 @@ DW(char *text)
 		tmp = *text << 8;
 		text++;
 		tmp |= *text;
+	} else if( *text == '-') {
+		text++;
+		tmp = DB(text);
+		return -tmp;
 	} else
 		tmp = ExpressionParser(text);
 	return tmp;
@@ -1228,6 +1232,7 @@ DW_proc(char *label, char *equation)
 	SYMBOL         *Local;
 	STACK          *LStack = ByteWordStack;
 	int             value;
+	int	sign = 1;
 
 	Local = FindLabel(label);
 	/* record the address of the label */
@@ -1266,6 +1271,8 @@ DW_proc(char *label, char *equation)
 			}
 			equation++;
 			break;
+		case '-':
+			sign = -1;
 		case ',':
 			equation++;
 			break;
@@ -1290,9 +1297,10 @@ DW_proc(char *label, char *equation)
 			 * accumulate a stack of 8 bit values to be printed
 			 * by the lister
 			 */
-			LStack->word = value;
+			LStack->word = value * sign;
 			LStack->next = (STACK *) calloc(1, sizeof(STACK));
 			LStack = (STACK *) LStack->next;
+			sign = 1;
 			break;
 
 		}
