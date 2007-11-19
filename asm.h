@@ -76,6 +76,8 @@ typedef struct Symbol {
 
 /* Action Prototypes */
 
+int		IF_proc(char *,char *);
+int		ENDIF_proc(char *, char *);
 int             EQU_proc(char *, char *);
 int             ANOP_proc(char *, char *);
 int             DAC_proc(char *, char *);
@@ -198,7 +200,8 @@ INSTRUCTIONS    OpCodes[] =
 	{"DI", DI_proc}, {"HLT", HLT_proc}, {"NOP", NOP_proc},
 	{"EQU", EQU_proc}, {"DAC", DAC_proc}, {"DB", DB_proc},
 	{"DW", DW_proc}, {"END", END_proc},{"ANOP",ANOP_proc}, 
-	{"ORG",ORG_proc},{"DS",DS_proc},
+	{"ORG",ORG_proc},{"DS",DS_proc},{"IF",IF_proc},
+	{"ENDIF",ENDIF_proc},
 	{"mov", MOV_proc}, {"mvi", MVI_proc}, {"lxi", LXI_proc},
 	{"lda", LDA_proc}, {"sta", STA_proc}, {"lhld", LHLD_proc},
 	{"shld", SHLD_proc}, {"ldax", LDAX_proc}, {"stax", STAX_proc},
@@ -227,6 +230,7 @@ INSTRUCTIONS    OpCodes[] =
 	{"di", DI_proc}, {"hlt", HLT_proc}, {"nop", NOP_proc},
 	{"equ", EQU_proc}, {"dac", DAC_proc}, {"db", DB_proc},
 	{"dw", DW_proc}, {"end", END_proc},{"anop",ANOP_proc}, 
-	{"org",ORG_proc},{"ds",DS_proc},
+	{"org",ORG_proc},{"ds",DS_proc},{"if",IF_proc},
+	{"endif",ENDIF_proc},
 	{0, NULL}
 };

@@ -45,7 +45,8 @@ int             ProcDollar(char *);
  * global defs
  */
 
-FILE           *in;
+FILE           *in[10];
+int	level = 0;
 FILE           *list;
 FILE           *bin;
 
@@ -63,6 +64,9 @@ int             opcode_bytes;
 
 SYMBOL         *Symbols;
 STACK          *ByteWordStack;
+
+int	IFFalse[10];
+int	nest = 0;
 
 /*
  * Notes:
@@ -91,7 +95,7 @@ main(int argv, char *argc[])
 	/* init the globals */
 
 	addr = b1 = b2 = b3 = b4 = 0;
-
+	IFFalse[0] = 1; 
 	Symbols = (SYMBOL *) calloc(1, sizeof(SYMBOL));
 	ByteWordStack = (STACK *) calloc(1, sizeof(STACK));
 
@@ -138,7 +142,7 @@ OpenFiles(char *name)
 
 	/* open the files */
 
-	in = fopen(in_file, "r");
+	in[level] = fopen(in_file, "r");
 	if (in == NULL) {
 		perror("Open input failed");
 		exit(1);
@@ -154,14 +158,34 @@ OpenFiles(char *name)
 void
 RewindFiles()
 {
-	fseek(in, 0, SEEK_SET);
+	fseek(in[0], 0, SEEK_SET);
 }
 void
 CloseFiles()
 {
-	fclose(in);
+	fclose(in[0]);
 	fclose(list);
 	fclose(bin);
+}
+void
+OpenIncludeFile(char *cc)
+{
+char name[256];
+int i = 0;
+	memset(name,0,256);
+	while(*cc) 
+		if(*cc != '"') 
+			cc++;
+		else
+			break;
+	cc++;
+	while(*cc) 
+		if(*cc != '"') 
+			name[i++] = *cc++;
+		else
+			break;
+	level++;
+	in[level] = fopen(name,"r");	
 }
 void
 Asm()
@@ -173,14 +197,30 @@ Asm()
 	/* until EOF */
 	while (1) {
 		EmitBin = 0;
-		if (!fgets(text, 128, in)) {
-			return;
+		if (!fgets(text, 128, in[level])) {
+			if(level)
+			{
+				fclose(in[level]);
+				level--;
+			}else
+				return;
 		}
 		if (strlen(text) == 1)
 			goto Skip;
 		/* trim text */
 		text[strlen(text) - 1] = '\0';
-		EmitBin = Parse(text);
+		if(text[0] == '$')
+		{
+			OpenIncludeFile(text);
+			goto Skip;
+		}
+		if(IFFalse[nest])
+			EmitBin = Parse(text);
+		else
+		{
+			EmitBin = Parse(text);
+			type = LIST_ONLY;
+		}
 Skip:
 		PrintList(text);
 		if (pass)
@@ -395,6 +435,8 @@ PrintList(char *text)
 		}
 		break;
 	case LIST_ONLY:
+		if(pass)
+			fprintf(list, "                 %s\n", text);
 		break;
 	case LIST_BYTES:
 	case LIST_WORDS:
@@ -2709,4 +2751,18 @@ NOP_proc(char *label, char *equation)
 	opcode_bytes = 1;
 	b1 = 0;
 	return TEXT;
+}
+int
+IF_proc(char *label, char *equation)
+{
+	nest++;
+	IFFalse[nest] = ExpressionParser(equation);
+	return LIST_ONLY;
+}
+int
+ENDIF_proc(char *label, char *equation)
+{
+	IFFalse[nest] = 0;
+	nest--;
+	return LIST_ONLY;
 }

@@ -22,28 +22,20 @@
 ;OTHER DEALINGS IN THE SOFTWARE.
 ;
 ; test file
-LAB1	EQU	$
+
+$include "macro.asm"
+
+true	equ	1
+false	equ	0
+
+	if	true
+	lxi	h,end
+	endif
+	if	false
+	lxi	h,end1
+	endif
+start 	EQU	$
 ;
-START	NOP		; first line
-	DB	(CMD > 8), CMD
-	CPI	'9'+1
-	CPI	'X'-0X40
-	DB	'X'-0x40
-	DB	0XD
-	MVI	A,0XD
-	DB	'TEST',0XD
-	JMP	START	; line 2
-	JMP	FORWARD	; refer ahead
-LAB2	EQU	$
-STORAGE	DAC	0x1000	
-STRING	DB	"This is a test"
-BYTES	DB	0x34,0x93,120,17,0x0d
-	DB	STRING,"Test",(5*4)+3,LAB2
-CMD	DB	"TEST",59
-	DW	START
-	DB	"LARGE",17
-	DW	$+9
-TABLE	DW	$,STORAGE,STRING
-FORWARD	NOP
-	HLT
+end	equ	$
+end1	equ	$
 	END
