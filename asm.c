@@ -2047,12 +2047,7 @@ JMP_proc(char *label, char *equation)
 		Local->Symbol_Value = addr;
 	b1 = 0xC3;
 	/* now the value */
-	equation = AdvanceToAscii(equation);
-	Local2 = FindLabel(equation);
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = DW(equation);
+	tmp = ExpressionParser(equation);
 	b2 = tmp & 0xff;
 	b3 = (tmp >> 8) & 0xff;
 	opcode_bytes = 3;
