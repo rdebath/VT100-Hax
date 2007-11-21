@@ -224,7 +224,8 @@ Asm()
 Skip:
 		PrintList(text);
 		if (pass)
-			DumpBin();
+			if(!IFFalse[nest])
+				DumpBin();
 		if (EmitBin == PROCESSED_END)
 			return;	/* processed END */
 		opcode_bytes = b1 = b2 = b3 = b4 = 0;
