@@ -224,7 +224,7 @@ Asm()
 Skip:
 		PrintList(text);
 		if (pass)
-			if(!IFFalse[nest])
+			if(IFFalse[nest])
 				DumpBin();
 		if (EmitBin == PROCESSED_END)
 			return;	/* processed END */
