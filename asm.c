@@ -1390,11 +1390,7 @@ MVI_proc(char *label, char *equation)
 	/* proc value */
 	equation = AdvancePast(equation, ',');
 	equation = AdvanceToAscii(equation);
-	Local2 = FindLabel(equation);
-	if (Local2)
-		b2 = Local2->Symbol_Value;
-	else
-		b2 = ExpressionParser(equation);
+	b2 = ExpressionParser(equation);
 	opcode_bytes = 2;
 	return TEXT;
 }
@@ -1590,10 +1586,7 @@ ADI_proc(char *label, char *equation)
 	/* now the value */
 	equation = AdvanceToAscii(equation);
 	Local2 = FindLabel(equation);
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = DW(equation);
+	tmp = ExpressionParser(equation);
 	b2 = tmp & 0xff;
 	opcode_bytes = 2;
 	return TEXT;
