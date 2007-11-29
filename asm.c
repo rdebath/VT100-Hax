@@ -1582,7 +1582,7 @@ ADI_proc(char *label, char *equation)
 	/* record the address of the label */
 	if (Local)
 		Local->Symbol_Value = addr;
-	b1 = 0xe6;
+	b1 = 0xc6;
 	/* now the value */
 	equation = AdvanceToAscii(equation);
 	Local2 = FindLabel(equation);
