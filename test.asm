@@ -23,7 +23,7 @@
 ;
 ; test file
 
-$include "macro.asm"
+;$include "macro.asm"
 
 true	equ	1
 false	equ	0
