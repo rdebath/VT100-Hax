@@ -456,8 +456,8 @@ PrintList(char *text)
 			} else {
 				if (pass) {
 					fprintf(list, "%04x ", LStack->word &0xffff);
-					fputc((LStack->word & 0xff00) >> 8, bin);
 					fputc((LStack->word & 0xff), bin);
+					fputc((LStack->word & 0xff00) >> 8, bin);
 				}
 				space += 5;
 				addr += 2;
