@@ -260,7 +260,7 @@ FindLabel(char *text)
 		tmp[i++] = *text++;
 	if (*text == '%')
 		tmp[i++] = *text++;
-	while (isalnum(*text))
+	while (isgraph(*text))
 		tmp[i++] = *text++;
 	tmp[i] = '\0';
 
@@ -274,7 +274,7 @@ FindLabel(char *text)
 void
 AddLabel(char *text)
 {
-	char            label[16];
+	char            label[80];
 	int             i = 0;
 	SYMBOL         *Local = Symbols;
 	int             phantom = 0;
@@ -291,7 +291,7 @@ AddLabel(char *text)
 		label[i++] = *text++;
 		phantom++;
 	}
-	while (isalnum(*text))
+	while (!isspace(*text))
 		label[i++] = *text++;
 	label[i] = '\0';
 
@@ -917,37 +917,23 @@ ANOP_proc(char *label, char *equation)
 int
 EQU_proc(char *label, char *equation)
 {
-	SYMBOL         *Local, *Local2;
-	/* handle the EQU command. */
-
-	Local = FindLabel(label);	/* things are very broken if not
-					 * found */
-	if (!Local)
-		return LIST_ONLY;
-
-	/* Evaluate the equation section */
-
-	if (*equation == '$')
-		Local->Symbol_Value = ProcDollar(equation);
+	SYMBOL         *Local;
+	int tmp;
+	Local = FindLabel(label);
+	if (Local)
+		tmp = Local->Symbol_Value = ExpressionParser(equation);
 	else
-		/* all other possible things go here */
-	{
-		Local2 = FindLabel(equation);
-		if (Local2)
-			Local->Symbol_Value = Local2->Symbol_Value;
-		else
-			Local->Symbol_Value = DW(equation);
-	}
-	/* Copy off the value */
-	b1 = Local->Symbol_Value & 0x00ff;
-	b2 = (Local->Symbol_Value & 0xff00) >> 8;
+		tmp = ExpressionParser(equation);
+
+	b1 = tmp & 0x00ff;
+	b2 = (tmp & 0xff00) >> 8;
+
 	return TEXT;
 }
 int
 ORG_proc(char *label, char *equation)
 {
 	SYMBOL         *Local;
-	STACK          *LStack = ByteWordStack;
 
 	Local = FindLabel(label);
 	if (Local)
@@ -1053,6 +1039,8 @@ int
 DW(char *text)
 {
 	int             tmp;
+	while(isspace(*text))text++;
+
 	if (*text == '%')
 		return 0;
 	if (*text == '\"') {
@@ -1064,6 +1052,10 @@ DW(char *text)
 		text++;
 		tmp = DB(text);
 		return -tmp;
+	} else if( *text == '+') {
+		text++;
+		tmp = DB(text);
+		return +tmp;
 	} else
 		tmp = ExpressionParser(text);
 	return tmp;

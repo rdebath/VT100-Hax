@@ -69,7 +69,7 @@ typedef struct Stack {
 /* Symbol table storage */
 
 typedef struct Symbol {
-	char            Symbol_Name[16];
+	char            Symbol_Name[80];
 	int             Symbol_Value;
 	void           *next;
 }               SYMBOL;
@@ -201,7 +201,7 @@ INSTRUCTIONS    OpCodes[] =
 	{"EQU", EQU_proc}, {"DAC", DAC_proc}, {"DB", DB_proc},
 	{"DW", DW_proc}, {"END", END_proc},{"ANOP",ANOP_proc}, 
 	{"ORG",ORG_proc},{"DS",DS_proc},{"IF",IF_proc},
-	{"ENDIF",ENDIF_proc},
+	{"ENDIF",ENDIF_proc},{"SET",EQU_proc},
 	{"mov", MOV_proc}, {"mvi", MVI_proc}, {"lxi", LXI_proc},
 	{"lda", LDA_proc}, {"sta", STA_proc}, {"lhld", LHLD_proc},
 	{"shld", SHLD_proc}, {"ldax", LDAX_proc}, {"stax", STAX_proc},
@@ -231,6 +231,6 @@ INSTRUCTIONS    OpCodes[] =
 	{"equ", EQU_proc}, {"dac", DAC_proc}, {"db", DB_proc},
 	{"dw", DW_proc}, {"end", END_proc},{"anop",ANOP_proc}, 
 	{"org",ORG_proc},{"ds",DS_proc},{"if",IF_proc},
-	{"endif",ENDIF_proc},
+	{"endif",ENDIF_proc},{"set",EQU_proc},
 	{0, NULL}
 };
