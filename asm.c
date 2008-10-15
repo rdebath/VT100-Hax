@@ -2747,3 +2747,11 @@ ENDIF_proc(char *label, char *equation)
 	nest--;
 	return LIST_ONLY;
 }
+int
+LOCAL_proc(char *equation)
+{
+}
+int
+ENDLOCAL_proc()
+{
+}

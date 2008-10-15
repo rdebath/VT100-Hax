@@ -164,6 +164,8 @@ int             EI_proc(char *, char *);
 int             DI_proc(char *, char *);
 int             HLT_proc(char *, char *);
 int             NOP_proc(char *, char *);
+int		LOCAL_proc(char *);
+int		ENDLOCAL_proc();
 
 typedef struct Instructions {
 	const char     *Name;
@@ -201,7 +203,8 @@ INSTRUCTIONS    OpCodes[] =
 	{"EQU", EQU_proc}, {"DAC", DAC_proc}, {"DB", DB_proc},
 	{"DW", DW_proc}, {"END", END_proc},{"ANOP",ANOP_proc}, 
 	{"ORG",ORG_proc},{"DS",DS_proc},{"IF",IF_proc},
-	{"ENDIF",ENDIF_proc},{"SET",EQU_proc},
+	{"ENDIF",ENDIF_proc},{"SET",EQU_proc},{"LOCAL",LOCAL_proc},
+	{"ENDLOCAL",ENDLOCAL_proc},
 	{"mov", MOV_proc}, {"mvi", MVI_proc}, {"lxi", LXI_proc},
 	{"lda", LDA_proc}, {"sta", STA_proc}, {"lhld", LHLD_proc},
 	{"shld", SHLD_proc}, {"ldax", LDAX_proc}, {"stax", STAX_proc},
@@ -232,5 +235,7 @@ INSTRUCTIONS    OpCodes[] =
 	{"dw", DW_proc}, {"end", END_proc},{"anop",ANOP_proc}, 
 	{"org",ORG_proc},{"ds",DS_proc},{"if",IF_proc},
 	{"endif",ENDIF_proc},{"set",EQU_proc},
+	{"local",LOCAL_proc},
+	{"endlocal",ENDLOCAL_proc},
 	{0, NULL}
 };
