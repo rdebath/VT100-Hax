@@ -68,11 +68,18 @@ STACK          *ByteWordStack;
 int	IFFalse[10];
 int	nest = 0;
 
+/*  Tageted binary handleing storage */
+
+typedef struct targ {
+short	count;
+short	addr;
+}TARG;
+
+TARG Target;
+char Image[1024*64];
+
 /*
  * Notes:
- * 
- * This is a single pass assembler, so, you have to define a symbol befor you
- * use it, else its not found.
  * 
  * The RPN parser is shaky at best.
  * 
@@ -83,25 +90,31 @@ int	nest = 0;
  * Overall the assembler needs a clean up.  There are a lot of places where to
  * code can be optimized.
  * 
- * Just noticed that the bin dumper is not implemented....TBD.
- * 
  * The assembler assumes that the left column is a lable the mid column is an
  * opcode and the right column is an equation.
  * 
  */
+int codeline;
 int
 main(int argv, char *argc[])
 {
 	/* init the globals */
 
 	addr = b1 = b2 = b3 = b4 = 0;
+	codeline = 0;
 	IFFalse[0] = 1; 
+	Target.count = 0;
+	Target.addr = 0;
+	memset(Image,0,1024*64);
 	Symbols = (SYMBOL *) calloc(1, sizeof(SYMBOL));
 	ByteWordStack = (STACK *) calloc(1, sizeof(STACK));
 
 	if (argv > 1) {
 		OpenFiles(argc[1]);
 		Pass1();
+		codeline = 0;
+	 	Target.count = 0;
+        	Target.addr = 0;
 		Pass2();
 		CloseFiles();
 		exit(0);
@@ -197,6 +210,7 @@ Asm()
 	/* until EOF */
 	while (1) {
 		EmitBin = 0;
+		codeline++;
 		if (!fgets(text, 128, in[level])) {
 			if(level)
 			{
@@ -405,59 +419,59 @@ PrintList(char *text)
 	switch (type) {
 	case COMMENT:
 		if (pass)
-			fprintf(list, "                 %s\n", text);
+			fprintf(list, "                       %s\n", text);
 		break;
 	case TEXT:
 		switch (opcode_bytes) {
 		case 1:
 			if (pass)
-				fprintf(list, "%04x %02x          %s\n", addr, b1, text);
+				fprintf(list, "%6d %04x %02x          %s\n",codeline, addr, b1, text);
 			addr += 1;
 			break;
 		case 2:
 			if (pass)
-				fprintf(list, "%04x %02x %02x       %s\n", addr, b1, b2, text);
+				fprintf(list, "%6d %04x %02x %02x       %s\n",codeline, addr, b1, b2, text);
 			addr += 2;
 			break;
 		case 3:
 			if (pass)
-				fprintf(list, "%04x %02x %02x %02x    %s\n", addr, b1, b2, b3, text);
+				fprintf(list, "%6d %04x %02x %02x %02x    %s\n",codeline, addr, b1, b2, b3, text);
 			addr += 3;
 			break;
 		case 4:
 			if (pass)
-				fprintf(list, "%04x %02x %02x %02x %02x %s\n", addr, b1, b2, b3, b4, text);
+				fprintf(list, "%d6 %04x %02x %02x %02x %02x %s\n",codeline, addr, b1, b2, b3, b4, text);
 			addr += 4;
 			break;
 		default:	/* 0 */
 			if (pass)
-				fprintf(list, "     %02x%02x        %s\n", b2, b1, text);
+				fprintf(list, "           %02x%02x        %s\n", b2, b1, text);
 			break;
 		}
 		break;
 	case LIST_ONLY:
 		if(pass)
-			fprintf(list, "                 %s\n", text);
+			fprintf(list, "                       %s\n", text);
 		break;
 	case LIST_BYTES:
 	case LIST_WORDS:
 		if (pass)
-			fprintf(list, "%04x             %s\n", addr, text);
+			fprintf(list, "%6d %04x             %s\n",codeline, addr, text);
 		if (pass)
-			fprintf(list, "     ");
+			fprintf(list, "           ");
 		while (LStack->next) {	/* don't count last byte/word */
 			if (type == LIST_BYTES) {
 				if (pass) {
 					fprintf(list, "%02x ", (LStack->word & 0xff));
-					fputc(LStack->word & 0xff, bin);
+					Image[Target.count++] = LStack->word&0xff;
 				}
 				space += 3;
 				addr++;
 			} else {
 				if (pass) {
-					fprintf(list, "%04x ", LStack->word &0xffff);
-					fputc((LStack->word & 0xff), bin);
-					fputc((LStack->word & 0xff00) >> 8, bin);
+					fprintf(list, "      %04x ", LStack->word &0xffff);
+					Image[Target.count++] = LStack->word&0xff;
+					Image[Target.count++] = (LStack->word&0xff00)>>8;
 				}
 				space += 5;
 				addr += 2;
@@ -502,27 +516,54 @@ PrintList(char *text)
 	if (pass)
 		fflush(list);
 }
+/*
+	This code needs to handle target address for the binary.
+	When the assembler finds an 'org' statment, we should set
+	the output address to 'org' and process a block of binary
+	that goes to that 'org' address.  
+
+	Things that control this are, 'org' and 'end'.  The first
+	bytes out, will be to the 'org' address or zero if 'org' is
+	not issued.  We will continue to push bytes until a new
+	'org' is processed or until 'end' is processed.
+
+	The header will have {short count}{short addr} followed by
+	count bytes.
+*/
+void
+ProcessDumpBin()
+{
+	if(Target.count)
+	{
+		if(Target.count & 1) 
+			Target.count += 1;
+		fwrite(&Target,sizeof(TARG),1,bin);
+		fwrite(&Image,Target.count,1,bin);
+		Target.count = 0;
+		memset(Image,0,1024*64);
+	}
+}
 void
 DumpBin()
 {
 	switch (opcode_bytes) {
 		case 1:
-		fputc(b1, bin);
+		Image[Target.count++] = b1;
 		break;
 	case 2:
-		fputc(b1, bin);
-		fputc(b2, bin);
+		Image[Target.count++] = b1;
+		Image[Target.count++] = b2;
 		break;
 	case 3:
-		fputc(b1, bin);
-		fputc(b2, bin);
-		fputc(b3, bin);
+		Image[Target.count++] = b1;
+		Image[Target.count++] = b2;
+		Image[Target.count++] = b3;
 		break;
 	case 4:
-		fputc(b1, bin);
-		fputc(b2, bin);
-		fputc(b3, bin);
-		fputc(b4, bin);
+		Image[Target.count++] = b1;
+		Image[Target.count++] = b2;
+		Image[Target.count++] = b3;
+		Image[Target.count++] = b4;
 		break;
 	}
 }
@@ -725,8 +766,8 @@ RPN(char *text)
 				break;
 		case '\0':
 		case '\n':
-				EvalRPN();
 		case ',':
+				EvalRPN();
 				return stack.word[0];
 			}
 		}
@@ -943,6 +984,8 @@ ORG_proc(char *label, char *equation)
 
 	b1 = addr & 0x00ff;
 	b2 = (addr & 0xff00) >> 8;
+	ProcessDumpBin();
+	Target.addr = addr;
 	return TEXT;
 }
 int
@@ -950,15 +993,19 @@ DS_proc(char *label, char *equation)
 {
 	SYMBOL         *Local;
 	STACK          *LStack = ByteWordStack;
-
+int Lsize;
 	b1 = addr & 0x00ff;
 	b2 = (addr & 0xff00) >> 8;
 	Local = FindLabel(label);
 	if (Local) {
 		Local->Symbol_Value = addr;
-		addr += ExpressionParser(equation);
+		Lsize = ExpressionParser(equation);
 	} else
-		addr += ExpressionParser(equation);
+		Lsize = ExpressionParser(equation);
+	addr += Lsize;
+	opcode_bytes = 1;
+	b1 = 0;
+	while(Lsize--) DumpBin();
 	return TEXT;
 }
 int
@@ -1345,6 +1392,7 @@ DW_proc(char *label, char *equation)
 int
 END_proc(char *label, char *equation)
 {
+	ProcessDumpBin();
 	type = PROCESSED_END;
 	return PROCESSED_END;
 }

@@ -38,4 +38,7 @@ start 	EQU	$
 ;
 end	equ	$
 end1	equ	$
+	org	0x420
+LIST	equ	$
+	db	(LIST > 8) + 128 , LIST and 0xff
 	END
