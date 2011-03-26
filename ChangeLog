@@ -1,0 +1,9 @@
+3-23-11  Autotooled the project to make it more portable to other systems.
+3-22-11  Imported changes from Claude Sylvain.
+	These changes include but are not limited to:
+		Segragate code into functional units.
+		Document sections more clearly.
+		Fix the expression parser WRT DAL vs RPN parseing.
+	A BIG thanks to Claude for his work on this code.
+Dark Ages:  Wrote the first version of the code on a weekend and
+	put a few fixes into it.   
