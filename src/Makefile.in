@@ -15,6 +15,18 @@
 
 @SET_MAKE@
 
+# *****************************************************************************
+# Filename:			Makefile.am
+# Description:
+# Copyright(c):
+# Author(s):		Jay Cotton, Claude Sylvain
+# Created:			26 Mars 2011
+# Last modified:	17 April 2011
+# Notes:
+# *****************************************************************************
+
+#AUTOMAKE_OPTOINS = foreign
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -181,8 +193,9 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AUTOMAKE_OPTOINS = foreign
-AM_CFLAGS = -g -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
+
+#AM_CFLAGS = -g -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
+AM_CFLAGS = -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 asm8080_SOURCES = asm_dir.c  exp_parser.c  main.c  opcode.c  util.c 
 all: all-am
 
@@ -504,6 +517,8 @@ uninstall-am: uninstall-binPROGRAMS
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-binPROGRAMS
 
+
+#asm8080_CPPFLAGS = -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

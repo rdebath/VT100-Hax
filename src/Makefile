@@ -15,6 +15,18 @@
 
 
 
+# *****************************************************************************
+# Filename:			Makefile.am
+# Description:
+# Copyright(c):
+# Author(s):		Jay Cotton, Claude Sylvain
+# Created:			26 Mars 2011
+# Last modified:	17 April 2011
+# Notes:
+# *****************************************************************************
+
+#AUTOMAKE_OPTOINS = foreign
+
 
 pkgdatadir = $(datadir)/asm8080
 pkgincludedir = $(includedir)/asm8080
@@ -68,12 +80,12 @@ DIST_SOURCES = $(asm8080_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080/missing --run aclocal-1.11
-AMTAR = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080/missing --run tar
+ACLOCAL = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17/missing --run aclocal-1.11
+AMTAR = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17/missing --run automake-1.11
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -81,7 +93,7 @@ CFLAGS = -g -O2
 CPP = gcc -E
 CPPFLAGS = 
 CYGPATH_W = cygpath -w
-DEFS = -DPACKAGE_NAME=\"asm8080\" -DPACKAGE_TARNAME=\"asm8080\" -DPACKAGE_VERSION=\"2.0\ \" -DPACKAGE_STRING=\"asm8080\ 2.0\ \" -DPACKAGE_BUGREPORT=\"lbmgmusic@gmail.com\" -DPACKAGE_URL=\"\" -DPACKAGE=\"asm8080\" -DVERSION=\"main\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\"
+DEFS = -DPACKAGE_NAME=\"\" -DPACKAGE_TARNAME=\"\" -DPACKAGE_VERSION=\"\" -DPACKAGE_STRING=\"\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DPACKAGE=\"asm8080\" -DVERSION=\"0.9.2\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\"
 DEPDIR = .deps
 DLLTOOL = dlltool
 DSYMUTIL = 
@@ -106,7 +118,7 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17/missing --run makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /usr/bin/mkdir -p
 NM = /usr/bin/nm -B
@@ -116,23 +128,23 @@ OBJEXT = o
 OTOOL = 
 OTOOL64 = 
 PACKAGE = asm8080
-PACKAGE_BUGREPORT = lbmgmusic@gmail.com
-PACKAGE_NAME = asm8080
-PACKAGE_STRING = asm8080 2.0 
-PACKAGE_TARNAME = asm8080
+PACKAGE_BUGREPORT = 
+PACKAGE_NAME = 
+PACKAGE_STRING = 
+PACKAGE_TARNAME = 
 PACKAGE_URL = 
-PACKAGE_VERSION = 2.0 
+PACKAGE_VERSION = 
 PATH_SEPARATOR = :
 RANLIB = ranlib
 SED = /usr/bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = strip
-VERSION = main
-abs_builddir = /home/claude/work/software/pc/asm8080/asm8080/src
-abs_srcdir = /home/claude/work/software/pc/asm8080/asm8080/src
-abs_top_builddir = /home/claude/work/software/pc/asm8080/asm8080
-abs_top_srcdir = /home/claude/work/software/pc/asm8080/asm8080
+VERSION = 0.9.2
+abs_builddir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17/src
+abs_srcdir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17/src
+abs_top_builddir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17
+abs_top_srcdir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_DUMPBIN = 
@@ -150,7 +162,7 @@ build_vendor = pc
 builddir = .
 datadir = ${datarootdir}
 datarootdir = ${prefix}/share
-docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
+docdir = ${datarootdir}/doc/${PACKAGE}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
 host = i686-pc-cygwin
@@ -161,7 +173,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080/install-sh
+install_sh = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-04-17/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -170,7 +182,7 @@ mandir = ${datarootdir}/man
 mkdir_p = /usr/bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
-prefix = /usr/local/asm8080
+prefix = /usr/local
 program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
@@ -181,8 +193,9 @@ target_alias =
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-AUTOMAKE_OPTOINS = foreign
-AM_CFLAGS = -g -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
+
+#AM_CFLAGS = -g -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
+AM_CFLAGS = -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 asm8080_SOURCES = asm_dir.c  exp_parser.c  main.c  opcode.c  util.c 
 all: all-am
 
@@ -504,6 +517,8 @@ uninstall-am: uninstall-binPROGRAMS
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-binPROGRAMS
 
+
+#asm8080_CPPFLAGS = -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
