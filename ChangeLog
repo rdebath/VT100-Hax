@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	10 April 2011
+Last modified:	28 June 2011
 Notes:
 *******************************************************************************
 
@@ -39,7 +39,7 @@ Date:		11 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- Creation of the project using Jay Cotton "asm8080" project.
+Notes:		- Creation of the project using Jay Cotton "asm8080" project.
 		- Created a cygwin makefile to be able to compile under
 		  Cygwin.
 		- Project structure tuning.  
@@ -54,7 +54,7 @@ Date:		12 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- project structure tuning.
+Notes:		- project structure tuning.
 		- Makefile tuning.
 		- Resolved many compiler warning messages.
 -------------------------------------------------------------------------------
@@ -64,7 +64,7 @@ Date:		18 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- Fixed a bad configuration in "mf_c" makefile.
+Notes:		- Fixed a bad configuration in "mf_c" makefile.
 		- Fixed labels that are still viewed in a "FALSE" "if/endif".
 		- Fixed opcode that are still parsed in a "FALSE" "if/endif".
 		- Added "if/endif" overflow/underflow check.
@@ -76,7 +76,7 @@ Date:		19 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- Fixed flood on "endif" underflow.
+Notes:		- Fixed flood on "endif" underflow.
 		- Fixed "db", "dw" processing.
 -------------------------------------------------------------------------------
 
@@ -85,7 +85,7 @@ Date:		23 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- Non fonctionnal "DS" implementation is now fully
+Notes:		- Non fonctionnal "DS" implementation is now fully
 		  functionnal :-)  This was a lot of work :-/
 		- Now, items in operand field can be separated using "Tab".
 		- "DB" and "DW" improvement.
@@ -99,7 +99,7 @@ Date:		24 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- "DS" is not for defining string, but for defining
+Notes:		- "DS" is not for defining string, but for defining
 		  Data Storage.  Was corrected!
 		- Enable to define string using "DW".
 	      	- Implemented "ELSE".
@@ -115,8 +115,8 @@ History:	- "DS" is not for defining string, but for defining
 Date:		25 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
-History:
-		- Now, there is 2 keywords table.  One for the assembler
+
+Notes:		- Now, there is 2 keywords table.  One for the assembler
 		  directives, and one for the processor opcodes.
 
 		- Modified "Parse()" to be able to work with 2 keywords
@@ -130,8 +130,8 @@ History:
 Date:		26 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
-History:
-		- Moved all assembler directive functions in "asm_dir.c"
+
+Notes:		- Moved all assembler directive functions in "asm_dir.c"
 		- Moved all opcode functions in "opcode.c"
 		- Added range check to opcode functions that use 8-bit
 	          operand.
@@ -141,8 +141,8 @@ History:
 Date:		27 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
-History:
-		- In "main.c", in "OpenIncludeFile()", added error check
+
+Notes:		- In "main.c", in "OpenIncludeFile()", added error check
 	       	  to avoid crash.
 		- Replaced keyword include "$" by "INCLUDE".
 		- Put expression evaluator an "rpn.c" module.
@@ -154,8 +154,8 @@ History:
 Date:		28 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
-History:
-		- In "opcode.c", completion of over range check on 16-bit
+
+Notes:		- In "opcode.c", completion of over range check on 16-bit
 		  value.
 		- In "opcode.c", done some optimisation.
 		- Now, on error/warning, file name is displayed/printed,
@@ -174,7 +174,8 @@ History:
 Date:		30 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
-History:	- A "INCLUDE" processing problem was resolved.
+
+Notes:		- A "INCLUDE" processing problem was resolved.
 		- A register pair processing problem was resolved.
 -------------------------------------------------------------------------------
 
@@ -182,7 +183,8 @@ History:	- A "INCLUDE" processing problem was resolved.
 Date:		31 December 2010
 By:		Claude Sylvain
 Version:	0.9.0
-History:	- A "jam" bug resolved in "rpn.c", "extract_byte()".
+
+Notes:		- A "jam" bug resolved in "rpn.c", "extract_byte()".
 		- Following problem has been resolved:
 			- When an empty source file is included, i8080-as
 			  jam.
@@ -196,7 +198,8 @@ History:	- A "jam" bug resolved in "rpn.c", "extract_byte()".
 Date:		1 January 2011
 By:		Claude Sylvain
 Version:	0.9.0
-History:	- "-I" (Include) option implemented :-)
+
+Notes:		- "-I" (Include) option implemented :-)
 		- Done some correction on how "equation" is parsed in some
 		  opcode process.  This have fixed a lot of problem :-)
 -------------------------------------------------------------------------------
@@ -206,7 +209,7 @@ Date:		2 January 2011
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- Renamed "rpn.c/h" module as "exp_parser.c/h", since
+Notes:		- Renamed "rpn.c/h" module as "exp_parser.c/h", since
 		  the expression parser is not a RPN (Reverse Polish Notation)
    		  expression parser, but a DAL (Direct Algebraic Logic)
    		  expression parser.
@@ -219,7 +222,7 @@ Date:		3 January 2011
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- In "exp_parser.c", in "dalep()", tuned the way stack is
+Notes:		- In "exp_parser.c", in "dalep()", tuned the way stack is
    		  removed.
 		- Updated help display (option "-h").
 		- Added "-v" option (display version).
@@ -232,7 +235,7 @@ Date:		4 January 2011
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- Now, operand evaluation work correctly on the
+Notes:		- Now, operand evaluation work correctly on the
 		  following instructions:
 		  	in	ADDR1 + OFFSET
 			out	ADDR1 + OFFSET
@@ -243,7 +246,7 @@ Date:		8 January 2011
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- Modified makefiles to be able to built project without
+Notes:		- Modified makefiles to be able to built project without
 		  using GNU make "-f" option.
 
 		- Now, the following line can be assembled correctly:
@@ -261,7 +264,7 @@ Date:		15 January 2011
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- In "opcode.c", renamed "reg_pair()" as "parse_reg16bits()".
+Notes:		- In "opcode.c", renamed "reg_pair()" as "parse_reg16bits()".
 		- In "opcode.c", modified "parse_reg()" to be able
 		  to check if register is allowed.
 		- Checked if it is necessary to check if register is
@@ -274,7 +277,7 @@ Date:		12 February 2011
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- Resolved an "if" problem, that appear when more than
+Notes:		- Resolved an "if" problem, that appear when more than
 		  1 level of "if" are used.
 -------------------------------------------------------------------------------
 
@@ -283,7 +286,7 @@ Date:		12 March 2011
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- Increased maximum label size from 32 to 64 characters.
+Notes:		- Increased maximum label size from 32 to 64 characters.
 		  Seems that 32 characters is not enough long.
 
 		- In "exp_parser.c", in "dalep()", made "label" match
@@ -296,7 +299,7 @@ Date:		13 March 2011
 By:		Claude Sylvain
 Version:	0.9.0
 
-History:	- Done a general project revision, and cleanup.
+Notes:		- Done a general project revision, and cleanup.
 
 		- In main.c, in "do_asm()", made empty source line
 		  appearing as single empty line in the listing file,
@@ -308,15 +311,20 @@ History:	- Done a general project revision, and cleanup.
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
-3-23-11  Autotooled the project to make it more portable to other systems.
-3-22-11  Imported changes from Claude Sylvain.
-	These changes include but are not limited to:
-		Segragate code into functional units.
-		Document sections more clearly.
-		Fix the expression parser WRT DAL vs RPN parseing.
-	A BIG thanks to Claude for his work on this code.
-Dark Ages:  Wrote the first version of the code on a weekend and
-	put a few fixes into it.   
+By:		Jay Cotton
+
+3-23-11:	Autotooled the project to make it more portable to other
+		systems.
+
+3-22-11:	Imported changes from Claude Sylvain.
+		These changes include but are not limited to:
+			Segragate code into functional units.
+			Document sections more clearly.
+			Fix the expression parser WRT DAL vs RPN parseing.
+		A BIG thanks to Claude for his work on this code.
+
+Dark Ages:	Wrote the first version of the code on a weekend and
+		put a few fixes into it.   
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
@@ -324,7 +332,7 @@ Date:		26 March 2011
 By:		Claude Sylvain
 Version:	0.9.1
 
-History:	- In ".c" and ".h" modules, update the copyright notice,
+Notes:		- In ".c" and ".h" modules, update the copyright notice,
    		  since Jay Cotton Email address have changed.
 		  Was Jay.Cotton@Sun.COM; and now jay.cotton@oracle.com.
 		  Also change year from <2007> to <2007-2011>.
@@ -339,7 +347,7 @@ Date:		27 March 2011
 By:		Claude Sylvain
 Version:	0.9.1
 
-History:	- Made some modification on source files and make files
+Notes:		- Made some modification on source files and make files
 		  to be able to built on Cygwin, GNU/Linux, Windows, and
 		  Solaris (32-bit and 64-bit).
 		  But only tested on Cygwin 32-bit and GNU/Linux 32-bit.
@@ -365,7 +373,7 @@ Date:		10 April 2011
 By:		Claude Sylvain
 Version:	0.9.2
 
-History:	- Changed project name as "asm8080" to match the original
+Notes:		- Changed project name as "asm8080" to match the original
 		  project name.  Was "i8080-as".
 
 		- Merged my local project with the one in CVS.
@@ -377,7 +385,14 @@ History:	- Changed project name as "asm8080" to match the original
 		- Updated TODO and ChangLog files.
 -------------------------------------------------------------------------------
 
+-------------------------------------------------------------------------------
+Date:		28 June 2011
+By:		Claude Sylvain
+Version:	0.9.3
 
+Notes:		- In "main.c", in "PrintList()", improved the listing
+		  output.
+-------------------------------------------------------------------------------
 
 
 
@@ -394,7 +409,7 @@ History:	- Changed project name as "asm8080" to match the original
 Date:
 By:
 Version:
-History:
+Notes:
 -------------------------------------------------------------------------------
 
 

@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 April 2011
+ *	Last modified:	28 June 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -114,7 +114,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 0;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 9;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 2;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 3;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -793,7 +793,7 @@ static int src_line_parser(char *text)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 January 2011
+ *	Last modified:	28 June 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -808,16 +808,16 @@ static int src_line_parser(char *text)
 
 static void PrintList(char *text)
 {
-	STACK		*DLStack;
-	STACK		*LStack	= ByteWordStack;
-	int		space		= 0;
+	STACK	*DLStack;
+	STACK	*LStack	= ByteWordStack;
+	int	space		= 0;
 
 
 	switch (type)
 	{
 		case COMMENT:
 			if ((asm_pass == 1) && (list != NULL))
-				fprintf(list, "                       %s\n", text);
+				fprintf(list, "\t\t\t%s\n", text);
 
 			break;
 
@@ -826,28 +826,32 @@ static void PrintList(char *text)
 			{
 				case 1:
 					if ((asm_pass == 1) && (list != NULL))
-						fprintf(list, "%6d %04x %02x          %s\n",codeline[file_level], addr, b1, text);
+						fprintf(	list, "%6d %04X %02X\t\t%s\n", codeline[file_level],
+							  		addr, b1, text);
 
 					addr += data_size;
 					break;
 
 				case 2:
 					if ((asm_pass == 1) && (list != NULL))
-						fprintf(list, "%6d %04x %02x %02x       %s\n",codeline[file_level], addr, b1, b2, text);
+						fprintf(	list, "%6d %04X %02X %02X\t%s\n",
+									codeline[file_level], addr, b1, b2, text);
 
 					addr += data_size;
 					break;
 
 				case 3:
 					if ((asm_pass == 1) && (list != NULL))
-						fprintf(list, "%6d %04x %02x %02x %02x    %s\n",codeline[file_level], addr, b1, b2, b3, text);
+						fprintf(	list, "%6d %04X %02X %02X %02X\t%s\n",
+									codeline[file_level], addr, b1, b2, b3, text);
 
 					addr += data_size;
 					break;
 
 				case 4:
 					if ((asm_pass == 1) && (list != NULL))
-						fprintf(list, "%d6 %04x %02x %02x %02x %02x %s\n",codeline[file_level], addr, b1, b2, b3, b4, text);
+						fprintf(	list, "%6d %04X %02X %02X %02X %02X\t%s\n",
+									codeline[file_level], addr, b1, b2, b3, b4, text);
 
 					addr += data_size;
 					break;
@@ -856,7 +860,7 @@ static void PrintList(char *text)
 				 * - */
 				default:
 					if ((asm_pass == 1) && (list != NULL))
-						fprintf(list, "           %02x%02x        %s\n", b2, b1, text);
+						fprintf(list, "           %02X %02X\t%s\n", b2, b1, text);
 
 					break;
 			}
@@ -865,7 +869,7 @@ static void PrintList(char *text)
 		case LIST_ONLY:
 		case PROCESSED_END:
 			if ((asm_pass == 1) && (list != NULL))
-				fprintf(list, "                       %s\n", text);
+				fprintf(list, "\t\t\t%s\n", text);
 
 			break;
 
@@ -873,7 +877,8 @@ static void PrintList(char *text)
 		 *	------------------------- */	
 		case LIST_DS:
 			if ((asm_pass == 1) && (list != NULL))
-				fprintf(list, "%6d %04x             %s\n",codeline[file_level], addr, text);
+				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
+					  		addr, text);
 
 			addr	+= data_size;
 			break;
@@ -883,11 +888,11 @@ static void PrintList(char *text)
 		case LIST_STRINGS:
 			if ((asm_pass == 1) && (list != NULL))
 			{
-				fprintf(list, "%6d %04x             %s\n",codeline[file_level], addr, text);
-				fprintf(list, "           ");
+				fprintf(list, "%6d %04X\t\t%s\n", codeline[file_level], addr, text);
+				fprintf(list, "            ");
 			}
 
-			/* don't count last byte/word/
+			/* Don't count last byte/word.
 			 *	--------------------------- */
 			while (LStack->next)
 			{
@@ -896,7 +901,7 @@ static void PrintList(char *text)
 					if (asm_pass == 1)
 					{
 						if (list != NULL)
-							fprintf(list, "%02x ", (LStack->word & 0xff));
+							fprintf(list, "%02X ", (LStack->word & 0xff));
 
 						Image[Target.count++] = LStack->word & 0xff;
 					}
@@ -909,10 +914,10 @@ static void PrintList(char *text)
 					if (asm_pass == 1)
 					{
 						if (list != NULL)
-							fprintf(list, "      %04x ", LStack->word &0xffff);
+							fprintf(list, "%04X ", LStack->word & 0xffff);
 
-						Image[Target.count++] = LStack->word&0xff;
-						Image[Target.count++] = (LStack->word&0xff00)>>8;
+						Image[Target.count++] = LStack->word & 0xff;
+						Image[Target.count++] = (LStack->word & 0xff00) >> 8;
 					}
 
 					space	+= 5;
@@ -921,10 +926,12 @@ static void PrintList(char *text)
 
 				LStack = (STACK *) LStack->next;
 
-				if (space > 16)
+				/*	Change line, if necessary.
+				 *	-------------------------- */
+				if (space >= (4 * 3))
 				{
 					if ((asm_pass == 1) && (list != NULL))
-						fprintf(list, "\n     ");
+						fprintf(list, "\n            ");
 
 					space = 0;
 				}
