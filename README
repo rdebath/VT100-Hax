@@ -1,0 +1,17 @@
+# *****************************************************************************
+# Created:		20 November 2011
+# Last modified:
+# *****************************************************************************
+
+
+To built this package, do the following:
+
+	./autogen.sh
+	./configure
+	./make
+
+To install this package, do the following:
+
+	./make install
+
+
