@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	28 June 2011
+Last modified:	26 November 2011
 Notes:
 *******************************************************************************
 
@@ -393,6 +393,15 @@ Version:	0.9.3
 Notes:		- In "main.c", in "PrintList()", improved the listing
 		  output.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		26 November 2011
+By:		Claude Sylvain
+Version:	0.9.4
+Notes:		General cleanup.  Removed dead code.
+-------------------------------------------------------------------------------
+
+
 
 
 
