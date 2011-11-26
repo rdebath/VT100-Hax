@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 March 2011
+ *	Last modified:	26 November 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -92,7 +92,6 @@ extern int	b4;
 extern int	asm_pass;		/* Assembler Pass. */
 
 extern FILE	*list;
-//extern char	*list_file;
 
 extern STACK	*ByteWordStack;
 
@@ -102,7 +101,6 @@ extern int	type;
 extern int	file_level;
 extern FILE	*in_fp[FILES_LEVEL_MAX];
 extern char	*in_fn[FILES_LEVEL_MAX];		/*	Input File Name. */
-//extern int	codeline;
 extern int codeline[FILES_LEVEL_MAX];
 
 extern SYMBOL	*Symbols;
@@ -113,9 +111,6 @@ extern SYMBOL	*Symbols;
  *	************************************************************************* */
 
 int get_file_from_path(char *fn, char* fn_path, size_t fn_path_size);
-//SYMBOL *FindLabel(char *text);
-//int ExpressionParser(char *text);
-//int DW(char *);
 void ProcessDumpBin(void);
 
 

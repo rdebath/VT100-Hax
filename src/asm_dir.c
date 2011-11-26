@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	27 March 2011
+ *	Last modified:	26 November 2011
  * Notes:
  *	************************************************************************* */
 
@@ -80,10 +80,7 @@ static int proc_dw(char *label, char *equation);
 static int proc_ds(char *label, char *equation);
 static int proc_include(char *label, char *equation);
 static int proc_local(char *label, char *equation);
-//static int proc_endlocal(char *label, char *equation);
-//static int proc_anop(char *label, char *equation);
 static int proc_equ(char *, char *);
-//static int DAC_proc(char *, char *);
 static int ORG_proc(char *, char *);
 static int END_proc(char *, char *);
 
@@ -99,28 +96,15 @@ static int END_proc(char *, char *);
  *	--------------------- */ 	
 const keyword_t	asm_dir[] =
 {
-//	{"EQU", proc_equ},			{"DAC", DAC_proc},	{"DB", proc_db},
-	{"EQU", proc_equ},			{"DB", proc_db},
-//	{"DW", proc_dw},				{"END", END_proc},	{"ANOP", proc_anop}, 
-	{"DW", proc_dw},				{"END", END_proc},
-  	{"INCLUDE", proc_include},	
-	{"ORG", ORG_proc},			{"DS", proc_ds},		{"IF", proc_if},
-	{"ELSE", proc_else},			{"ENDIF", proc_endif},
-	{"SET", proc_equ},			{"LOCAL", proc_local},
-//	{"ENDLOCAL", proc_endlocal},
+	{"EQU", proc_equ},				{"DB", proc_db},
+	{"DW", proc_dw},					{"END", END_proc},
+  	{"INCLUDE", proc_include},
+	{"ORG", ORG_proc},				{"DS", proc_ds},
+	{"IF", proc_if},
+	{"ELSE", proc_else},				{"ENDIF", proc_endif},
+	{"SET", proc_equ},				{"LOCAL", proc_local},
 	{0, NULL}
 };
-
-
-/*	*************************************************************************
- *											  VARIABLES
- *	************************************************************************* */
-
-/*	Private variables.
- *	****************** */
-
-//static unsigned char	end_processed	= 0;
-//static unsigned char	end_processed;
 
 
 /*	*************************************************************************
@@ -129,53 +113,11 @@ const keyword_t	asm_dir[] =
 
 
 /*	*************************************************************************
- *	Function name:	asm_dir_start
- *	Description:	Prepare to Start a new assembler pass.
- *	Author(s):		Claude Sylvain
- *	Created:			31 December 2010
- *	Last modified:
- *	Parameters:		void
- *	Returns:			void
- *	Globals:
- *	Notes:
- *	************************************************************************* */
-
-void asm_dir_start(void)
-{
-//	end_processed	= 0;
-}
-
-
-#if 0
-/*	*************************************************************************
- *	Function name:	asm_dir_is_end_processed
- *	Description:	Tell if "END" directive was processed.
- *	Author(s):		Claude Sylvain
- *	Created:			31 December 2010
- *	Last modified:
- *	Parameters:		void
- *
- *	Returns:			int:
- *							0	: "EQU" directive not processed.
- *							1	: "EQU" directive was processed.
- *
- *	Globals:
- *	Notes:
- *	************************************************************************* */
-
-int asm_dir_is_end_processed(void)
-{
-	return ((int) end_processed);
-}
-#endif
-
-
-/*	*************************************************************************
  *	Function name:	proc_if
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 February 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -192,12 +134,6 @@ int asm_dir_is_end_processed(void)
 
 static int proc_if(char *label, char *equation)
 {
-#if FALSE
-	/*	Don't do anything, if code section is desactivated.
-	 *	*/
-	if (if_true[if_nest] == 0)	return (LIST_ONLY);
-#endif
-
 	if (++if_nest < (sizeof (if_true) / sizeof (int)))
 	{
 		if_true[if_nest] = exp_parser(equation);
@@ -301,7 +237,7 @@ static int proc_endif(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 February 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -325,7 +261,6 @@ static int proc_db(char *label, char *equation)
 
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
-//	if (if_true[if_nest] == 0)	return (LIST_ONLY);
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
 	Local = FindLabel(label);
@@ -405,52 +340,7 @@ static int proc_db(char *label, char *equation)
 				equation++;
 				break;
 
-#if 0
-			case '$':
-				value		= exp_parser(equation);
-				equation	= AdvanceTo(equation, ',');
-				break;
-#endif
-
 			default:
-#if 0
-				/* Could be numbers, or a label.
-				 * ----------------------------- */
-				if (isdigit((int) *equation))
-				{
-					value		= exp_parser(equation);
-					equation	= AdvanceTo(equation, ',');
-				}
-				else if (*equation == '+')
-				{
-					value		+= exp_parser(equation);
-					equation	= AdvanceTo(equation, ',');
-				}
-				else if (*equation == '-')
-				{
-					value		-= exp_parser(equation);
-					equation	= AdvanceTo(equation, ',');
-				}
-				else if (*equation == '(')
-				{
-					value		= exp_parser(equation);
-					equation	= AdvanceTo(equation, ',');
-				}
-				else
-				{
-					Local = FindLabel(equation);
-
-					if (Local)
-						value = Local->Symbol_Value;
-					else if (asm_pass == 1)
-					{
-						fprintf(list, "*** Error %d in \"%s\": Label not found (%s)!\n", EC_LNF, in_fn[file_level], equation);
-						fprintf(stderr, "*** Error %d in \"%s\" @%d: Label not found (%s)!\n", EC_LNF, in_fn[file_level], codeline[file_level], equation);
-					}
-
-					equation = AdvanceTo(equation, ',');
-				}
-#endif
 				value		= exp_parser(equation);
 				equation	= AdvanceTo(equation, ',');
 
@@ -474,7 +364,7 @@ static int proc_db(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 February 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -494,12 +384,10 @@ static int proc_dw(char *label, char *equation)
 	SYMBOL	*Local;
 	STACK		*LStack	= ByteWordStack;
 	int		value;
-//	int		sign		= 1;
 
 
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
-//	if (if_true[if_nest] == 0)	return (LIST_ONLY);
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
 	Local = FindLabel(label);
@@ -588,13 +476,8 @@ static int proc_dw(char *label, char *equation)
 				break;
 			}	
 
-#if 0			
-			case '-':
-				sign = -1;
-#endif
-
-				/*	Bypass some characters.
-				 *	----------------------- */	
+			/*	Bypass some characters.
+			 *	----------------------- */	
 			case ',':
 			case ' ':
 			case '\t':
@@ -602,48 +485,16 @@ static int proc_dw(char *label, char *equation)
 				equation++;
 				break;
 
-#if 0
-			case '$':
-				value		= exp_parser(equation);
-				equation	= AdvanceTo(equation, ',');
-				break;
-#endif
-
 			default:
-#if 0
-				/* Could be numbers, or a label.
-				 * ----------------------------- */
-				if (isdigit((int) *equation))
-				{
-					value		= exp_parser(equation);
-					equation = AdvanceTo(equation, ',');
-				}
-				else
-				{
-					Local = FindLabel(equation);
-
-					if (Local)
-						value = Local->Symbol_Value;
-					else if (asm_pass == 1)
-					{
-						fprintf(list, "*** Error %d in \"%s\": Label not found (%s)!\n", EC_LNF, in_fn[file_level], equation);
-						fprintf(stderr, "*** Error %d in \"%s\" @%d: Label not found (%s)!\n", EC_LNF, in_fn[file_level], codeline[file_level], equation);
-					}
-
-					equation = AdvanceTo(equation, ',');
-				}
-#endif
 				value		= exp_parser(equation);
 				equation = AdvanceTo(equation, ',');
 
 				/*	Stock value and make space in stack.
 				 *	------------------------------------ */	
-//				LStack->word	= value * sign;
 				LStack->word	= value;
 				LStack->next	= (STACK *) calloc(1, sizeof(STACK));
 				LStack			= (STACK *) LStack->next;
 
-//				sign				= 1;
 				break;
 		}
 	}
@@ -657,7 +508,7 @@ static int proc_dw(char *label, char *equation)
  *	Description:	Define Space.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 February 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -675,13 +526,11 @@ static int proc_dw(char *label, char *equation)
 static int proc_ds(char *label, char *equation)
 {
 	SYMBOL	*Local;
-//	STACK		*LStack	= ByteWordStack;
 	int		value;
 
 
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
-//	if (if_true[if_nest] == 0)	return (LIST_ONLY);
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
 	Local = FindLabel(label);
@@ -690,11 +539,6 @@ static int proc_ds(char *label, char *equation)
 	 * -------------------------------- */
 	if (Local)
 		Local->Symbol_Value = addr;
-
-#if 0	
-	b1		= addr & 0x00ff;
-	b2		= (addr & 0xff00) >> 8;
-#endif
 
 	/* Go to the end of the string.
 	 * ---------------------------- */
@@ -752,23 +596,10 @@ static int proc_ds(char *label, char *equation)
 				equation = AdvanceTo(equation, ',');
 			}
 
-#if 0			
-			addr	+= value;	/*	Make space! */
-
-			if ((addr > 0xFFFF) && (asm_pass == 1))
-			{
-//				addr	-= value;	/*	Restore address. */
-
-				fprintf(list, "*** Error %d: Address counter overflow (%d)!\n", EC_ACOF, addr);
-				fprintf(stderr, "*** Error %d @%d: Address counter overflow (%d)!\n", EC_ACOF, codeline[file_level], addr);
-			}
-#endif
 			data_size	= value;		/*	Space reserved! */
 
 			if ((addr + value) > 0xFFFF)
 			{
-//				data_size	= 0;		/*	Space reserved! */
-
 				if (asm_pass == 1)
 				{
 					if (list != NULL)
@@ -782,7 +613,6 @@ static int proc_ds(char *label, char *equation)
 		}
 	}
 
-//	return (LIST_STRINGS);
 	return (LIST_DS);
 }
 
@@ -792,7 +622,7 @@ static int proc_ds(char *label, char *equation)
  *	Description:	"INCLUDE" assembler directive processing.
  *	Author(s):		Claude Sylvain
  *	Created:			27 December	2010
- *	Last modified:	12 February 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -823,7 +653,6 @@ static int proc_include(char *label, char *equation)
 
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
-//	if (if_true[if_nest] == 0)	return (LIST_ONLY);
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
 	process_label(label);
@@ -1024,7 +853,6 @@ static int proc_include(char *label, char *equation)
 
 		/*	Open include file, and check for error.
 		 *	--------------------------------------- */
-//		if (in_fp[file_level] != NULL)
 		if (file_openned)
 		{
 			/*	Allocate memory for the input file name.
@@ -1077,7 +905,7 @@ static int proc_include(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 February 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1097,93 +925,10 @@ static int proc_local(char *label, char *equation)
 
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
-//	if (if_true[if_nest] == 0)	return (LIST_ONLY);
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
 	return (LIST_ONLY);
 }
-
-
-#if 0
-/*	*************************************************************************
- *	Function name:	proc_endlocal
- *	Description:
- *	Author(s):		Jay Cotton, Claude Sylvain
- *	Created:			2007
- *	Last modified:	24 December 2010
- *
- *	Parameters:		char *label:
- *							...
- *
- *						char *equation:
- *							...
- *
- *	Returns:			int:
- *							...
- *
- *	Globals:
- *	Notes:
- *	************************************************************************* */
-
-static int proc_endlocal(char *label, char *equation)
-{
-
-	/*	Don't do anything, if code section is desactivated.
-	 *	*/
-	if (if_true[if_nest] == 0)	return (LIST_ONLY);
-
-	return (0);
-}
-#endif
-
-
-#if 0
-/*	*************************************************************************
- *	Function name:	proc_anop
- *	Description:
- *	Author(s):		Jay Cotton, Claude Sylvain
- *	Created:			2007
- *	Last modified:	25 December 2010
- *
- *	Parameters:		char *label:
- *							...
- *
- *						char *equation:
- *							...
- *
- *	Returns:			int:
- *							...
- *
- *	Globals:
- *	Notes:
- *	- This function seems to put the current address in the code.
- *	  This is not a standard Intel 8080 assembler directive.
- *	************************************************************************* */
-
-static int proc_anop(char *label, char *equation)
-{
-	SYMBOL	*Local;
-
-
-	/*	Don't do anything, if code section is desactivated.
-	 *	*/
-	if (if_true[if_nest] == 0)	return (LIST_ONLY);
-
-	/* Things are very broken if not found.
-	 * */
-	Local = FindLabel(label);
-
-	if (!Local)
-		return (LIST_ONLY);
-
-	Local->Symbol_Value = addr;
-
-	b1 = Local->Symbol_Value & 0x00ff;
-	b2 = (Local->Symbol_Value & 0xff00) >> 8;
-
-	return (TEXT);
-}
-#endif
 
 
 /*	*************************************************************************
@@ -1191,7 +936,7 @@ static int proc_anop(char *label, char *equation)
  *	Description:	Process "EQU" assembler directive.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 February 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1213,7 +958,6 @@ static int proc_equ(char *label, char *equation)
 
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
-//	if (if_true[if_nest] == 0)	return (LIST_ONLY);
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
 	Local = FindLabel(label);
@@ -1232,53 +976,12 @@ static int proc_equ(char *label, char *equation)
 }
 
 
-#if 0
-/*	*************************************************************************
- *	Function name:	DAC_proc
- *	Description:
- *	Author(s):		Jay Cotton, Claude Sylvain
- *	Created:			2007
- *	Last modified:	26 December 2010
- *
- *	Parameters:		char *label:
- *							...
- *
- *						char *equation:
- *							...
- *
- *	Returns:			int:
- *							...
- *
- *	Globals:
- *	Notes:
- *	************************************************************************* */
-
-static int DAC_proc(char *label, char *equation)
-{
-	SYMBOL         *Local;
-//	STACK          *LStack = ByteWordStack;
-
-	/*	Don't do anything, if code section is desactivated.
-	 *	*/
-	if (if_true[if_nest] == 0)	return (LIST_ONLY);
-
-	Local = FindLabel(label);
-	addr = Local->Symbol_Value = exp_parser(equation);
-
-	b1 = Local->Symbol_Value & 0x00ff;
-	b2 = (Local->Symbol_Value & 0xff00) >> 8;
-
-	return TEXT;
-}
-#endif
-
-
 /*	*************************************************************************
  *	Function name:	ORG_proc
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 February 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1295,11 +998,10 @@ static int DAC_proc(char *label, char *equation)
 
 static int ORG_proc(char *label, char *equation)
 {
-	SYMBOL         *Local;
+	SYMBOL	*Local;
 
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
-//	if (if_true[if_nest] == 0)	return (LIST_ONLY);
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
 	Local = FindLabel(label);
@@ -1314,7 +1016,8 @@ static int ORG_proc(char *label, char *equation)
 
 	ProcessDumpBin();
 	Target.addr = addr;
-	return TEXT;
+
+	return (TEXT);
 }
 
 
@@ -1323,7 +1026,7 @@ static int ORG_proc(char *label, char *equation)
  *	Description:	Process "END" assembler directive.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 February 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1342,13 +1045,9 @@ static int END_proc(char *label, char *equation)
 {
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
-//	if (if_true[if_nest] == 0)	return (LIST_ONLY);
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
-//	ProcessDumpBin();
-
 	type				= PROCESSED_END;
-//	end_processed	=	1;
 
 	return (PROCESSED_END);
 }

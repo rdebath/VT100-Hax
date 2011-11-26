@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	27 March 2011
+ *	Last modified:	26 November 2011
  * Notes:
  *	************************************************************************* */
 
@@ -229,76 +229,6 @@ const keyword_t	OpCodes[] =
  *	************************************************************************* */
 
 
-#if 0
-/*	*************************************************************************
- *	Function name:	process_label
- *	Description:	Process Label.
- *	Author(s):		Claude Sylvain
- *	Created:			28 December 2010
- *	Last modified:
- *
- *	Parameters:		char *label:
- *							Point to a string that hold label.
- *
- *	Returns:			void
- *	Globals:
- *	Notes:
- *	************************************************************************* */
-
-static void process_label(char *label)
-{
-	SYMBOL	*Local = FindLabel(label);
-
-	/* Record the address of the label.
-	 * -------------------------------- */
-	if (Local)
-		Local->Symbol_Value = addr;
-}
-#endif
-
-
-#if 0
-/*	*************************************************************************
- *	Function name:	check_oor
- *
- *	Description:	- Check for Operand Over Range, and display/print
- *						  an error message if an over range is detected.
- *
- *	Author(s):		Claude Sylvain
- *	Created:			24 December 2010
- *	Last modified:	28 December 2010
- *
- *	Parameters:		int value:
- *							Value to check.
- *
- *						int limit:
- *							Operand Limit.
- *
- *	Returns:			int:
- *							-1	: Over Range.
- *							0	: Good Range.
- *
- *	Globals:			None.
- *	Notes:
- *	************************************************************************* */
-
-static int check_oor(int value, int limit)
-{
-	int	rv	= 0;
-
-	if ((value > limit) && (asm_pass == 1))
-	{
-		fprintf(list, "*** Error %d in \"%s\": Operand over range (%d)!\n", EC_OOR, in_fn[file_level], value);
-		fprintf(stderr, "*** Error %d in \"%s\" @%d: Operand over range (%d)!\n", EC_OOR, in_fn[file_level], codeline[file_level], value);
-
-		rv	= -1;
-	}
-
-	return (rv);
-}
-#endif
-
-
 /*	*************************************************************************
  *	Function name:	parse_reg16bits
  *	Description:	Parse 16-bit Register.
@@ -457,7 +387,7 @@ static char *parse_reg16bits(char *text, unsigned char ar)
  *	Description:	Parse Destination Register.
  *	Author(s):		Claude Sylvain
  *	Created:			2007
- *	Last modified:	15 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -473,51 +403,37 @@ static char *DestReg(char *text)
 {
 	int	c	= toupper((int) *text);
 
-#if 0
-	while (isspace((int) *text))
-		text++;
-#endif
-
-//	switch (*text)
 	switch (c)
   	{
 		case 'A':
-//		case 'a':
 			b1 += 0x7 << 3;
 			break;
 
 		case 'B':
-//		case 'b':
 			b1 += 0x0 << 3;
 			break;
 
 		case 'C':
-//		case 'c':
 			b1 += 0x1 << 3;
 			break;
 
 		case 'D':
-//		case 'd':
 			b1 += 0x2 << 3;
 			break;
 
 		case 'E':
-//		case 'e':
 			b1 += 0x3 << 3;
 			break;
 
 		case 'H':
-//		case 'h':
 			b1 += 0x4 << 3;
 			break;
 
 		case 'L':
-//		case 'l':
 			b1 += 0x5 << 3;
 			break;
 
 		case 'M':
-//		case 'm':
 			b1 += 0x6 << 3;
 			break;
 
@@ -544,7 +460,7 @@ static char *DestReg(char *text)
  *	Description:	Parse Source Register.
  *	Author(s):		Claude Sylvain
  *	Created:			2007
- *	Last modified:	15 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -567,46 +483,37 @@ static char *SourceReg(char *text)
 
 	c	= toupper((int) *text);
 
-//	switch (*text)
 	switch (c)
   	{
 		case 'A':
-//		case 'a':
 			b1 += 0x7;
 			break;
 
 		case 'B':
-//		case 'b':
 			b1 += 0x0;
 			break;
 
 		case 'C':
-//		case 'c':
 			b1 += 0x1;
 			break;
 
 		case 'D':
-//		case 'd':
 			b1 += 0x2;
 			break;
 
 		case 'E':
-//		case 'e':
 			b1 += 0x3;
 			break;
 
 		case 'H':
-//		case 'h':
 			b1 += 0x4;
 			break;
 
 		case 'L':
-//		case 'l':
 			b1 += 0x5;
 			break;
 
 		case 'M':
-//		case 'm':
 			b1 += 0x6;
 			break;
 
@@ -664,7 +571,7 @@ int proc_nop(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	4 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -682,21 +589,11 @@ int proc_nop(char *label, char *equation)
 int proc_in(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xDB;
 
-//	equation	= AdvanceToAscii(equation);	/* Now the value. */
-#if 0
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 	tmp		= exp_parser(equation);
 
 	check_oor(tmp, 0xFF);		/*	Check Operand Over Range. */
@@ -713,7 +610,7 @@ int proc_in(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	4 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -731,21 +628,10 @@ int proc_in(char *label, char *equation)
 int proc_out(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xD3;
-
-//	equation	= AdvanceToAscii(equation);	/*	Now the value. */
-#if 0
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 
 	tmp	= exp_parser(equation);
 
@@ -763,7 +649,7 @@ int proc_out(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -781,31 +667,16 @@ int proc_out(char *label, char *equation)
 int proc_rst(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
-//	b1 = 0xD3;
 	b1 = 0xC7;
 
-//	equation	= AdvanceToAscii(equation);		/*	Now the value. */
-#if 0
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0x07);		/*	Check Operand Over Range. */
 
-//	b2				= tmp & 0x7;
 	tmp			= tmp & 0x7;
-//	b1				= 0xC7 + (b2 << 3);
-//	b1				= 0xC7 | (b2 << 3);
-//	b1				= 0xC7 | (tmp << 3);
 	b1				|= tmp << 3;
 	data_size	= 1;
 
@@ -856,7 +727,7 @@ static int proc_mov(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -874,7 +745,6 @@ static int proc_mov(char *label, char *equation)
 static int proc_mvi(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);				/*	Process Label. */
 
@@ -885,20 +755,6 @@ static int proc_mvi(char *label, char *equation)
 	 *	*/
 	equation = DestReg(equation);
 
-#if 0
-	/*	Process value.
-	 * ************* */
-
-	equation = AdvancePast(equation, ',');
-	equation = AdvanceToAscii(equation);
-
-	Local2 = FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 	equation = AdvancePast(equation, ',');
 	tmp		= exp_parser(equation);
 
@@ -963,7 +819,7 @@ static int proc_lxi(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -981,24 +837,10 @@ static int proc_lxi(char *label, char *equation)
 static int proc_lda(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0x3A;
-
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 *	-------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 
 	tmp	= exp_parser(equation);
 
@@ -1017,7 +859,7 @@ static int proc_lda(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1035,24 +877,10 @@ static int proc_lda(char *label, char *equation)
 static int proc_sta(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0x32;
-
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 *	------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 
 	tmp	= exp_parser(equation);
 
@@ -1071,7 +899,7 @@ static int proc_sta(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1089,24 +917,11 @@ static int proc_sta(char *label, char *equation)
 static int proc_lhld(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0x2A;
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 *	-------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -1124,7 +939,7 @@ static int proc_lhld(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1142,24 +957,11 @@ static int proc_lhld(char *label, char *equation)
 static int proc_shld(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0x22;
 
-//	equation	= AdvanceToAscii(equation);
-#if 0	
-	/* Now the value.
-	 *	-------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -1312,7 +1114,7 @@ static int proc_add(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 December 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1330,21 +1132,9 @@ static int proc_add(char *label, char *equation)
 static int proc_adi(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
-#if 0
-	/* Now the value.
-	 *	-------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2 	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFF);		/*	Check Operand Over Range. */
@@ -1394,7 +1184,7 @@ static int proc_adc(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1412,21 +1202,8 @@ static int proc_adc(char *label, char *equation)
 static int proc_aci(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
-
-#if 0	
-	/* Now the value.
-	 *	-------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 
 	tmp	= exp_parser(equation);
 
@@ -1477,7 +1254,7 @@ static int proc_sub(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1495,21 +1272,8 @@ static int proc_sub(char *label, char *equation)
 static int proc_sui(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
-
-#if 0	
-	/* Now the value.
-	 *	-------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 
 	tmp	= exp_parser(equation);
 
@@ -1560,7 +1324,7 @@ static int proc_sbb(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1578,21 +1342,8 @@ static int proc_sbb(char *label, char *equation)
 static int proc_sbi(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
-
-#if 0
-	/* Now the value.
-	 *	-------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 
 	tmp	= exp_parser(equation);
 
@@ -1846,7 +1597,7 @@ static int proc_ana(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1864,21 +1615,8 @@ static int proc_ana(char *label, char *equation)
 static int proc_ani(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
-	
-#if 0
-	/* Now the value.
-	 *	-------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 
 	tmp	= exp_parser(equation);
 
@@ -1929,7 +1667,7 @@ static int proc_ora(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1947,21 +1685,8 @@ static int proc_ora(char *label, char *equation)
 static int proc_ori(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
-
-#if 0
-	/* Now the value.
-	 *	-------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 
 	tmp	= exp_parser(equation);
 
@@ -2012,7 +1737,7 @@ static int proc_xra(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2030,21 +1755,8 @@ static int proc_xra(char *label, char *equation)
 static int proc_xri(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
-
-#if 0
-	/* Now the value.
-	 *	-------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 
 	tmp	= exp_parser(equation);
 
@@ -2095,7 +1807,7 @@ static int proc_cmp(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2113,19 +1825,9 @@ static int proc_cmp(char *label, char *equation)
 static int proc_cpi(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
-#if 0
-	equation = AdvanceToAscii(equation);	/* Now the value. */
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_byte(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFF);		/*	Check Operand Over Range. */
@@ -2360,7 +2062,7 @@ static int proc_stc(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2383,19 +2085,6 @@ static int proc_jmp(char *label, char *equation)
 
 	b1				= 0xC3;
 
-//	equation	= AdvanceToAscii(equation);
-#if 0	
-	if (is_string_detected(equation))
-	{
-		if (asm_pass == 1)
-		{
-			fprintf(list, "*** Error %d: String not supported (\"%s\")!\n", EC_SNS, equation);
-			fprintf(stderr, "*** Error %d @%d: String not supported (\"%s\")!\n", EC_SNS, codeline[file_level], equation);
-		}
-
-		return (TEXT);
-	}
-#endif
 	tmp = exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2413,7 +2102,7 @@ static int proc_jmp(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2431,22 +2120,11 @@ static int proc_jmp(char *label, char *equation)
 static int proc_jnz(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC2;
 
-//	equation = AdvanceToAscii(equation);
-
-#if 0
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2464,7 +2142,7 @@ static int proc_jnz(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2482,24 +2160,11 @@ static int proc_jnz(char *label, char *equation)
 static int proc_jz(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC2 + (1 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * -------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2517,7 +2182,7 @@ static int proc_jz(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2535,24 +2200,11 @@ static int proc_jz(char *label, char *equation)
 static int proc_jnc(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC2 + (2 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * -------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2570,7 +2222,7 @@ static int proc_jnc(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2588,24 +2240,11 @@ static int proc_jnc(char *label, char *equation)
 static int proc_jc(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC2 + (3 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * -------------- */
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2623,7 +2262,7 @@ static int proc_jc(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2641,25 +2280,11 @@ static int proc_jc(char *label, char *equation)
 static int proc_jpo(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC2 + (4 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2677,7 +2302,7 @@ static int proc_jpo(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2695,25 +2320,11 @@ static int proc_jpo(char *label, char *equation)
 static int proc_jpe(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC2 + (5 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2731,7 +2342,7 @@ static int proc_jpe(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2749,25 +2360,11 @@ static int proc_jpe(char *label, char *equation)
 static int proc_jp(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC2 + (6 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2785,7 +2382,7 @@ static int proc_jp(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2803,25 +2400,11 @@ static int proc_jp(char *label, char *equation)
 static int proc_jm(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC2 + (7 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2839,7 +2422,7 @@ static int proc_jm(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2857,25 +2440,11 @@ static int proc_jm(char *label, char *equation)
 static int proc_call(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xCD;
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2893,7 +2462,7 @@ static int proc_call(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2911,25 +2480,11 @@ static int proc_call(char *label, char *equation)
 static int proc_cnz(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC4;
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -2947,7 +2502,7 @@ static int proc_cnz(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -2965,25 +2520,11 @@ static int proc_cnz(char *label, char *equation)
 static int proc_cz(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC4 + (1 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -3001,7 +2542,7 @@ static int proc_cz(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -3019,25 +2560,11 @@ static int proc_cz(char *label, char *equation)
 static int proc_cnc(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC4 + (2 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -3055,7 +2582,7 @@ static int proc_cnc(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -3073,25 +2600,11 @@ static int proc_cnc(char *label, char *equation)
 static int proc_cc(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC4 + (3 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -3109,7 +2622,7 @@ static int proc_cc(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -3127,25 +2640,11 @@ static int proc_cc(char *label, char *equation)
 static int proc_cpo(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC4 + (4 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -3163,7 +2662,7 @@ static int proc_cpo(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -3181,25 +2680,11 @@ static int proc_cpo(char *label, char *equation)
 static int proc_cpe(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC4 + (5 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -3217,7 +2702,7 @@ static int proc_cpe(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -3235,25 +2720,11 @@ static int proc_cpe(char *label, char *equation)
 static int proc_cp(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC4 + (6 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
@@ -3271,7 +2742,7 @@ static int proc_cp(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	8 January 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -3289,25 +2760,11 @@ static int proc_cp(char *label, char *equation)
 static int proc_cm(char *label, char *equation)
 {
 	int		tmp;
-//	SYMBOL	*Local2;
 
 	process_label(label);		/*	Process Label. */
 
 	b1 = 0xC4 + (7 << 3);
 
-//	equation	= AdvanceToAscii(equation);
-#if 0
-	/* Now the value.
-	 * ************** */
-
-	equation	= AdvanceToAscii(equation);
-	Local2	= FindLabel(equation);
-
-	if (Local2)
-		tmp = Local2->Symbol_Value;
-	else
-		tmp = extract_word(equation);
-#endif
 	tmp	= exp_parser(equation);
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */

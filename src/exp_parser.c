@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	27 March 2011
+ *	Last modified:	26 November 2011
  *
  *	Notes:			- This module implement an expression parser using
  *						  DAL (Direct Algebraic Logic) format.
@@ -95,21 +95,6 @@ struct ep_stack_t
 };
 
 
-#if 0
-/*	*************************************************************************
- *	                                 TYPEDEF
- *	************************************************************************* */
-
-/*	DAL (Direct Algebraic Logic) Expression Parser Stack.
- *	----------------------------------------------------- */
-typedef struct dalep_stack_t
-{
-	int	word[4];
-	int	level;
-} stack_t;
-#endif
-
-
 /*	*************************************************************************
  *												  ENUM
  *	************************************************************************* */
@@ -167,13 +152,10 @@ static void eval(void);
 /*	Private variables.
  *	****************** */
 
-//static stack_t	stack;
-
 /*	- Expression Parser Stack.
  *	- Notes: This is the static base stack.  All other stacks
  *	  are dynamically created as needed.
  *	*/
-//static struct ep_stack_t	ep_stack	= {NULL, {0, 0, 0, 0}, 0};
 static struct ep_stack_t	ep_stack;
 
 static struct ep_stack_t	*p_ep_stack	= &ep_stack;
@@ -189,7 +171,7 @@ static struct ep_stack_t	*p_ep_stack	= &ep_stack;
  *	Description:	Search for an Operator.
  *	Author(s):		Claude Sylvain
  *	Created:			28 December 2010
- *	Last modified:
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *text:
  *							Point to text that possibly hold an operator.
@@ -211,7 +193,6 @@ static int search_operator(char *text, int *text_bp)
 {
 	int	rv;
 	char	*p_text;
-//	int	text_len		= strlen(text);
 	int	i				= 0;
 
 	struct operator_t	*p_operator	= (struct operator_t *) operator;
@@ -219,18 +200,10 @@ static int search_operator(char *text, int *text_bp)
 
 	*text_bp	= 0;
 
-//	p_text	= (char *) malloc(text_len + 1);
 	p_text	= (char *) malloc(strlen(text) + 1);
 
 	if (p_text == NULL)
 	{
-#if 0
-		if (asm_pass == 1)
-		{
-			fprintf(list, "*** Error %d in \"%s\": Memory allocation error!\n", EC_MAE, in_fn[file_level]);
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Memory allocation error!\n", EC_MAE, in_fn[file_level], codeline[file_level]);
-		}
-#endif
 		fprintf(stderr, "*** Error %d: Memory allocation error!\n", EC_MAE);
 
 		return (-1);
@@ -258,16 +231,6 @@ static int search_operator(char *text, int *text_bp)
 	}
 
 	p_text[i]	= '\0';
-
-#if 0
-	if (*p_text == '\0')
-	{
-		*text_bp	= 0;
-		free(p_text);
-
-		return (-1);
-	}
-#endif
 
 	/*	Search the operator.
 	 *	-------------------- */	
@@ -744,7 +707,7 @@ static int remove_stack(void)
  *	Description:	DAL (Direct Algebraic Logic) Expression Parser.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 March 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *text:
  *							- Point to a string that hold expression to parse
@@ -782,12 +745,6 @@ static int dalep(char *text)
 				text++;			/*	Bypass '(' */
 				add_stack();	/*	Add a new Stack. */
 
-#if 0				
-				/*	- Recursively Evaluate expression inside parenthise(s),
-				 *	  and push result into the stack	.
-				 *	*/
-				push(dalep(text));
-#endif
 				/*	Recursively Evaluate expression inside parenthise(s).
 				 *	*/
 				val	= dalep(text);
@@ -832,23 +789,9 @@ static int dalep(char *text)
 				else
 					text++;
 
-//				remove_stack();
 				break;
 			}
 
-#if 0
-			/*	Handle ')'.
-			 *	----------- */	
-			case ')':
-			{
-				int	word_0;
-
-				eval();									/*	Evaluate partial expression. */
-				word_0	= p_ep_stack->word[0];	/*	Save result. */
-				remove_stack();						/*	Now, we can remove stack. */
-				return (word_0);
-			}
-#endif
 			/*	Handle ')'.
 			 *	----------- */	
 			case ')':
@@ -957,7 +900,6 @@ static int dalep(char *text)
 				else
 				{
 					SYMBOL	*Local;
-//					char		label[16];
 					char		label[LABEL_SIZE_MAX];
 					int		i			= 0;
 
@@ -1188,7 +1130,7 @@ static void push(int value)
  *	Description:	Pop a value from the stack.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	2 January 2011
+ *	Last modified:	26 November 2011
  *	Parameters:		void
  *
  *	Returns:			int:
@@ -1205,7 +1147,6 @@ static int pop(void)
 	p_ep_stack->word[0] = p_ep_stack->word[1];
 	p_ep_stack->word[1] = p_ep_stack->word[2];
 	p_ep_stack->word[2] = p_ep_stack->word[3];
-//	p_ep_stack->level--;
 
 	if (--p_ep_stack->level < 0)
 	{

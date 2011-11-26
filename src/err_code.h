@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	27 March 2011
+ *	Last modified:	26 November 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -44,7 +44,6 @@
 
 #define	EC_LNF			0		/* Label Not Found. */
 #define	EC_DL				1		/* Duplicate Label. */
-//#define	EC_CNFO			2		/* Can Not Find Opcode. */
 #define	EC_CNFK			2		/* Can Not Find Keyword. */
 #define	EC_BDR			3		/* Bad Destination Register. */
 #define	EC_BSR			4		/* Bad Source Register. */
@@ -53,7 +52,6 @@
 #define	EC_NQC			7		/* Not Quoted Character detected. */
 #define	EC_MF				8		/* Missing Field. */
 #define	EC_DWDNSS		9		/* "DW" Do Not Support String. */
-//#define	EC_UGNBI			10		/* "util_get_number_base_inc()" error. */
 #define	EC_BDE			10		/* Bad Data Encoding. */
 #define	EC_BBD			11		/* Bad Binary Digit. */
 #define	EC_BOC			12		/* Bad Octal Digit. */
@@ -76,16 +74,12 @@
 #define	EC_COIF			29		/* Can't Open Include File. */
 #define 	EC_EEP			30		/*	Extra Ending Parenthesis. */
 #define 	EC_NMEP			31		/*	No Matching Ending Parenthesis. */
-//#define 	EC_BRP			32		/*	Bad Register Pair. */
 #define 	EC_B16BR			32		/*	Bad 16-Bit Register. */
 #define 	EC_MAE			33		/*	Memory Allocation Error. */
-//#define 	EC_RPNSOF		34		/*	RPN Stack OverFlow. */
 #define 	EC_EPSPOF		34		/*	Expression Parser Stack Push OverFlow. */
 #define 	EC_BD				35		/*	Bad Data. */
-//#define 	EC_IFNAE			36		/*	Input File Name Already Exist. */
 #define 	EC_EIFS			36		/*	Extra Input File Specified. */
 #define 	EC_IFNTL			37		/*	Input File Name Too Long. */
-//#define 	EC_IFNNE			38		/*	Input File Name Need an Extension. */
 #define 	EC_BTS			39		/*	Buffer Too Small. */
 #define 	EC_COINF			40		/*	Can't Open INput File. */
 #define 	EC_COLF			41		/*	Can't Open Listing File. */

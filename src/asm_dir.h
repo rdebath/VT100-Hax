@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	26 March 2011
+ *	Last modified:	26 November 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -50,15 +50,6 @@
  *	************************************************************************* */
 
 extern const keyword_t	asm_dir[];
-
-
-/*	*************************************************************************
- *	                          FUNCTIONS DECLARATION
- *	************************************************************************* */
-
-void asm_dir_start(void);
-//int asm_dir_is_end_processed(void);
-
 
 
 

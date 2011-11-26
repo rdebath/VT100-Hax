@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	27 March 2011
+ *	Last modified:	26 November 2011
  *	************************************************************************* */
 
 /*
@@ -136,7 +136,7 @@ int check_oor(int value, int limit)
  *	Description:	Label processing.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 March 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *text:
  *							"text" that possibly contain label.
@@ -150,7 +150,6 @@ int check_oor(int value, int limit)
 
 SYMBOL *FindLabel(char *text)
 {
-//	char		tmp[80];
 	char		tmp[SYMBOL_SIZE_MAX];
 	SYMBOL	*Local	= Symbols;
 	int		i			= 0;
@@ -162,19 +161,6 @@ SYMBOL *FindLabel(char *text)
 	if (*text == '&')	tmp[i++] = *text++;
 	if (*text == '%')	tmp[i++] = *text++;
 
-#if 0
-	while (isalnum((int) *text) || (*text == '_'))
-		tmp[i++] = *text++;
-#endif
-#if 0
-	while (isgraph((int) *text))
-		tmp[i++] = *text++;
-#endif
-#if 0
-	while ((isalnum((int) *text) != 0) || (*text == '_'))
-		tmp[i++] = *text++;
-#endif
-//	while ((isalnum((int) *text) != 0) || (*text == '_'))
 	while (islabelchar((int) *text) != 0)
 	{
 		tmp[i] = *text++;
@@ -242,7 +228,7 @@ void process_label(char *label)
  *	Description:	Get Number Base Increment.
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *text:
  *							Text that contain number.
@@ -302,7 +288,6 @@ int util_get_number_base_inc(char *text)
 				 *	- Notes: This is necessary to avoid the caller
 				 *	  to have to process that character.
 				 *	*/
-//				*text	= ' ';
 				*text	= '\0';
 
 				/*	Set increment, depending on the numerical specifier.

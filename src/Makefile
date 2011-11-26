@@ -18,11 +18,33 @@
 # *****************************************************************************
 # Filename:			Makefile.am
 # Description:
-# Copyright(c):
+# Copyright(c):	See below.
 # Author(s):		Jay Cotton, Claude Sylvain
 # Created:			26 Mars 2011
-# Last modified:	17 April 2011
+# Last modified:	26 November 2011
 # Notes:
+# *****************************************************************************
+
+# *****************************************************************************
+# Copyright (c) <2007-2011> <jay.cotton@oracle.com>
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+# DEALINGS IN THE SOFTWARE.
 # *****************************************************************************
 
 #AUTOMAKE_OPTOINS = foreign
@@ -80,12 +102,12 @@ DIST_SOURCES = $(asm8080_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20/missing --run aclocal-1.11
-AMTAR = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20/missing --run tar
+ACLOCAL = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26/missing --run aclocal-1.11
+AMTAR = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20/missing --run automake-1.11
+AUTOCONF = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26/missing --run automake-1.11
 AWK = gawk
 CC = gcc
 CCDEPMODE = depmode=gcc3
@@ -118,7 +140,7 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26/missing --run makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /usr/bin/mkdir -p
 NM = /usr/bin/nm -B
@@ -141,10 +163,10 @@ SET_MAKE =
 SHELL = /bin/sh
 STRIP = strip
 VERSION = 0.9.2
-abs_builddir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20/src
-abs_srcdir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20/src
-abs_top_builddir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20
-abs_top_srcdir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20
+abs_builddir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26/src
+abs_srcdir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26/src
+abs_top_builddir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26
+abs_top_srcdir = /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26
 ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_DUMPBIN = 
@@ -173,7 +195,7 @@ host_vendor = pc
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-20/install-sh
+install_sh = ${SHELL} /home/claude/work/software/pc/asm8080/asm8080-cvs_2011-11-26/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localedir = ${datarootdir}/locale
@@ -194,6 +216,25 @@ top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
 
+# Set C Flags.
+# Include the following settings:
+#
+# Set the Machine type and Operating System type.
+#
+# 	Possible values for Machine type are:
+# 			_TGT_M_X86		32-bit Machine
+# 			_TGT_M_X64		64-bit Machine
+#
+#	 Possible values for Operating System are:
+# 			_TGT_OS_SOLARIS32		Solaris 32-bit
+# 			_TGT_OS_SOLARIS64		Solaris 64-bit
+# 			_TGT_OS_LINUX32		GNU/Linux 32-bit
+# 			_TGT_OS_LINUX64		GNU/Linux 64-bit
+# 			_TGT_OS_CYGWIN32		Cygwin 32-bit
+# 			_TGT_OS_CYGWIN64		Cygwin 64-bit (do not still exist)
+# 			_TGT_OS_WIN32			Windows 32-bit
+# 			_TGT_OS_WIN64			Windows 64-bit
+#
 #AM_CFLAGS = -g -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 AM_CFLAGS = -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 asm8080_SOURCES = asm_dir.c  exp_parser.c  main.c  opcode.c  util.c 
@@ -517,8 +558,6 @@ uninstall-am: uninstall-binPROGRAMS
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-binPROGRAMS
 
-
-#asm8080_CPPFLAGS = -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

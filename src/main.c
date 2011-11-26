@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	28 June 2011
+ *	Last modified:	26 November 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -74,10 +74,7 @@
  *											  CONSTANTS
  *	************************************************************************* */
 
-//#define SRC_LINE_WIDTH_MAX			128			/*	Source Line Maximum Width. */
 #define SRC_LINE_WIDTH_MAX			256		/*	Source Line Maximum Width. */
-
-//#define FN_SIZE_MAX					256
 #define FN_BASE_SIZE					80
 #define FN_IN_SIZE					80
 #define FN_OUT_SIZE					(FN_BASE_SIZE + 4)
@@ -92,7 +89,6 @@
 struct option_i_t
 {
 	char					*path;
-//	void	*next;
 	struct option_i_t	*next;
 };
 
@@ -114,7 +110,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 0;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 9;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 3;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 4;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -156,7 +152,6 @@ static int cmd_line_parser(int argc, char *argv[]);
 int	if_true[10];
 int	if_nest		= 0;
 
-//int	addr;
 int	data_size	= 0;
 
 int	b1	= 0;
@@ -167,7 +162,6 @@ int	b4	= 0;
 int asm_pass;			/* Assembler Pass. */
 
 FILE	*list		= NULL;
-//char	*list_file	= NULL;
 
 STACK	*ByteWordStack;
 
@@ -176,7 +170,6 @@ int	type;
 
 FILE	*in_fp[FILES_LEVEL_MAX];
 char	*in_fn[FILES_LEVEL_MAX];		/*	Input File Name. */
-//int codeline;
 int codeline[FILES_LEVEL_MAX];
 
 FILE	*bin;
@@ -185,7 +178,6 @@ int	file_level	= 0;
 /* Global storage for assembler */
 
 int	addr;
-//char	Equation[80];
 
 SYMBOL	*Symbols;
 
@@ -195,18 +187,11 @@ char Image[1024 * 64];
 /*	Private variables.
  *	****************** */
 
-/*	Verbose option.
- *	*/
-//static unsigned char	verbose	= 0;
-
 /*	TODO: Size this string dynamically.
  *	*/
 static char	fn_base[FN_BASE_SIZE];
 
-//static char	list_file[FN_OUT_SIZE];
 static char	*list_file	= NULL;
-
-//static char	bin_file[FN_OUT_SIZE];
 static char	*bin_file	= NULL;
 
 /*	Single linked list that old all "-I" options.
@@ -475,7 +460,7 @@ static void CloseFiles(void)
  *	Description:	Break down a source line.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 March 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -494,7 +479,6 @@ static int src_line_parser(char *text)
 	int	i					= 0;
 	int	msg_displayed	= 0;
 	char	Equation[80];
-//	char	label[32];
 	char	label[LABEL_SIZE_MAX];
 	int	status;
 
@@ -649,8 +633,6 @@ static int src_line_parser(char *text)
 			}
 		}
 
-//		text	= find_cleanup_tf(text);		/*	Find & CleanUp Third Field. */
-
 		/*	Bypass delimitors, if necessary.
 		 *	-------------------------------- */
 		while (isspace((int) *text))
@@ -660,13 +642,10 @@ static int src_line_parser(char *text)
 		 *	************************************	*/
 
 		if ((*text != '\0') && (*text != ';'))
-//		if (*text != '\0')
 		{
 			i					= 0;
 			msg_displayed	= 0;
 
-//			while ((iscntrl((int) *text) == 0) || (*text == '\t'))
-//			while (iscntrl((int) *text) == 0)
 			while ((iscntrl((int) *text) == 0) && (*text != ';'))
 			{
 				if (i < (sizeof (Equation) - 1))
@@ -693,9 +672,6 @@ static int src_line_parser(char *text)
 				}
 			}
 		}
-
-//		equation	= find_cleanup_tf(equation);		/*	Find & CleanUp Third Field. */
-
 
 		/*	- Lookup for assembler directives, and call associated
 		 *	  function if necessary.
@@ -736,7 +712,6 @@ static int src_line_parser(char *text)
 		/*	- Check for opcodes search result only if code section
 		 *	  is active.
 		 *	------------------------------------------------------ */
-//		if (if_true[if_nest] == 1)
 		if (util_is_cs_enable() == 1)
 		{
 			p_keyword	= (keyword_t *) OpCodes;
@@ -975,7 +950,7 @@ static void PrintList(char *text)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	31 December 2010
+ *	Last modified:	26 November 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1001,25 +976,12 @@ void ProcessDumpBin(void)
 	 *	--------------------------------- */
 	if ((Target.count > 0) && (asm_pass == 1))
 	{
-#if 0
-		/*	Adjust to have an even number of bytes, if necessary.
-		 *	TODO: Is it really necessary?
-		 *	----------------------------------------------------- */
-		if (Target.count & 1) 
-			Target.count += 1;
-#endif
-
 		/*	Write binary.
 		 *	------------- */
 #if USE_BINARY_HEADER
 		fwrite(&Target, sizeof (TARG), 1, bin);	/*	Code size and base address. */
 #endif
 		fwrite(&Image, Target.count, 1, bin);		/*	Code. */
-
-#if 0
-		Target.count = 0;
-		memset(Image, 0, sizeof (Image));
-#endif
 	}
 }
 
@@ -1029,7 +991,7 @@ void ProcessDumpBin(void)
  *	Description:	Assemble source file.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	13 March 2011
+ *	Last modified:	26 November 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1093,14 +1055,6 @@ static void do_asm(void)
 		 	 *	----------------------------------------------------------- */	 
 			else
 			{
-#if 0
-				/*	- If "END" directive was not found/excuted,
-				 *	  force processing of binary file and 
-				 *	  symbols table printout.
-			 	 *	------------------------------------------- */
-				if (asm_dir_is_end_processed() == 0)
-					ProcessDumpBin();
-#endif
 				ProcessDumpBin();
 
 				/*	Print symbols table, if necessary.
@@ -1279,7 +1233,7 @@ static void display_version(void)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	12 March 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -1291,7 +1245,6 @@ static void display_version(void)
 
 static void AddLabel(char *text)
 {
-//	char   label[80];
 	char   label[LABEL_SIZE_MAX];
 	int    i			= 0;
 	SYMBOL *Local	= Symbols;
@@ -1300,7 +1253,6 @@ static void AddLabel(char *text)
 
 	if (asm_pass == 1)				return;
 	if (isspace((int) *text))		return;
-//	if (if_true[if_nest] == 0)		return;
 	if (util_is_cs_enable() == 0)	return;
 
 	if (*text == '&')
@@ -1421,59 +1373,12 @@ static void DumpBin(void)
 }
 
 
-#if 0
 /*	*************************************************************************
  *	Function name:	asm_pass1
  *	Description:	Assembler Pass #1.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	31 December 2010
- *	Parameters:		void
- *
- *	Returns:			int:
- *							-1	: Error detected.
- *							0	: No error detected.
- *
- *	Globals:
- *	Notes:
- *	************************************************************************* */
-
-static int asm_pass1(void)
-{
-	int	rv	= -1;
-	int	i;
-
-	/*	Open Source File, and go further more if there was no error.
-	 *	------------------------------------------------------------ */
-	if (open_source_file() != 1)
-	{
-		for (i = 0; i < FILES_LEVEL_MAX; i++)
-			codeline[i]	= 0;
-
-		Target.count	= 0;
-		Target.addr		= 0;
-		addr				= 0;
-		type				= LIST_ONLY;
-		asm_pass 		= 0;
-
-		memset(Image, 0, sizeof (Image));
-		asm_dir_start();	/*	Prepare "asm_dir" module for a new assembler pass. */
-		do_asm();
-
-		rv	= 0;
-	}
-
-	return (rv);
-}
-#endif
-
-
-/*	*************************************************************************
- *	Function name:	asm_pass1
- *	Description:	Assembler Pass #1.
- *	Author(s):		Jay Cotton, Claude Sylvain
- *	Created:			2007
- *	Last modified:	31 December 2010
+ *	Last modified:	26 November 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1494,65 +1399,16 @@ static void asm_pass1(void)
 	asm_pass 		= 0;
 
 	memset(Image, 0, sizeof (Image));
-	asm_dir_start();	/*	Prepare "asm_dir" module for a new assembler pass. */
 	do_asm();
 }
 
 
-#if 0
 /*	*************************************************************************
  *	Function name:	asm_pass2
  *	Description:	Assembler Pass #2.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	31 December 2010
- *	Parameters:		void
- *
- *	Returns:			int:
- *							-1	: Error detected.
- *							0	: No error detected.
- *
- *	Globals:
- *	Notes:
- *	************************************************************************* */
-
-static int asm_pass2(void)
-{
-	int	rv	= -1;
-	int	i;
-
-	/*	Open Source File, and go further more if there was no error.
-	 *	------------------------------------------------------------ */
-	if (open_source_file() != 1)
-	{
-		for (i = 0; i < FILES_LEVEL_MAX; i++)
-			codeline[i]	= 0;
-
-		Target.count	= 0;
-		Target.addr		= 0;
-		addr				= 0;
-		type				= LIST_ONLY;
-		asm_pass			= 1;
-
-		memset(Image, 0, sizeof (Image));
-//		RewindFiles();
-		asm_dir_start();	/*	Prepare "asm_dir" module for a new assembler pass. */
-		do_asm();
-
-		rv	= 0;
-	}
-
-	return (rv);
-}
-#endif
-
-
-/*	*************************************************************************
- *	Function name:	asm_pass2
- *	Description:	Assembler Pass #2.
- *	Author(s):		Jay Cotton, Claude Sylvain
- *	Created:			2007
- *	Last modified:	31 December 2010
+ *	Last modified:	26 November 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1574,7 +1430,6 @@ static void asm_pass2(void)
 
 	memset(Image, 0, sizeof (Image));
 	RewindFiles();
-	asm_dir_start();	/*	Prepare "asm_dir" module for a new assembler pass. */
 	do_asm();
 }
 
@@ -1693,7 +1548,7 @@ static int process_option_i(char *text)
  *	Description:	Process Option "-l".
  *	Author(s):		Claude Sylvain
  *	Created:			26 March 2011
- *	Last modified:	27 March 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *text:
  *							Pointer to text that hold "-l" option.
@@ -1733,9 +1588,6 @@ static int process_option_l(char *text)
 	{
 		int		i;
 		int		dot_pos		= 0;
-//		size_t	ln				= strlen(text);
-//		char		*str_tmp		= text;
-//		int		fne_found	= 0;		/*	File Name Extension Found (default == NO). */
 
 		/*	Search for the beginning of an extension.
 		 *	----------------------------------------- */
@@ -1748,31 +1600,13 @@ static int process_option_l(char *text)
 			}
 		}
 
-#if 0		
-		/*	- Search for presence of an extension in the string
-		 *	  that follow "-l" extension.
-		 *	--------------------------------------------------- */
-		while (*str_tmp != '\0')
-		{
-			if (*str_tmp == '.')
-			{
-				fne_found	= 1;		/*	Extension found. */
-				break;
-			}
-
-			str_tmp++;					/*	Next string character. */
-		}
-#endif
-
 		/*	- If a file extension is present, init. listing file name
 		 *	  without adding an extension.
 		 *	--------------------------------------------------------- */	 
-//		if (fne_found != 0)
 		if (dot_pos > 0)
 		{
 			/*	Allocate memory for the listing file name.
 			 *	*/
-//			list_file	= (char *) malloc(strlen(text) + 1);
 			list_file	= (char *) malloc(string_len + 1);
 
 			/*	Built list file name, if possible.
@@ -1794,7 +1628,6 @@ static int process_option_l(char *text)
 		{
 			/*	Allocate memory for the listing file name.
 			 *	*/
-//			list_file	= (char *) malloc(strlen(text) + 4 + 1);
 			list_file	= (char *) malloc(string_len + 4 + 1);
 
 			/*	Built list file name, if possible.
@@ -1873,7 +1706,7 @@ static int process_option_l(char *text)
  *	Description:	Process Option "-o".
  *	Author(s):		Claude Sylvain
  *	Created:			26 March 2011
- *	Last modified:	27 March 2011
+ *	Last modified:	26 November 2011
  *
  *	Parameters:		char *text:
  *							Pointer to text that hold "-o" option.
@@ -1914,9 +1747,6 @@ static int process_option_o(char *text)
 	{
 		int		i;
 		int		dot_pos		= 0;
-//		size_t	ln				= strlen(text);
-//		char		*str_tmp		= text;
-//		int		fne_found	= 0;		/*	File Name Extension Found (default == NO). */
 
 		/*	Search for the beginning of an extension.
 		 *	----------------------------------------- */
@@ -1929,31 +1759,13 @@ static int process_option_o(char *text)
 			}
 		}
 
-#if 0
-		/*	- Search for presence of an extension in the string
-		 *	  that follow "-o" extension.
-		 *	--------------------------------------------------- */
-		while (*str_tmp != '\0')
-		{
-			if (*str_tmp == '.')
-			{
-				fne_found	= 1;		/*	Extension found. */
-				break;
-			}
-
-			str_tmp++;					/*	Next string character. */
-		}
-#endif
-
 		/*	- If a file extension is present, init. output file name
 		 *	  without adding an extension.
 		 *	-------------------------------------------------------- */
-//		if (fne_found != 0)
 		if (dot_pos > 0)
 		{
 			/*	Allocate memory for the binary file name.
 			 *	*/
-//			bin_file	= (char *) malloc(strlen(text) + 1);
 			bin_file	= (char *) malloc(string_len + 1);
 
 			/*	Built binary file name, if possible.
@@ -1975,7 +1787,6 @@ static int process_option_o(char *text)
 		{
 			/*	Allocate memory for the binary file name.
 			 *	*/
-//			bin_file	= (char *) malloc(strlen(text) + 4 + 1);
 			bin_file	= (char *) malloc(string_len + 4 + 1);
 
 			/*	Built binary file name, if possible.
