@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	26 November 2011
+Last modified:	3 December 2011
 Notes:
 *******************************************************************************
 
@@ -399,6 +399,20 @@ Date:		26 November 2011
 By:		Claude Sylvain
 Version:	0.9.4
 Notes:		General cleanup.  Removed dead code.
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		3 December 2011
+By:		Claude Sylvain
+Version:	0.9.5
+
+Notes:		- in "asm_dir.c", in "proc_ds()"; "proc_ds()" do not
+		  have to process a list of expression, but just
+		  one expression.  This was a major bug.
+		  Also seems that "proc_ds()" local expression
+		  parser had some flaws.
+		  That bug was discovered by Jay Cotton, using
+		  "als8.asm" module.
 -------------------------------------------------------------------------------
 
 

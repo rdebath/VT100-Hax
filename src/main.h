@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -95,7 +95,8 @@ extern FILE	*list;
 
 extern STACK	*ByteWordStack;
 
-extern TARG Target;
+//extern TARG Target;
+extern TARG target;
 
 extern int	type;
 extern int	file_level;

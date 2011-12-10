@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *
  *	Notes:			- This module implement an expression parser using
  *						  DAL (Direct Algebraic Logic) format.
@@ -707,7 +707,7 @@ static int remove_stack(void)
  *	Description:	DAL (Direct Algebraic Logic) Expression Parser.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *
  *	Parameters:		char *text:
  *							- Point to a string that hold expression to parse
@@ -860,7 +860,7 @@ static int dalep(char *text)
 				break;
 
 			case '$':
-				push(addr);
+				push(target.pc);
 				text++;
 				break;
 

@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	4 December 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -120,6 +120,8 @@ static const unsigned char	pgm_version_rn	= 4;	/*	Revision Number. */
 /*	Private functions.
  *	****************** */
 
+static void check_new_pc(int count);
+static int update_pc(int count);
 static void print_symbols_table(void);
 static void init(void);
 static int process_option_i(char *text);
@@ -165,7 +167,9 @@ FILE	*list		= NULL;
 
 STACK	*ByteWordStack;
 
-TARG	Target;
+//TARG	Target;
+TARG	target;
+
 int	type;
 
 FILE	*in_fp[FILES_LEVEL_MAX];
@@ -177,7 +181,7 @@ int	file_level	= 0;
 
 /* Global storage for assembler */
 
-int	addr;
+//int	addr;						/*	The program counter. */
 
 SYMBOL	*Symbols;
 
@@ -202,6 +206,86 @@ static struct	option_i_t	option_i	= {NULL, NULL};
 /*	*************************************************************************
  *	                           FUNCTIONS DEFINITION
  *	************************************************************************* */
+
+
+/*	*************************************************************************
+ *	Function name:	check_new_pc
+ *	Description:	Check the New Program Counter value.
+ *	Author(s):		Claude Sylvain
+ *	Created:			4 December 2011
+ *	Last modified:	10 December 2011
+ *
+ *	Parameters:		int count:
+ *							Count that will be added to the program counter.
+ *
+ *	Returns:			void
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+static void check_new_pc(int count)
+{
+	int	new_pc	= target.pc + count;	/*	Calculate new PC value. */
+
+	/*	- Check if the new program counter is out of range, and
+	 *	  manage messages if necessary.
+	 *	------------------------------------------------------- */	 
+	if (	((target.pc_or != 0) || ((new_pc < 0) || (new_pc > 0x10000))) &&
+		  	(asm_pass == 1))
+	{
+		if (list != NULL)
+			fprintf(	list, "*** Error %d in \"%s\": Program counter over range (%d)!\n",
+				  		EC_PCOR, in_fn[file_level], target.pc);
+
+		fprintf(	stderr, "*** Error %d in \"%s\" @%d: Program counter over range (%d)!\n",
+			  		EC_PCOR, in_fn[file_level], codeline[file_level], target.pc);
+	}
+}
+
+
+/*	*************************************************************************
+ *	Function name:	update_pc
+ *	Description:	Update Program Counter.
+ *	Author(s):		Claude Sylvain
+ *	Created:			4 December 2011
+ *	Last modified:	10 December 2011
+ *
+ *	Parameters:		int count:
+ *							Count to add to the program counter.
+ *
+ *	Returns:			int:
+ *							-1	: - Can not update program counter, because
+ *									 of an out of range error.  Program counter
+ *									 is resetted to 0x0000.
+ *
+ *							0	: Program counter updated successfully.
+ *
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+static int update_pc(int count)
+{
+	int	rv	= 0;		/*	Return Value. */
+
+//	addr	+= count;	/*	Update program counter. */
+	target.pc	+= count;	/*	Update program counter. */
+
+	if (target.pc <= 0x10000)
+		target.mem_size	= target.pc;
+
+	/*	- Check if program counter is out of range, and
+	 *	  reset it if necessary.
+	 *	----------------------------------------------- */	 
+	if ((target.pc < 0) || (target.pc > 0xFFFF))
+	{
+		target.pc		= 0;
+		target.pc_or	= 1;		/*	PC Over Range detected! */
+		rv					= -1;		/*	Program counter is out of range. */
+	}
+
+	return (rv);
+}
 
 
 /*	*************************************************************************
@@ -768,30 +852,32 @@ static int src_line_parser(char *text)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	28 June 2011
+ *	Last modified:	10 December 2011
  *
  *	Parameters:		char *text:
  *							...
  *
  *	Returns:			void
  *
- *	Globals:			int addr
+ *	Globals:			int target.pc
  *						int data_size
  *
- *	Notes:			- Also, update "addr".
+ *	Notes:
  *	************************************************************************* */
 
 static void PrintList(char *text)
 {
-	STACK	*DLStack;
 	STACK	*LStack	= ByteWordStack;
 	int	space		= 0;
 
+	/*	Don't print list if not in assembler pass 1.
+	 *	*/
+	if (asm_pass != 1)	return;
 
 	switch (type)
 	{
 		case COMMENT:
-			if ((asm_pass == 1) && (list != NULL))
+			if (list != NULL)
 				fprintf(list, "\t\t\t%s\n", text);
 
 			break;
@@ -800,41 +886,45 @@ static void PrintList(char *text)
 			switch (data_size)
 			{
 				case 1:
-					if ((asm_pass == 1) && (list != NULL))
-						fprintf(	list, "%6d %04X %02X\t\t%s\n", codeline[file_level],
-							  		addr, b1, text);
+					check_new_pc(data_size);		/*	Check the new PC value. */
 
-					addr += data_size;
+					if (list != NULL)
+						fprintf(	list, "%6d %04X %02X\t\t%s\n", codeline[file_level],
+							  		target.pc, b1, text);
+
 					break;
 
 				case 2:
-					if ((asm_pass == 1) && (list != NULL))
-						fprintf(	list, "%6d %04X %02X %02X\t%s\n",
-									codeline[file_level], addr, b1, b2, text);
+					check_new_pc(data_size);		/*	Check the new PC value. */
 
-					addr += data_size;
+					if (list != NULL)
+						fprintf(	list, "%6d %04X %02X %02X\t%s\n",
+									codeline[file_level], target.pc, b1, b2, text);
+
 					break;
 
 				case 3:
-					if ((asm_pass == 1) && (list != NULL))
-						fprintf(	list, "%6d %04X %02X %02X %02X\t%s\n",
-									codeline[file_level], addr, b1, b2, b3, text);
+					check_new_pc(data_size);		/*	Check the new PC value. */
 
-					addr += data_size;
+					if (list != NULL)
+						fprintf(	list, "%6d %04X %02X %02X %02X\t%s\n",
+									codeline[file_level], target.pc, b1, b2, b3, text);
+
 					break;
 
 				case 4:
-					if ((asm_pass == 1) && (list != NULL))
-						fprintf(	list, "%6d %04X %02X %02X %02X %02X\t%s\n",
-									codeline[file_level], addr, b1, b2, b3, b4, text);
+					check_new_pc(data_size);		/*	Check the new PC value. */
 
-					addr += data_size;
+					if (list != NULL)
+						fprintf(	list, "%6d %04X %02X %02X %02X %02X\t%s\n",
+									codeline[file_level], target.pc, b1, b2, b3, b4, text);
+
 					break;
 
 				/* 0
 				 * - */
 				default:
-					if ((asm_pass == 1) && (list != NULL))
+					if (list != NULL)
 						fprintf(list, "           %02X %02X\t%s\n", b2, b1, text);
 
 					break;
@@ -843,7 +933,7 @@ static void PrintList(char *text)
 
 		case LIST_ONLY:
 		case PROCESSED_END:
-			if ((asm_pass == 1) && (list != NULL))
+			if (list != NULL)
 				fprintf(list, "\t\t\t%s\n", text);
 
 			break;
@@ -851,52 +941,66 @@ static void PrintList(char *text)
 		/*	List "DS" (Data Storage).
 		 *	------------------------- */	
 		case LIST_DS:
-			if ((asm_pass == 1) && (list != NULL))
-				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
-					  		addr, text);
+			check_new_pc(data_size);		/*	Check the new PC value. */
 
-			addr	+= data_size;
+			if (list != NULL)
+				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
+					  		target.pc, text);
+
 			break;
 
 		case LIST_BYTES:
 		case LIST_WORDS:
 		case LIST_STRINGS:
-			if ((asm_pass == 1) && (list != NULL))
+			data_size	= 0;
+
+			/* - Set "data_size" by counting space that will be
+			 *   taken by the list elements.
+			 *	------------------------------------------------ */
+			while (LStack->next)
 			{
-				fprintf(list, "%6d %04X\t\t%s\n", codeline[file_level], addr, text);
+				if ((type == LIST_BYTES) || (type == LIST_STRINGS))
+					data_size++;
+				/*	Assuming this is a "WORD".
+				 *	-------------------------- */
+				else
+					data_size	+= 2;
+
+				LStack = (STACK *) LStack->next;
+			}
+
+			check_new_pc(data_size);		/*	Check the new PC value. */
+
+			/*	Restore stack pointer.
+			 *	*/
+			LStack	= ByteWordStack;
+
+			if (list != NULL)
+			{
+				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
+					  		target.pc, text);
 				fprintf(list, "            ");
 			}
 
-			/* Don't count last byte/word.
-			 *	--------------------------- */
+			/*	Process all elements in the linked list.
+			 *	---------------------------------------- */
 			while (LStack->next)
 			{
 				if ((type == LIST_BYTES) || (type == LIST_STRINGS))
 				{
-					if (asm_pass == 1)
-					{
-						if (list != NULL)
-							fprintf(list, "%02X ", (LStack->word & 0xff));
-
-						Image[Target.count++] = LStack->word & 0xff;
-					}
+					if (list != NULL)
+						fprintf(list, "%02X ", (LStack->word & 0xff));
 
 					space += 3;
-					addr++;
 				}
+				/*	Assuming this is a "WORD".
+				 *	-------------------------- */
 				else
 				{
-					if (asm_pass == 1)
-					{
-						if (list != NULL)
-							fprintf(list, "%04X ", LStack->word & 0xffff);
+					if (list != NULL)
+						fprintf(list, "%04X ", LStack->word & 0xffff);
 
-						Image[Target.count++] = LStack->word & 0xff;
-						Image[Target.count++] = (LStack->word & 0xff00) >> 8;
-					}
-
-					space	+= 5;
-					addr	+= 2;
+					space				+= 5;
 				}
 
 				LStack = (STACK *) LStack->next;
@@ -905,33 +1009,16 @@ static void PrintList(char *text)
 				 *	-------------------------- */
 				if (space >= (4 * 3))
 				{
-					if ((asm_pass == 1) && (list != NULL))
+					if (list != NULL)
 						fprintf(list, "\n            ");
 
 					space = 0;
 				}
 			}
 
-			if ((asm_pass == 1) && (list != NULL))
+			if (list != NULL)
 				fprintf(list, "\n");
 
-			/*	Always keep the stack root.
-			 *	--------------------------- */
-			LStack	= ByteWordStack;
-			DLStack	= LStack = (STACK *) LStack->next;
-
-			if (LStack)
-			{
-				do
-				{
-					LStack	= (STACK *) LStack->next;
-					free(DLStack);
-					DLStack	= LStack;
-				} while (LStack);
-
-				LStack			= ByteWordStack;
-				LStack->next	= NULL;
-			}
 			break;
 
 		default:
@@ -940,7 +1027,7 @@ static void PrintList(char *text)
 
 	/*	Remove after debug.
 	 *	------------------- */
-	if ((asm_pass == 1) && (list != NULL))
+	if (list != NULL)
 		fflush(list);
 }
 
@@ -950,7 +1037,7 @@ static void PrintList(char *text)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -974,14 +1061,16 @@ void ProcessDumpBin(void)
 {
 	/*	If there is something to write...
 	 *	--------------------------------- */
-	if ((Target.count > 0) && (asm_pass == 1))
+//	if ((target.pc > 0) && (asm_pass == 1))
+	if ((target.mem_size > 0) && (asm_pass == 1))
 	{
 		/*	Write binary.
 		 *	------------- */
 #if USE_BINARY_HEADER
-		fwrite(&Target, sizeof (TARG), 1, bin);	/*	Code size and base address. */
+		fwrite(&target, sizeof (TARG), 1, bin);	/*	Code size and base address. */
 #endif
-		fwrite(&Image, Target.count, 1, bin);		/*	Code. */
+//		fwrite(&Image, target.pc, 1, bin);			/*	Code. */
+		fwrite(&Image, target.mem_size, 1, bin);	/*	Code. */
 	}
 }
 
@@ -991,7 +1080,7 @@ void ProcessDumpBin(void)
  *	Description:	Assemble source file.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1233,7 +1322,7 @@ static void display_version(void)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -1299,7 +1388,7 @@ static void AddLabel(char *text)
 		Local = (SYMBOL *) Local->next;
 
 	strcpy(Local->Symbol_Name, label);
-	Local->Symbol_Value	= addr;
+	Local->Symbol_Value	= target.pc;
 	Local->next				= (SYMBOL *) calloc(1, sizeof(SYMBOL));
 }
 
@@ -1309,63 +1398,158 @@ static void AddLabel(char *text)
  *	Description:	Dump Binary.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2010
+ *	Last modified:	10 December 2011
  *	Parameters:		void
  *	Returns:			void
  *
  *	Globals:			int type
  *						int data_size
+ *						int target.pc
  *
  *	Notes:
  *	************************************************************************* */
 
 static void DumpBin(void)
 {
+	STACK	*DLStack;
+	STACK	*LStack	= ByteWordStack;
+
+
 	switch (type)
 	{
 		case TEXT:
 			switch (data_size)
 			{
 				case 1:
+#if 0
 					Image[Target.count++] = b1;
+#endif
+					Image[target.pc] = b1;
+					update_pc(1);
 					break;
 
 				case 2:
+#if 0
 					Image[Target.count++] = b1;
 					Image[Target.count++] = b2;
+#endif
+					Image[target.pc] = b1;
+					update_pc(1);
+					Image[target.pc] = b2;
+					update_pc(1);
 					break;
 
 				case 3:
+#if 0
 					Image[Target.count++] = b1;
 					Image[Target.count++] = b2;
 					Image[Target.count++] = b3;
+#endif
+					Image[target.pc] = b1;
+					update_pc(1);
+					Image[target.pc] = b2;
+					update_pc(1);
+					Image[target.pc] = b3;
+					update_pc(1);
 					break;
 
 				case 4:
+#if 0
 					Image[Target.count++] = b1;
 					Image[Target.count++] = b2;
 					Image[Target.count++] = b3;
 					Image[Target.count++] = b4;
+#endif
+					Image[target.pc] = b1;
+					update_pc(1);
+					Image[target.pc] = b2;
+					update_pc(1);
+					Image[target.pc] = b3;
+					update_pc(1);
+					Image[target.pc] = b4;
+					update_pc(1);
 					break;
 
 				default:
 					break;	
 			}
 
+//			Target.count	= addr;		/*	Sync. */
 			break;
 
 		case LIST_DS:
 		{	
 			int	i;
 
+#if 0
 			/*	Fill space.
 			 *	Notes: 0x00 is also known as "NOP" opcode.
 			 *	------------------------------------------ */
 			for (i = 0; i < data_size; i++)
 				Image[Target.count++] = 0x00;
+#endif
+			/*	Fill space.
+			 *	Notes: 0x00 is also known as "NOP" opcode.
+			 *	------------------------------------------ */
+			for (i = 0; i < data_size; i++)
+			{
+				Image[target.pc] = 0x00;
+				update_pc(1);
+			}
 
+//			Target.count	= addr;		/*	Sync. */
 			break;
 		}
+
+		case LIST_BYTES:
+		case LIST_WORDS:
+		case LIST_STRINGS:
+			/* Don't count last byte/word.
+			 *	--------------------------- */
+			while (LStack->next)
+			{
+				if ((type == LIST_BYTES) || (type == LIST_STRINGS))
+				{
+					if (asm_pass == 1)
+						Image[target.pc]	= LStack->word & 0xFF;
+
+					update_pc(1);
+//					Target.count	= addr;
+				}
+				else
+				{
+					if (asm_pass == 1)
+					{
+						Image[target.pc]	= LStack->word & 0x00FF;
+						update_pc(1);
+						Image[target.pc]	= (LStack->word & 0xFF00) >> 8;
+						update_pc(1);
+					}
+
+//					Target.count	= addr;
+				}
+
+				LStack = (STACK *) LStack->next;
+			}
+
+			/*	Always keep the stack root.
+			 *	--------------------------- */
+			LStack	= ByteWordStack;
+			DLStack	= LStack = (STACK *) LStack->next;
+
+			if (LStack)
+			{
+				do
+				{
+					LStack	= (STACK *) LStack->next;
+					free(DLStack);
+					DLStack	= LStack;
+				} while (LStack);
+
+				LStack			= ByteWordStack;
+				LStack->next	= NULL;
+			}
+			break;
 
 		default:
 			break;	
@@ -1378,7 +1562,7 @@ static void DumpBin(void)
  *	Description:	Assembler Pass #1.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1392,11 +1576,14 @@ static void asm_pass1(void)
 	for (i = 0; i < FILES_LEVEL_MAX; i++)
 		codeline[i]	= 0;
 
-	Target.count	= 0;
-	Target.addr		= 0;
-	addr				= 0;
-	type				= LIST_ONLY;
-	asm_pass 		= 0;
+//	Target.count		= 0;
+	target.addr			= 0;
+//	addr					= 0;
+	target.pc			= 0x0000;
+	target.mem_size	= 0;
+	target.pc_or		= 0;					/*	No PC Over Range. */
+	type					= LIST_ONLY;
+	asm_pass 			= 0;
 
 	memset(Image, 0, sizeof (Image));
 	do_asm();
@@ -1408,7 +1595,7 @@ static void asm_pass1(void)
  *	Description:	Assembler Pass #2.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1422,11 +1609,14 @@ static void asm_pass2(void)
 	for (i = 0; i < FILES_LEVEL_MAX; i++)
 		codeline[i]	= 0;
 
-	Target.count	= 0;
-	Target.addr		= 0;
-	addr				= 0;
-	type				= LIST_ONLY;
-	asm_pass			= 1;
+//	Target.count		= 0;
+	target.addr			= 0;
+//	addr					= 0;
+	target.pc			= 0x0000;
+	target.mem_size	= 0;
+	target.pc_or		= 0;					/*	No PC Over Range. */
+	type					= LIST_ONLY;
+	asm_pass				= 1;
 
 	memset(Image, 0, sizeof (Image));
 	RewindFiles();

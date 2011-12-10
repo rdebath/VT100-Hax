@@ -4,7 +4,7 @@
 # Copyright(c):	See below.
 # Author(s):		Jay Cotton, Claude Sylvain
 # Created:			26 Mars 2011
-# Last modified:	26 November 2011
+# Last modified:	4 December 2011
 # Notes:
 # *****************************************************************************
 
@@ -52,12 +52,16 @@
 # 			_TGT_OS_WIN32			Windows 32-bit
 # 			_TGT_OS_WIN64			Windows 64-bit
 #
-#AM_CFLAGS = -g -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
+#AM_CFLAGS = -O0 -g -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 AM_CFLAGS = -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 
 bin_PROGRAMS = asm8080
 
 asm8080_SOURCES = asm_dir.c  exp_parser.c  main.c  opcode.c  util.c 
+#asm8080_CFLAGS = -g -O0
+#asm8080_LDFLAGS = -g
+#asm8080_CPPFLAGS = -g -O0
+
 
 
 

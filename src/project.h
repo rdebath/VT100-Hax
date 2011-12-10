@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	27 March 2011
+ *	Last modified:	10 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -105,7 +105,10 @@ typedef struct Instructions
  *	*/
 typedef struct targ
 {
-	short	count;
+//	short	count;
+	int	pc;			/*	Program Counter. */
+	int	mem_size;	/*	Memory Size. */
+	char	pc_or;		/*	Program Counter Over Range (0=No OR, 1=OR). */
 	short	addr;
 } TARG;
 

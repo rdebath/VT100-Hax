@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	26 November 2011
+ *	Last modified:	4 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -59,7 +59,7 @@
 #define	EC_BHD			14		/* Bad Hexadecimal Digit. */
 #define	EC_OOR			15		/* Operand Over Range. */
 #define	WC_SNA			16		/* String Not Accepted. */
-#define	EC_ACOF			17		/* Address Counter OverFlow. */
+#define 	EC_PCOR			17		/* Program Counter Over Range. */
 #define	EC_KTL			18		/* Keyword Too Long. */
 #define	EC_ETL			19		/* Equation Too Long. */
 #define	EC_LTL			20		/* Label Too Long. */
@@ -80,6 +80,7 @@
 #define 	EC_BD				35		/*	Bad Data. */
 #define 	EC_EIFS			36		/*	Extra Input File Specified. */
 #define 	EC_IFNTL			37		/*	Input File Name Too Long. */
+#define 	EC_EVOR			38		/*	Expression Value Over Range. */
 #define 	EC_BTS			39		/*	Buffer Too Small. */
 #define 	EC_COINF			40		/*	Can't Open INput File. */
 #define 	EC_COLF			41		/*	Can't Open Listing File. */

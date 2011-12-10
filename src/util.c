@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *	************************************************************************* */
 
 /*
@@ -86,6 +86,50 @@
 int islabelchar(int c)
 {
 	return ((isalnum(c) != 0) || (c == '_'));
+}
+
+
+/*	*************************************************************************
+ *	Function name:	check_evor
+ *
+ *	Description:	- Check for Expression Value Over Range, and display/print
+ *						  an error message if an over range is detected.
+ *
+ *	Author(s):		Claude Sylvain
+ *	Created:			4 December 2011
+ *	Last modified:
+ *
+ *	Parameters:		int value:
+ *							Expression Value to check.
+ *
+ *						int limit:
+ *							Expression value Limit.
+ *
+ *	Returns:			int:
+ *							-1	: Over Range.
+ *							0	: Good Range.
+ *
+ *	Globals:			None.
+ *	Notes:
+ *	************************************************************************* */
+
+int check_evor(int value, int limit)
+{
+	int	rv	= 0;
+
+	if ((value > limit) && (asm_pass == 1))
+	{
+		if (list != NULL)
+			fprintf(	list, "*** Error %d in \"%s\": Expression value over range (%d)!\n",
+				  		EC_EVOR, in_fn[file_level], value);
+
+		fprintf(	stderr, "*** Error %d in \"%s\" @%d: Expression value over range (%d)!\n",
+			  		EC_EVOR, in_fn[file_level], codeline[file_level], value);
+
+		rv	= -1;
+	}
+
+	return (rv);
 }
 
 
@@ -202,7 +246,7 @@ SYMBOL *FindLabel(char *text)
  *	Description:	Process Label.
  *	Author(s):		Claude Sylvain
  *	Created:			28 December 2010
- *	Last modified:
+ *	Last modified:	10 December 2011
  *
  *	Parameters:		char *label:
  *							Point to a string that hold label.
@@ -219,7 +263,7 @@ void process_label(char *label)
 	/* Record the address of the label.
 	 * -------------------------------- */
 	if (Local)
-		Local->Symbol_Value = addr;
+		Local->Symbol_Value = target.pc;
 }
 
 

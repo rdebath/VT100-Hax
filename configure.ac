@@ -4,7 +4,7 @@
 # Copyright(c):
 # Author(s):		Jay Cotton, Claude Sylvain
 # Created:			26 Mars 2011
-# Last modified:	17 April 2011
+# Last modified:	4 December 2011
 #
 # Notes:				- Process this file with autoconf to produce a configure
 #						  script.
@@ -29,6 +29,8 @@ AC_PROG_CC
 AC_PROG_INSTALL
 AC_PROG_MAKE_SET
 
+#AM_PROG_CC_C_O
+
 # Checks for libraries.
 #
 AM_PROG_LIBTOOL
@@ -44,6 +46,10 @@ AC_CONFIG_FILES([Makefile src/Makefile])
 #AC_OUTPUT(app/Makefile)
 #AC_OUTPUT(src/Makefile Makefile)
 AC_OUTPUT
+
+
+
+
 
 
 

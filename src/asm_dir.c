@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  * Notes:
  *	************************************************************************* */
 
@@ -81,7 +81,7 @@ static int proc_ds(char *label, char *equation);
 static int proc_include(char *label, char *equation);
 static int proc_local(char *label, char *equation);
 static int proc_equ(char *, char *);
-static int ORG_proc(char *, char *);
+static int proc_org(char *, char *);
 static int END_proc(char *, char *);
 
 
@@ -99,7 +99,7 @@ const keyword_t	asm_dir[] =
 	{"EQU", proc_equ},				{"DB", proc_db},
 	{"DW", proc_dw},					{"END", END_proc},
   	{"INCLUDE", proc_include},
-	{"ORG", ORG_proc},				{"DS", proc_ds},
+	{"ORG", proc_org},				{"DS", proc_ds},
 	{"IF", proc_if},
 	{"ELSE", proc_else},				{"ENDIF", proc_endif},
 	{"SET", proc_equ},				{"LOCAL", proc_local},
@@ -268,10 +268,10 @@ static int proc_db(char *label, char *equation)
 	/* Record the address of the label.
 	 * -------------------------------- */
 	if (Local)
-		Local->Symbol_Value = addr;
+		Local->Symbol_Value = target.pc;
 
-	b1		= addr & 0x00ff;
-	b2		= (addr & 0xff00) >> 8;
+	b1		= target.pc & 0x00ff;
+	b2		= (target.pc & 0xff00) >> 8;
 	value	= 0;
 
 	/* The list could be strings, labels, or digits */
@@ -395,10 +395,10 @@ static int proc_dw(char *label, char *equation)
 	/* Record the address of the label.
 	 * -------------------------------- */
 	if (Local)
-		Local->Symbol_Value = addr;
+		Local->Symbol_Value = target.pc;
 
-	b1		= addr & 0x00ff;
-	b2		= (addr & 0xff00) >> 8;
+	b1		= target.pc & 0x00ff;
+	b2		= (target.pc & 0xff00) >> 8;
 	value	= 0;
 
 	/* The list could be strings, labels, or digits. */
@@ -505,10 +505,13 @@ static int proc_dw(char *label, char *equation)
 
 /*	*************************************************************************
  *	Function name:	proc_ds
- *	Description:	Define Space.
+ *
+ *	Description:	- Process DS (Define a block of Storage) assembler
+ *						  directive.
+ *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	4 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -526,8 +529,6 @@ static int proc_dw(char *label, char *equation)
 static int proc_ds(char *label, char *equation)
 {
 	SYMBOL	*Local;
-	int		value;
-
 
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
@@ -538,80 +539,27 @@ static int proc_ds(char *label, char *equation)
 	/* Record the address of the label.
 	 * -------------------------------- */
 	if (Local)
-		Local->Symbol_Value = addr;
+		Local->Symbol_Value = target.pc;
 
-	/* Go to the end of the string.
-	 * ---------------------------- */
-	while (*equation != '\0')
-  	{
-		switch (*equation)
-	  	{
-		case '\'':
-		case '"':
-			if (asm_pass == 1)
-			{
-				if (list != NULL)
-					fprintf(	list, "*** Error %d in \"%s\": String not accepted (%c)!\n", WC_SNA, in_fn[file_level], *equation);
+	data_size	= exp_parser(equation);	/*	Get memory to reserve. */
+	check_evor(data_size, 0xFFFF);		/*	Check Expression Value Over Range. */
 
-				fprintf(	stderr, "*** Error %d in \"%s\" @%d: Missing quote (%c)!\n", WC_SNA, in_fn[file_level], codeline[file_level], *equation);
-			}
+#if 0
+	/*	Check if memory reservation will produce a program counter overflow.
+	 *	-------------------------------------------------------------------- */
+	if ((addr + data_size) > 0xFFFF)
+	{
+		if (asm_pass == 1)
+		{
+			if (list != NULL)
+				fprintf(	list, "*** Error %d in \"%s\": Address counter overflow (%d)!\n",
+					  		EC_ACOF, in_fn[file_level], addr);
 
-			/*	Flush "equation".
-			 *	----------------- */	
-			while (*equation != '\0')
-				equation++;
-
-			break;
-
-		/*	Bypass some characters.
-		 *	----------------------- */	
-		case ',':
-		case ' ':
-		case '\t':
-			equation++;
-			break;
-
-		default:
-			/* Could be numbers, or a label.
-			 * ----------------------------- */
-			if (isdigit((int) *equation))
-			{
-				value		= exp_parser(equation);
-				equation = AdvanceTo(equation, ',');
-			}
-			else
-			{
-				Local = FindLabel(equation);
-
-				if (Local)
-					value = Local->Symbol_Value;
-				else if (asm_pass == 1)
-				{
-					if (list != NULL)
-						fprintf(list, "*** Error %d in \"%s\": Label not found (%s)!\n", EC_LNF, in_fn[file_level], equation);
-
-					fprintf(stderr, "*** Error %d in \"%s\" @%d: Label not found (%s)!\n", EC_LNF, in_fn[file_level], codeline[file_level], equation);
-				}
-
-				equation = AdvanceTo(equation, ',');
-			}
-
-			data_size	= value;		/*	Space reserved! */
-
-			if ((addr + value) > 0xFFFF)
-			{
-				if (asm_pass == 1)
-				{
-					if (list != NULL)
-						fprintf(list, "*** Error %d in \"%s\": Address counter overflow (%d)!\n", EC_ACOF, in_fn[file_level], addr);
-
-					fprintf(stderr, "*** Error %d in \"%s\" @%d: Address counter overflow (%d)!\n", EC_ACOF, in_fn[file_level], codeline[file_level], addr);
-				}
-			}
-
-			break;
+			fprintf(	stderr, "*** Error %d in \"%s\" @%d: Address counter overflow (%d)!\n",
+				  		EC_ACOF, in_fn[file_level], codeline[file_level], addr);
 		}
 	}
+#endif
 
 	return (LIST_DS);
 }
@@ -977,11 +925,11 @@ static int proc_equ(char *label, char *equation)
 
 
 /*	*************************************************************************
- *	Function name:	ORG_proc
- *	Description:
+ *	Function name:	proc_org
+ *	Description:	ORG directive Processing.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -996,7 +944,7 @@ static int proc_equ(char *label, char *equation)
  *	Notes:
  *	************************************************************************* */
 
-static int ORG_proc(char *label, char *equation)
+static int proc_org(char *label, char *equation)
 {
 	SYMBOL	*Local;
 
@@ -1007,15 +955,33 @@ static int ORG_proc(char *label, char *equation)
 	Local = FindLabel(label);
 
 	if (Local)
-		addr = Local->Symbol_Value = exp_parser(equation);
+		target.pc = Local->Symbol_Value = exp_parser(equation);
 	else
-		addr = exp_parser(equation);
+		target.pc = exp_parser(equation);
 
-	b1 = addr & 0x00ff;
-	b2 = (addr & 0xff00) >> 8;
+	/*	Check for Program Counter Over Range.
+	 *	------------------------------------- */	
+	if ((target.pc < 0) || (target.pc > 0xFFFF))
+	{
+		target.pc		= 0;
+		target.pc_or	= 1;		/*	PC Over Range. */
+
+		if (asm_pass == 1)
+		{
+			if (list != NULL)
+				fprintf(	list, "*** Error %d in \"%s\": Program counter over range (%d)!\n",
+					  		EC_PCOR, in_fn[file_level], target.pc);
+
+			fprintf(	stderr, "*** Error %d in \"%s\" @%d: Program counter over range (%d)!\n",
+				  		EC_PCOR, in_fn[file_level], codeline[file_level], target.pc);
+		}
+	}
+
+	b1 = target.pc & 0x00FF;
+	b2 = (target.pc & 0xFF00) >> 8;
 
 	ProcessDumpBin();
-	Target.addr = addr;
+	target.addr = target.pc;
 
 	return (TEXT);
 }
