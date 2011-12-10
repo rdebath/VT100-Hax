@@ -1210,7 +1210,8 @@ static void do_asm(void)
 		if (EmitBin != PROCESSED_END)
 			PrintList(p_text);
 
-		if ((asm_pass == 1) && (util_is_cs_enable() == 1))
+//		if ((asm_pass == 1) && (util_is_cs_enable() == 1))
+		if (util_is_cs_enable() == 1)
 			DumpBin();
 
 		/*	If an "END" directive was executed...

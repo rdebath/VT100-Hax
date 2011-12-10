@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	3 December 2011
+Last modified:	10 December 2011
 Notes:
 *******************************************************************************
 
@@ -420,8 +420,14 @@ Date:		10 December 2011
 By:		Claude Sylvain
 Version:	0.9.6
 
-Notes:		- Program Counter management improvement.
-		- Expression parser improvement.
+Notes:		- Program Counter management improvement.  Now, PC is
+		  checked for over range.  This avoid "asm8080" to
+		  crash when PC do a roll over, or have an invalid value.
+
+		- Expression parser improvement.  Now, expression parser
+		  can handle more levels.
+
+		- Now, can built "test/als8.asm" successfully.
 -------------------------------------------------------------------------------
 
 
