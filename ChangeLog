@@ -415,6 +415,16 @@ Notes:		- in "asm_dir.c", in "proc_ds()"; "proc_ds()" do not
 		  "als8.asm" module.
 -------------------------------------------------------------------------------
 
+-------------------------------------------------------------------------------
+Date:		10 December 2011
+By:		Claude Sylvain
+Version:	0.9.6
+
+Notes:		- Program Counter management improvement.
+		- Expression parser improvement.
+-------------------------------------------------------------------------------
+
+
 
 
 

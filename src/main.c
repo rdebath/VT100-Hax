@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	4 December 2011
+ *	Last modified:	10 December 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -110,7 +110,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 0;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 9;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 4;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 6;	/*	Revision Number. */
 
 
 /*	*************************************************************************

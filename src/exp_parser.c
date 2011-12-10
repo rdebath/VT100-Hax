@@ -71,6 +71,13 @@
 
 
 /*	*************************************************************************
+ *											  CONSTANTS
+ *	************************************************************************* */
+
+#define STACK_LEVELS			8
+
+
+/*	*************************************************************************
  *												 STRUCT
  *	************************************************************************* */
 
@@ -90,7 +97,7 @@ struct operator_t
 struct ep_stack_t
 {
 	struct ep_stack_t	*prev;
-	int					word[4];
+	int					word[STACK_LEVELS];
 	int					level;
 };
 
@@ -531,7 +538,7 @@ int extract_byte(char *text)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	27 December 2010
+ *	Last modified:	10 December 2011
  *	Parameters:
  *	Returns:
  *	Globals:
@@ -547,9 +554,8 @@ static void eval(void)
 
 	/*	- Evaluation can be done only if there was at least 2 operand
 	 *	  and 1  operator.
- 	 *	------------------------------------------------------------- */	 
-	if (p_ep_stack->level < 3)
-		return;
+ 	 * */
+	if (p_ep_stack->level < 3)	return;
 
 	b	= pop();
 	op	= pop();
@@ -600,7 +606,7 @@ static void eval(void)
  *	Description:	Add Stack .
  *	Author(s):		Claude Sylvain
  *	Created:			2 January 2011
- *	Last modified:
+ *	Last modified:	10 December 2011
  *	Parameters:		void
  *
  *	Returns:			int:
@@ -641,9 +647,15 @@ static int add_stack(void)
 		if (asm_pass == 1)
 		{
 			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": Memory Allocation Error!\n", EC_MAE, in_fn[file_level]);
+			{
+				fprintf(	list,
+					  		"*** Error %d in \"%s\": Memory Allocation Error!\n",
+						  	EC_MAE, in_fn[file_level]);
+			}
 
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Memory Allocation Error!\n", EC_MAE, in_fn[file_level], codeline[file_level]);
+			fprintf(	stderr,
+				  		"*** Error %d in \"%s\" @%d: Memory Allocation Error!\n",
+					  	EC_MAE, in_fn[file_level], codeline[file_level]);
 		}
 	}
 
@@ -656,7 +668,7 @@ static int add_stack(void)
  *	Description:	Remove Stack .
  *	Author(s):		Claude Sylvain
  *	Created:			2 January 2011
- *	Last modified:
+ *	Last modified:	10 December 2011
  *	Parameters:		void
  *
  *	Returns:			int:
@@ -692,9 +704,15 @@ static int remove_stack(void)
 		if (asm_pass == 1)
 		{
 			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": Expression parser stack remove underflow!\n", EC_EPSRUF, in_fn[file_level]);
+			{
+				fprintf(	list,
+					  		"*** Error %d in \"%s\": Expression parser stack remove underflow!\n",
+						  	EC_EPSRUF, in_fn[file_level]);
+			}
 
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Expression parser stack remove underflow!\n", EC_EPSRUF, in_fn[file_level], codeline[file_level]);
+			fprintf(	stderr,
+				  		"*** Error %d in \"%s\" @%d: Expression parser stack remove underflow!\n",
+					  	EC_EPSRUF, in_fn[file_level], codeline[file_level]);
 		}
 	}
 
@@ -1093,7 +1111,7 @@ int extract_word(char *text)
  *	Description:	Push a value to the stack.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	2 January 2011
+ *	Last modified:	10 December 2011
  *
  *	Parameters:		int value:
  *							Value to push to the stack.
@@ -1105,11 +1123,17 @@ int extract_word(char *text)
 
 static void push(int value)
 {
-	p_ep_stack->word[3] = p_ep_stack->word[2];
-	p_ep_stack->word[2] = p_ep_stack->word[1];
-	p_ep_stack->word[1] = p_ep_stack->word[0];
-	p_ep_stack->word[0] = value;
+	int	i;
 
+	/*	Update stack words.
+	 *	------------------- */	
+	for (i = STACK_LEVELS - 1; i > 0; i--)
+		p_ep_stack->word[i] = p_ep_stack->word[i -1];
+
+	p_ep_stack->word[0] = value;		/*	Add new value in the stack. */
+
+	/*	Check for stack overflow.
+	 *	------------------------- */	
 	if (++p_ep_stack->level >= (sizeof (p_ep_stack->word) / sizeof (int)))
 	{
 		p_ep_stack->level--;
@@ -1117,9 +1141,14 @@ static void push(int value)
 		if (asm_pass == 1)
 		{
 			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": Expression parser stack push overflow!\n", EC_EPSPOF, in_fn[file_level]);
+			{
+				fprintf(	list,
+					  		"*** Error %d in \"%s\": Expression parser stack push overflow!\n",
+						  	EC_EPSPOF, in_fn[file_level]);
+			}
 
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Expression parser stack push overflow!\n", EC_EPSPOF, in_fn[file_level], codeline[file_level]);
+			fprintf(	stderr, "*** Error %d in \"%s\" @%d: Expression parser stack push overflow!\n",
+				  		EC_EPSPOF, in_fn[file_level], codeline[file_level]);
 		}
 	}
 }
@@ -1130,7 +1159,7 @@ static void push(int value)
  *	Description:	Pop a value from the stack.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *	Parameters:		void
  *
  *	Returns:			int:
@@ -1142,12 +1171,16 @@ static void push(int value)
 
 static int pop(void)
 {
-	int	value	= p_ep_stack->word[0];
+	int	i;
+	int	value	= p_ep_stack->word[0];		/*	Get value from the stack. */
 
-	p_ep_stack->word[0] = p_ep_stack->word[1];
-	p_ep_stack->word[1] = p_ep_stack->word[2];
-	p_ep_stack->word[2] = p_ep_stack->word[3];
+	/*	Update stack words.
+	 *	------------------- */
+	for (i = 0; i < STACK_LEVELS - 1; i++)
+		p_ep_stack->word[i] = p_ep_stack->word[i + 1];
 
+	/*	Check for stack underflow.
+	 *	-------------------------- */	
 	if (--p_ep_stack->level < 0)
 	{
 		p_ep_stack->level	= 0;
@@ -1155,9 +1188,15 @@ static int pop(void)
 		if (asm_pass == 1)
 		{
 			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": Exression parser stack pop underflow!\n", EC_EPSPUF, in_fn[file_level]);
+			{
+				fprintf(	list,
+					  		"*** Error %d in \"%s\": Exression parser stack pop underflow!\n",
+						  	EC_EPSPUF, in_fn[file_level]);
+			}
 
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Exression parser stack pop underflow!\n", EC_EPSPUF, in_fn[file_level], codeline[file_level]);
+			fprintf(	stderr,
+				  		"*** Error %d in \"%s\" @%d: Exression parser stack pop underflow!\n",
+					  	EC_EPSPUF, in_fn[file_level], codeline[file_level]);
 		}
 	}
 
