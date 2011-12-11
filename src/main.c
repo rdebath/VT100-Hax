@@ -1511,14 +1511,17 @@ static void DumpBin(void)
 			{
 				if ((type == LIST_BYTES) || (type == LIST_STRINGS))
 				{
+#if 0
 					if (asm_pass == 1)
 						Image[target.pc]	= LStack->word & 0xFF;
-
+#endif
+					Image[target.pc]	= LStack->word & 0xFF;
 					update_pc(1);
 //					Target.count	= addr;
 				}
 				else
 				{
+#if 0
 					if (asm_pass == 1)
 					{
 						Image[target.pc]	= LStack->word & 0x00FF;
@@ -1526,6 +1529,11 @@ static void DumpBin(void)
 						Image[target.pc]	= (LStack->word & 0xFF00) >> 8;
 						update_pc(1);
 					}
+#endif
+					Image[target.pc]	= LStack->word & 0x00FF;
+					update_pc(1);
+					Image[target.pc]	= (LStack->word & 0xFF00) >> 8;
+					update_pc(1);
 
 //					Target.count	= addr;
 				}
@@ -2401,7 +2409,7 @@ static int cmd_line_parser(int argc, char *argv[])
  *	Description:	Main function.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	28 December 2010
+ *	Last modified:	10 December 2011
  *
  *	Parameters:		int argv:
  *							...
@@ -2419,7 +2427,7 @@ static int cmd_line_parser(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
 	init();						/*	Initialize module. */
-	if_true[0]		= 1;		/*	If nesting base level (always TRUE). */ 
+	if_true[0]		= 1;		/*	"IF" nesting base level (always TRUE). */ 
 
 	Symbols			= (SYMBOL *) calloc(1, sizeof(SYMBOL));
 	ByteWordStack	= (STACK *) calloc(1, sizeof(STACK));
