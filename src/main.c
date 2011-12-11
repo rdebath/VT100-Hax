@@ -544,7 +544,7 @@ static void CloseFiles(void)
  *	Description:	Break down a source line.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	10 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -564,7 +564,7 @@ static int src_line_parser(char *text)
 	int	msg_displayed	= 0;
 	char	Equation[80];
 	char	label[LABEL_SIZE_MAX];
-	int	status;
+	int	status	= LIST_ONLY;
 
 	/*	If this is a comment, don't do anything.
 	 *	---------------------------------------- */	
@@ -577,7 +577,7 @@ static int src_line_parser(char *text)
 		 * */
 		type		= COMMENT;
 
-		status	= LIST_ONLY;
+//		status	= LIST_ONLY;
 	}
 	/* Record any symbol and the cop.
 	 * ------------------------------ */
