@@ -1,19 +1,17 @@
 -------------------------------------------------------------------------------
-
 			      asm8080 User Manual
 
 
-Cover:		asm8080 V0.9.2
+Cover:		asm8080 V0.9.2 to V0.9.6
 Copyright(c):	See below.
 Author(s):	Claude Sylvain
 Created:	17 March 2011
-Last modified:	10 April 2011
-Revision:	0.9.2
+Last modified:	11 December 2011
+Revision:	0.9.3
 -------------------------------------------------------------------------------
 
 
 -------------------------------------------------------------------------------
-
 Copyright (c) <2007-2011> <jay.cotton@oracle.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -33,12 +31,17 @@ THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
-
 -------------------------------------------------------------------------------
 
+-------------------------------------------------------------------------------
+			       Table of contents
 
+1	Introduction to the assembler
+1.1	Assembler command line
+1.2	Assembler options
 -------------------------------------------------------------------------------
 
+-------------------------------------------------------------------------------
 1	Introduction to the assembler
 
 1.1	Assembler command line
@@ -47,13 +50,11 @@ The assembler is called by entering a line of the form:
 
 	asm8080 <file> [<options>]
 
-
 Where asm8080 represents the filename of the assembler, <file>	is the name
 of the source file to be assembled, and [<options>] represents zero or
 more assembler option specifiers.  The assembler's assembly language
 input file is expected to have a filename extension; if none is explicitly
 specified, a filename extension of the form .asm is assumed.
-
 
 1.2	Assembler options
 
@@ -64,7 +65,7 @@ Assembler options are listed and described below.
 
 -I<dir>
 	Add directory to the include file search path.
-	Notes: Path delimitor is not mandatory, at end of <dir>.
+	Notes: Path delimiter is not mandatory, at end of <dir>.
 
 -l<filename>
 	This option specifies that <filename> is the name of the file
@@ -84,7 +85,6 @@ Assembler options are listed and described below.
 
 -v
 	Display assembler version.
-
 -------------------------------------------------------------------------------
 
 
