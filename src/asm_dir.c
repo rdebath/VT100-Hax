@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	10 December 2011
+ *	Last modified:	11 December 2011
  * Notes:
  *	************************************************************************* */
 
@@ -912,7 +912,7 @@ static int proc_equ(char *label, char *equation)
  *	Description:	ORG directive Processing.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	11 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -963,8 +963,10 @@ static int proc_org(char *label, char *equation)
 	b1 = target.pc & 0x00FF;
 	b2 = (target.pc & 0xFF00) >> 8;
 
+#if 0
 	ProcessDumpBin();
 	target.addr = target.pc;
+#endif
 
 	return (TEXT);
 }

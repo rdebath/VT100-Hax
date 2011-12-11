@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	10 December 2011
+ *	Last modified:	11 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -101,14 +101,14 @@ typedef struct Instructions
 	int			(*fnc) (char *, char *);
 } keyword_t;
 
-/*	Tageted binary handleing storage.
+/*	Targeted binary handling storage.
  *	*/
 typedef struct targ
 {
 	int	pc;			/*	Program Counter. */
 	int	mem_size;	/*	Memory Size. */
 	char	pc_or;		/*	Program Counter Over Range (0=No OR, 1=OR). */
-	short	addr;
+//	short	addr;
 } TARG;
 
 

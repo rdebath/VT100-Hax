@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	11 December 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -245,7 +245,7 @@ static void check_new_pc(int count)
  *	Description:	Update Program Counter.
  *	Author(s):		Claude Sylvain
  *	Created:			4 December 2011
- *	Last modified:	10 December 2011
+ *	Last modified:	11 December 2011
  *
  *	Parameters:		int count:
  *							Count to add to the program counter.
@@ -267,10 +267,21 @@ static int update_pc(int count)
 
 	target.pc	+= count;	/*	Update program counter. */
 
-	/*	Update Target Memory size.
-	 *	-------------------------- */
+	/*	Update Target Memory Size only if PC is valid.
+	 *	---------------------------------------------- */
 	if (target.pc <= 0x10000)
-		target.mem_size	= target.pc;
+	{
+		/*	- Update Target Memory Size only if current PC
+		 *	  is higher.  This is necessary to handle properly
+		 *	  program using multiple "ORG" directives, that are
+		 *	  not necessarily in ascendant order.
+		 *	--------------------------------------------------- */	  
+		if (target.pc > target.mem_size)
+			target.mem_size	= target.pc;
+	}
+	/*	- PC is not valid, and will be reseted to 0.  So, do the
+	 *	  same with Target Memory Size.
+	 *	-------------------------------------------------------- */
 	else
 		target.mem_size	= 0;
 
@@ -1525,7 +1536,7 @@ static void DumpBin(void)
  *	Description:	Assembler Pass #1.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	11 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1539,7 +1550,7 @@ static void asm_pass1(void)
 	for (i = 0; i < FILES_LEVEL_MAX; i++)
 		codeline[i]	= 0;
 
-	target.addr			= 0;
+//	target.addr			= 0;
 	target.pc			= 0x0000;
 	target.mem_size	= 0;
 	target.pc_or		= 0;					/*	No PC Over Range. */
@@ -1556,7 +1567,7 @@ static void asm_pass1(void)
  *	Description:	Assembler Pass #2.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	11 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1570,7 +1581,7 @@ static void asm_pass2(void)
 	for (i = 0; i < FILES_LEVEL_MAX; i++)
 		codeline[i]	= 0;
 
-	target.addr			= 0;
+//	target.addr			= 0;
 	target.pc			= 0x0000;
 	target.mem_size	= 0;
 	target.pc_or		= 0;					/*	No PC Over Range. */
