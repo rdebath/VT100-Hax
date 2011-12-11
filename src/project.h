@@ -105,7 +105,6 @@ typedef struct Instructions
  *	*/
 typedef struct targ
 {
-//	short	count;
 	int	pc;			/*	Program Counter. */
 	int	mem_size;	/*	Memory Size. */
 	char	pc_or;		/*	Program Counter Over Range (0=No OR, 1=OR). */

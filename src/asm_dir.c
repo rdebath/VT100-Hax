@@ -82,7 +82,7 @@ static int proc_include(char *label, char *equation);
 static int proc_local(char *label, char *equation);
 static int proc_equ(char *, char *);
 static int proc_org(char *, char *);
-static int END_proc(char *, char *);
+static int proc_end(char *, char *);
 
 
 /*	*************************************************************************
@@ -97,7 +97,7 @@ static int END_proc(char *, char *);
 const keyword_t	asm_dir[] =
 {
 	{"EQU", proc_equ},				{"DB", proc_db},
-	{"DW", proc_dw},					{"END", END_proc},
+	{"DW", proc_dw},					{"END", proc_end},
   	{"INCLUDE", proc_include},
 	{"ORG", proc_org},				{"DS", proc_ds},
 	{"IF", proc_if},
@@ -511,7 +511,7 @@ static int proc_dw(char *label, char *equation)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	4 December 2011
+ *	Last modified:	10 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -543,23 +543,6 @@ static int proc_ds(char *label, char *equation)
 
 	data_size	= exp_parser(equation);	/*	Get memory to reserve. */
 	check_evor(data_size, 0xFFFF);		/*	Check Expression Value Over Range. */
-
-#if 0
-	/*	Check if memory reservation will produce a program counter overflow.
-	 *	-------------------------------------------------------------------- */
-	if ((addr + data_size) > 0xFFFF)
-	{
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-				fprintf(	list, "*** Error %d in \"%s\": Address counter overflow (%d)!\n",
-					  		EC_ACOF, in_fn[file_level], addr);
-
-			fprintf(	stderr, "*** Error %d in \"%s\" @%d: Address counter overflow (%d)!\n",
-				  		EC_ACOF, in_fn[file_level], codeline[file_level], addr);
-		}
-	}
-#endif
 
 	return (LIST_DS);
 }
@@ -988,7 +971,7 @@ static int proc_org(char *label, char *equation)
 
 
 /*	*************************************************************************
- *	Function name:	END_proc
+ *	Function name:	proc_end
  *	Description:	Process "END" assembler directive.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
@@ -1007,7 +990,7 @@ static int proc_org(char *label, char *equation)
  *	Notes:
  *	************************************************************************* */
 
-static int END_proc(char *label, char *equation)
+static int proc_end(char *label, char *equation)
 {
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/

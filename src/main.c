@@ -166,22 +166,19 @@ int asm_pass;			/* Assembler Pass. */
 FILE	*list		= NULL;
 
 STACK	*ByteWordStack;
-
-//TARG	Target;
 TARG	target;
 
 int	type;
 
 FILE	*in_fp[FILES_LEVEL_MAX];
 char	*in_fn[FILES_LEVEL_MAX];		/*	Input File Name. */
-int codeline[FILES_LEVEL_MAX];
+int	codeline[FILES_LEVEL_MAX];
 
 FILE	*bin;
 int	file_level	= 0;
 
-/* Global storage for assembler */
 
-//int	addr;						/*	The program counter. */
+/* Global storage for assembler */
 
 SYMBOL	*Symbols;
 
@@ -266,13 +263,16 @@ static void check_new_pc(int count)
 
 static int update_pc(int count)
 {
-	int	rv	= 0;		/*	Return Value. */
+	int	rv	= 0;				/*	Return Value. */
 
-//	addr	+= count;	/*	Update program counter. */
 	target.pc	+= count;	/*	Update program counter. */
 
+	/*	Update Target Memory size.
+	 *	-------------------------- */
 	if (target.pc <= 0x10000)
 		target.mem_size	= target.pc;
+	else
+		target.mem_size	= 0;
 
 	/*	- Check if program counter is out of range, and
 	 *	  reset it if necessary.
@@ -1061,7 +1061,6 @@ void ProcessDumpBin(void)
 {
 	/*	If there is something to write...
 	 *	--------------------------------- */
-//	if ((target.pc > 0) && (asm_pass == 1))
 	if ((target.mem_size > 0) && (asm_pass == 1))
 	{
 		/*	Write binary.
@@ -1069,7 +1068,6 @@ void ProcessDumpBin(void)
 #if USE_BINARY_HEADER
 		fwrite(&target, sizeof (TARG), 1, bin);	/*	Code size and base address. */
 #endif
-//		fwrite(&Image, target.pc, 1, bin);			/*	Code. */
 		fwrite(&Image, target.mem_size, 1, bin);	/*	Code. */
 	}
 }
@@ -1210,7 +1208,6 @@ static void do_asm(void)
 		if (EmitBin != PROCESSED_END)
 			PrintList(p_text);
 
-//		if ((asm_pass == 1) && (util_is_cs_enable() == 1))
 		if (util_is_cs_enable() == 1)
 			DumpBin();
 
@@ -1422,18 +1419,11 @@ static void DumpBin(void)
 			switch (data_size)
 			{
 				case 1:
-#if 0
-					Image[Target.count++] = b1;
-#endif
 					Image[target.pc] = b1;
 					update_pc(1);
 					break;
 
 				case 2:
-#if 0
-					Image[Target.count++] = b1;
-					Image[Target.count++] = b2;
-#endif
 					Image[target.pc] = b1;
 					update_pc(1);
 					Image[target.pc] = b2;
@@ -1441,11 +1431,6 @@ static void DumpBin(void)
 					break;
 
 				case 3:
-#if 0
-					Image[Target.count++] = b1;
-					Image[Target.count++] = b2;
-					Image[Target.count++] = b3;
-#endif
 					Image[target.pc] = b1;
 					update_pc(1);
 					Image[target.pc] = b2;
@@ -1455,12 +1440,6 @@ static void DumpBin(void)
 					break;
 
 				case 4:
-#if 0
-					Image[Target.count++] = b1;
-					Image[Target.count++] = b2;
-					Image[Target.count++] = b3;
-					Image[Target.count++] = b4;
-#endif
 					Image[target.pc] = b1;
 					update_pc(1);
 					Image[target.pc] = b2;
@@ -1475,20 +1454,12 @@ static void DumpBin(void)
 					break;	
 			}
 
-//			Target.count	= addr;		/*	Sync. */
 			break;
 
 		case LIST_DS:
 		{	
 			int	i;
 
-#if 0
-			/*	Fill space.
-			 *	Notes: 0x00 is also known as "NOP" opcode.
-			 *	------------------------------------------ */
-			for (i = 0; i < data_size; i++)
-				Image[Target.count++] = 0x00;
-#endif
 			/*	Fill space.
 			 *	Notes: 0x00 is also known as "NOP" opcode.
 			 *	------------------------------------------ */
@@ -1498,7 +1469,6 @@ static void DumpBin(void)
 				update_pc(1);
 			}
 
-//			Target.count	= addr;		/*	Sync. */
 			break;
 		}
 
@@ -1511,31 +1481,15 @@ static void DumpBin(void)
 			{
 				if ((type == LIST_BYTES) || (type == LIST_STRINGS))
 				{
-#if 0
-					if (asm_pass == 1)
-						Image[target.pc]	= LStack->word & 0xFF;
-#endif
 					Image[target.pc]	= LStack->word & 0xFF;
 					update_pc(1);
-//					Target.count	= addr;
 				}
 				else
 				{
-#if 0
-					if (asm_pass == 1)
-					{
-						Image[target.pc]	= LStack->word & 0x00FF;
-						update_pc(1);
-						Image[target.pc]	= (LStack->word & 0xFF00) >> 8;
-						update_pc(1);
-					}
-#endif
 					Image[target.pc]	= LStack->word & 0x00FF;
 					update_pc(1);
 					Image[target.pc]	= (LStack->word & 0xFF00) >> 8;
 					update_pc(1);
-
-//					Target.count	= addr;
 				}
 
 				LStack = (STACK *) LStack->next;
@@ -1585,9 +1539,7 @@ static void asm_pass1(void)
 	for (i = 0; i < FILES_LEVEL_MAX; i++)
 		codeline[i]	= 0;
 
-//	Target.count		= 0;
 	target.addr			= 0;
-//	addr					= 0;
 	target.pc			= 0x0000;
 	target.mem_size	= 0;
 	target.pc_or		= 0;					/*	No PC Over Range. */
@@ -1618,9 +1570,7 @@ static void asm_pass2(void)
 	for (i = 0; i < FILES_LEVEL_MAX; i++)
 		codeline[i]	= 0;
 
-//	Target.count		= 0;
 	target.addr			= 0;
-//	addr					= 0;
 	target.pc			= 0x0000;
 	target.mem_size	= 0;
 	target.pc_or		= 0;					/*	No PC Over Range. */

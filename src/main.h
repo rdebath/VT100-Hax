@@ -94,9 +94,7 @@ extern int	asm_pass;		/* Assembler Pass. */
 extern FILE	*list;
 
 extern STACK	*ByteWordStack;
-
-//extern TARG Target;
-extern TARG target;
+extern TARG		target;
 
 extern int	type;
 extern int	file_level;
