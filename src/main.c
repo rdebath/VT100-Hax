@@ -265,25 +265,30 @@ static int update_pc(int count)
 {
 	int	rv	= 0;				/*	Return Value. */
 
+	/*	Keep track of the lowest PC value.
+	 *	---------------------------------- */
+	if (target.pc < target.pc_lowest)
+		target.pc_lowest	= target.pc;
+
 	target.pc	+= count;	/*	Update program counter. */
 
-	/*	Update Target Memory Size only if PC is valid.
-	 *	---------------------------------------------- */
+	/*	Keep track of the highest PC value.
+	 *	----------------------------------- */
 	if (target.pc <= 0x10000)
 	{
-		/*	- Update Target Memory Size only if current PC
+		/*	- Update Target PC Highest value only if current PC
 		 *	  is higher.  This is necessary to handle properly
 		 *	  program using multiple "ORG" directives, that are
 		 *	  not necessarily in ascendant order.
 		 *	--------------------------------------------------- */	  
-		if (target.pc > target.mem_size)
-			target.mem_size	= target.pc;
+		if (target.pc > target.pc_highest)
+			target.pc_highest	= target.pc;
 	}
 	/*	- PC is not valid, and will be reseted to 0.  So, do the
-	 *	  same with Target Memory Size.
+	 *	  same with Target PC Highest value.
 	 *	-------------------------------------------------------- */
 	else
-		target.mem_size	= 0;
+		target.pc_highest	= 0;
 
 	/*	- Check if program counter is out of range, and
 	 *	  reset it if necessary.
@@ -1048,7 +1053,7 @@ static void PrintList(char *text)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	11 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1072,14 +1077,16 @@ void ProcessDumpBin(void)
 {
 	/*	If there is something to write...
 	 *	--------------------------------- */
-	if ((target.mem_size > 0) && (asm_pass == 1))
+	if ((target.pc_highest > 0) && (asm_pass == 1))
 	{
 		/*	Write binary.
 		 *	------------- */
 #if USE_BINARY_HEADER
-		fwrite(&target, sizeof (TARG), 1, bin);	/*	Code size and base address. */
+		fwrite(&target, sizeof (TARG), 1, bin);		/*	Code size and base address. */
 #endif
-		fwrite(&Image, target.mem_size, 1, bin);	/*	Code. */
+//		fwrite(&Image, target.pc_highest, 1, bin);	/*	Code. */
+		fwrite(	&Image[target.pc_lowest],
+			  		target.pc_highest - target.pc_lowest, 1, bin);
 	}
 }
 
@@ -1550,9 +1557,9 @@ static void asm_pass1(void)
 	for (i = 0; i < FILES_LEVEL_MAX; i++)
 		codeline[i]	= 0;
 
-//	target.addr			= 0;
 	target.pc			= 0x0000;
-	target.mem_size	= 0;
+	target.pc_lowest	= 0xFFFF;
+	target.pc_highest	= 0;
 	target.pc_or		= 0;					/*	No PC Over Range. */
 	type					= LIST_ONLY;
 	asm_pass 			= 0;
@@ -1581,9 +1588,9 @@ static void asm_pass2(void)
 	for (i = 0; i < FILES_LEVEL_MAX; i++)
 		codeline[i]	= 0;
 
-//	target.addr			= 0;
 	target.pc			= 0x0000;
-	target.mem_size	= 0;
+	target.pc_lowest	= 0xFFFF;
+	target.pc_highest	= 0;
 	target.pc_or		= 0;					/*	No PC Over Range. */
 	type					= LIST_ONLY;
 	asm_pass				= 1;
