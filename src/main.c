@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	11 December 2011
+ *	Last modified:	17 December 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -110,7 +110,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 0;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 9;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 6;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 7;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -128,12 +128,12 @@ static int process_option_i(char *text);
 static int process_option_l(char *text);
 static int process_option_o(char *text);
 static int check_set_output_fn(void);
+static int OpenFiles(void);
 static void CloseFiles(void);
 static void RewindFiles(void);
 static void DumpBin(void);
 static void do_asm(void);
 static void PrintList(char *text);
-static int OpenFiles(void);
 static void display_help(void);
 static int src_line_parser(char *text);
 static void AddLabel(char *text);
@@ -175,6 +175,8 @@ char	*in_fn[FILES_LEVEL_MAX];		/*	Input File Name. */
 int	codeline[FILES_LEVEL_MAX];
 
 FILE	*bin;
+FILE	*hex;
+
 int	file_level	= 0;
 
 
@@ -192,8 +194,9 @@ char Image[1024 * 64];
  *	*/
 static char	fn_base[FN_BASE_SIZE];
 
-static char	*list_file	= NULL;
-static char	*bin_file	= NULL;
+static char	*list_file	= NULL;		/*	Listing File name. */
+static char	*bin_file	= NULL;		/*	Binary File name. */
+static char	*hex_file	= NULL;		/*	Intel Hexadecimal File name. */
 
 /*	Single linked list that old all "-I" options.
  *	*/	
@@ -210,7 +213,7 @@ static struct	option_i_t	option_i	= {NULL, NULL};
  *	Description:	Check the New Program Counter value.
  *	Author(s):		Claude Sylvain
  *	Created:			4 December 2011
- *	Last modified:	10 December 2011
+ *	Last modified:	17 December 2011
  *
  *	Parameters:		int count:
  *							Count that will be added to the program counter.
@@ -231,10 +234,14 @@ static void check_new_pc(int count)
 		  	(asm_pass == 1))
 	{
 		if (list != NULL)
-			fprintf(	list, "*** Error %d in \"%s\": Program counter over range (%d)!\n",
+		{
+			fprintf(	list,
+				  		"*** Error %d in \"%s\": Program counter over range (%d)!\n",
 				  		EC_PCOR, in_fn[file_level], target.pc);
+		}
 
-		fprintf(	stderr, "*** Error %d in \"%s\" @%d: Program counter over range (%d)!\n",
+		fprintf(	stderr,
+			  		"*** Error %d in \"%s\" @%d: Program counter over range (%d)!\n",
 			  		EC_PCOR, in_fn[file_level], codeline[file_level], target.pc);
 	}
 }
@@ -463,7 +470,7 @@ static void print_symbols_table(void)
  *	Description:	Open Files.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 March 2011
+ *	Last modified:	17 December 2011
  *	Parameters:		void
  *
  *	Returns:			int:
@@ -477,20 +484,25 @@ static void print_symbols_table(void)
 static int OpenFiles(void)
 {
 	/* Remove old output files, if any.
-	 *	******************************** */
-
-	if (list_file != NULL)
-		remove(list_file);
-
-	remove(bin_file);
+	 *	-------------------------------- */
+	if (list_file != NULL)	remove(list_file);
+	if (bin_file != NULL)	remove(bin_file);
+	if (hex_file != NULL)	remove(hex_file);
 
 
 	/*	Open files.
 	 *	*********** */
 
+	/*	- Open input file.
+	 *	  If not able to open input file, display an error and abort
+	 *	  operation.
+	 *	------------------------------------------------------------ */	  
 	if ((in_fp[0] = fopen(in_fn[0], "r")) == NULL)
   	{
-		fprintf(stderr, "*** Error %d: Can't open input file (\"%s\")!\n", EC_COINF, in_fn[0]);
+		fprintf(	stderr,
+			  		"*** Error %d: Can't open input file (\"%s\")!\n",
+				  	EC_COINF, in_fn[0]);
+
 		return (-1);
 	}
 
@@ -498,13 +510,32 @@ static int OpenFiles(void)
 	 *	----------------------------------------------------------- */	
 	if ((list_file != NULL) && (list = fopen(list_file, "w")) == NULL)
   	{
-		fprintf(stderr, "*** Error %d: Can't open listing file (\"%s\")!\n", EC_COLF, list_file);
+		fprintf(	stderr,
+			  		"*** Error %d: Can't open listing file (\"%s\")!\n",
+				  	EC_COLF, list_file);
+
 		return (-1);
 	}
 
+	/*	Open binary file, and check for error.
+	 *	-------------------------------------- */
 	if ((bin = fopen(bin_file, "wb")) == NULL)
   	{
-		fprintf(stderr, "*** Error %d: Can't open binary file (\"%s\")!\n", EC_COBF, bin_file);
+		fprintf(	stderr,
+			  		"*** Error %d: Can't open binary file (\"%s\")!\n",
+				  	EC_COBF, bin_file);
+
+		return (-1);
+	}
+
+	/*	Open Intel hexadecimal file, and check for error.
+	 *	------------------------------------------------- */
+	if ((hex = fopen(hex_file, "w")) == NULL)
+  	{
+		fprintf(	stderr,
+			  		"*** Error %d: Can't open Intel hexadecimal file (\"%s\")!\n",
+				  	EC_COHF, hex_file);
+
 		return (-1);
 	}
 
@@ -535,7 +566,7 @@ static void RewindFiles(void)
  *	Description:	Close Files.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 March 2011
+ *	Last modified:	17 December 2011
  *	Parameters:		void
  *	Returns:			void
  *
@@ -549,9 +580,10 @@ static void CloseFiles(void)
 {
 	/*	Close files, if necessary.
 	 *	-------------------------- */
-	if (in_fp[0] != NULL)	fclose(in_fp[0]);		/*	Source. */
-	if (list != NULL)			fclose(list);			/*	Listing. */
-	if (bin != NULL)			fclose(bin);			/*	Binary. */
+	if (in_fp[0] != NULL)	fclose(in_fp[0]);		/*	Source file. */
+	if (list != NULL)			fclose(list);			/*	Listing file. */
+	if (bin != NULL)			fclose(bin);			/*	Binary file. */
+	if (hex != NULL)			fclose(hex);			/*	Intel Hexadecimal file. */
 }
 
 
@@ -560,7 +592,7 @@ static void CloseFiles(void)
  *	Description:	Break down a source line.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	17 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -647,9 +679,15 @@ static int src_line_parser(char *text)
 						msg_displayed	= 1;	/*	No more message. */
 
 						if (list != NULL)
-							fprintf(list, "*** Error %d in \"%s\": Label too long (\"%s\")!\n", EC_LTL, in_fn[file_level], label);
+						{
+							fprintf(	list,
+								  		"*** Error %d in \"%s\": Label too long (\"%s\")!\n",
+									  	EC_LTL, in_fn[file_level], label);
+						}
 
-						fprintf(stderr, "*** Error %d in \"%s\" @%d: Label too long (\"%s\")!\n", EC_LTL, in_fn[file_level], codeline[file_level], label);
+						fprintf(	stderr,
+							  		"*** Error %d in \"%s\" @%d: Label too long (\"%s\")!\n",
+								  	EC_LTL, in_fn[file_level], codeline[file_level], label);
 					}
 				}
 			}
@@ -661,9 +699,15 @@ static int src_line_parser(char *text)
 			if (asm_pass == 1)
 			{
 				if (list != NULL)
-					fprintf(list, "*** Error %d in \"%s\": Non ASCII character ('%c')!\n", EC_NAC, in_fn[file_level], *text);
+				{
+					fprintf(	list,
+						  		"*** Error %d in \"%s\": Non ASCII character ('%c')!\n",
+							  	EC_NAC, in_fn[file_level], *text);
+				}
 
-				fprintf(stderr, "*** Error %d in \"%s\" @%d: Non ASCII character ('%c')!\n", EC_NAC, in_fn[file_level], codeline[file_level], *text);
+				fprintf(	stderr,
+					  		"*** Error %d in \"%s\" @%d: Non ASCII character ('%c')!\n",
+						  	EC_NAC, in_fn[file_level], codeline[file_level], *text);
 			}
 
 			/*	Flush non ASCII characters.
@@ -726,9 +770,15 @@ static int src_line_parser(char *text)
 					msg_displayed	= 1;	/*	No more message. */
 
 					if (list != NULL)
-						fprintf(list, "*** Error %d in \"%s\": Keyword too long (\"%s\")!\n", EC_KTL, in_fn[file_level], keyword);
+					{
+						fprintf(	list,
+							  		"*** Error %d in \"%s\": Keyword too long (\"%s\")!\n",
+								  	EC_KTL, in_fn[file_level], keyword);
+					}
 
-					fprintf(stderr, "*** Error %d in \"%s\" @%d: Keyword too long (\"%s\")!\n", EC_KTL, in_fn[file_level], codeline[file_level], keyword);
+					fprintf(	stderr,
+						  		"*** Error %d in \"%s\" @%d: Keyword too long (\"%s\")!\n",
+							  	EC_KTL, in_fn[file_level], codeline[file_level], keyword);
 				}
 			}
 		}
@@ -765,9 +815,15 @@ static int src_line_parser(char *text)
 						msg_displayed	= 1;	/*	No more message. */
 
 						if (list != NULL)
-							fprintf(list, "*** Error %d in \"%s\": Equation too long (\"%s\")!\n", EC_ETL, in_fn[file_level], Equation);
+						{
+							fprintf(	list,
+								  		"*** Error %d in \"%s\": Equation too long (\"%s\")!\n",
+									  	EC_ETL, in_fn[file_level], Equation);
+						}
 
-						fprintf(stderr, "*** Error %d in \"%s\" @%d: Equation too long (\"%s\")!\n", EC_ETL, in_fn[file_level], codeline[file_level], Equation);
+						fprintf(	stderr,
+							  		"*** Error %d in \"%s\" @%d: Equation too long (\"%s\")!\n",
+								  	EC_ETL, in_fn[file_level], codeline[file_level], Equation);
 					}
 				}
 			}
@@ -842,9 +898,15 @@ static int src_line_parser(char *text)
 				if (asm_pass == 1)
 				{
 					if (list != NULL)
-						fprintf(list, "*** Error %d in \"%s\": Can't find keyword \"%s\"!\n", EC_CNFK, in_fn[file_level], keyword);
+					{
+						fprintf(	list,
+							  		"*** Error %d in \"%s\": Can't find keyword \"%s\"!\n",
+								  	EC_CNFK, in_fn[file_level], keyword);
+					}
 
-					fprintf(stderr, "*** Error %d in \"%s\" @%d: Can't find keyword \"%s\"!\n", EC_CNFK, in_fn[file_level], codeline[file_level], keyword);
+					fprintf(	stderr,
+						  		"*** Error %d in \"%s\" @%d: Can't find keyword \"%s\"!\n",
+							  	EC_CNFK, in_fn[file_level], codeline[file_level], keyword);
 				}
 			}
 		}
@@ -868,7 +930,7 @@ static int src_line_parser(char *text)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	17 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -995,6 +1057,7 @@ static void PrintList(char *text)
 			{
 				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
 					  		target.pc, text);
+
 				fprintf(list, "            ");
 			}
 
@@ -1005,7 +1068,7 @@ static void PrintList(char *text)
 				if ((type == LIST_BYTES) || (type == LIST_STRINGS))
 				{
 					if (list != NULL)
-						fprintf(list, "%02X ", (LStack->word & 0xff));
+						fprintf(list, "%02X ", (LStack->word & 0xFF));
 
 					space += 3;
 				}
@@ -1014,7 +1077,7 @@ static void PrintList(char *text)
 				else
 				{
 					if (list != NULL)
-						fprintf(list, "%04X ", LStack->word & 0xffff);
+						fprintf(list, "%04X ", LStack->word & 0xFFFF);
 
 					space				+= 5;
 				}
@@ -1050,27 +1113,18 @@ static void PrintList(char *text)
 
 /*	*************************************************************************
  *	Function name:	ProcessDumpBin
- *	Description:
+ *	Description:	Process Dump of Binary code.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	11 December 2011
+ *	Last modified:	17 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
+ *
  *	Notes:
- *
- *	- This code needs to handle target address for the binary.
- *	  When the assembler finds an 'org' statement, we should set
- *	  the output address to 'org' and process a block of binary
- *	  that goes to that 'org' address.  
- *
- *	- Things that control this are, 'org' and 'end'.  The first
- *	  bytes out, will be to the 'org' address or zero if 'org' is
- *	  not issued.  We will continue to push bytes until a new
- *	  'org' is processed or until 'end' is processed.
- *
- *	- The header will have {short count}{short addr} followed by
- *	  count bytes.
+ *						- This function is called on end of assembler pass #2,
+ *						  and dump all significant target bytes to the
+ *						  binary file.
  *	************************************************************************* */
 
 void ProcessDumpBin(void)
@@ -1080,13 +1134,100 @@ void ProcessDumpBin(void)
 	if ((target.pc_highest > 0) && (asm_pass == 1))
 	{
 		/*	Write binary.
-		 *	------------- */
-#if USE_BINARY_HEADER
-		fwrite(&target, sizeof (TARG), 1, bin);		/*	Code size and base address. */
-#endif
-//		fwrite(&Image, target.pc_highest, 1, bin);	/*	Code. */
+		 *	*/
 		fwrite(	&Image[target.pc_lowest],
 			  		target.pc_highest - target.pc_lowest, 1, bin);
+	}
+}
+
+
+/*	*************************************************************************
+ *	Function name:	ProcessDumpHex
+ *	Description:	Process Dump of Intel Hexadecimal code.a
+ *	Author(s):		Claude Sylvain
+ *	Created:			17 December 2011
+ *	Last modified:
+ *
+ *	Parameters:		char end_of_asm:
+ *							0	: This is not the End Of Assembly process.
+ *							1	: This is the End Of Assembly process.
+ *
+ *	Returns:			void
+ *	Globals:
+ *
+ *	Notes:
+ * 					- This function is called every time an "ORG"
+ * 					  directive is found, and at end of the
+ * 					  assembly pass #2.
+ *	************************************************************************* */
+
+void ProcessDumpHex(char end_of_asm)
+{
+	/*	- Process Intel hexadecimal object file only if there is something
+	 *	  to process.
+	 *	------------------------------------------------------------------ */
+	if ((target.pc > target.pc_org) && (asm_pass == 1))
+	{
+		int		addr			= target.pc_org;
+		int		i;
+		int		byte_count;
+		uint8_t	checksum;
+		char		string[5];
+
+		/*	Process target bytes.
+		 *	--------------------- */
+		while (addr < target.pc)
+		{
+			/*	Set bytes count.
+			 *	---------------- */
+			if ((target.pc - addr) >= 16)
+				byte_count	= 16;
+			else
+				byte_count	= target.pc - addr;
+
+			checksum	= 0x00;							/*	Reset checksum. */
+
+			fprintf(hex, ":");						/*	Start code. */
+
+			/*	Process byte count.
+			 *	------------------- */
+			checksum	+= (uint8_t) byte_count;
+			byte_to_hex((uint8_t) byte_count, string);
+			fprintf(hex, "%s", string);
+
+			/*	Process address.
+			 *	---------------- */
+			checksum	+= (uint8_t) (addr >> 8);		/*	Address MSB part. */
+			checksum	+= (uint8_t) (addr & 0xFF);	/*	Address LSB part. */
+			word_to_hex((uint16_t) addr, string);
+			fprintf(hex, "%s", string);
+
+			fprintf(hex, "00");							/*	Record type. */
+
+			/*	Process "Data" field.
+			 *	--------------------- */
+			for (i = 0; i < byte_count; ++i)
+			{
+				checksum	+= Image[addr + i];
+
+				byte_to_hex(Image[addr + i], string);
+				fprintf(hex, "%s", string);
+			}
+
+			/*	Process checksum field.
+			 *	----------------------- */
+			checksum	= ~checksum + 1;			/*	Two's complement. */
+			byte_to_hex(checksum, string);
+			fprintf(hex, "%s\n", string);
+
+			addr	+= byte_count;					/*	Update byte location. */
+		}
+
+		/*	- If this is the end of assembly process, put the End Of File
+		 *	  record in the hex file.
+		 *	------------------------------------------------------------- */	  
+		if (end_of_asm != 0)
+			fprintf(hex, ":00000001FF\n");
 	}
 }
 
@@ -1096,7 +1237,7 @@ void ProcessDumpBin(void)
  *	Description:	Assemble source file.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	17 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1161,6 +1302,7 @@ static void do_asm(void)
 			else
 			{
 				ProcessDumpBin();
+				ProcessDumpHex(1);
 
 				/*	Print symbols table, if necessary.
 				 *	---------------------------------- */	
@@ -1199,9 +1341,15 @@ static void do_asm(void)
 			if (asm_pass == 1)
 			{
 				if (list != NULL)
-					fprintf(list, "*** Error %d in \"%s\": Line too long!\n", EC_SLTL, in_fn[file_level]);
+				{
+					fprintf(	list,
+						  		"*** Error %d in \"%s\": Line too long!\n",
+							  	EC_SLTL, in_fn[file_level]);
+				}
 
-				fprintf(stderr, "*** Error %d in \"%s\" @%d: Line too long!\n", EC_SLTL, in_fn[file_level], codeline[file_level]);
+				fprintf(	stderr,
+					  		"*** Error %d in \"%s\" @%d: Line too long!\n",
+						  	EC_SLTL, in_fn[file_level], codeline[file_level]);
 			}
 		}
 
@@ -1238,13 +1386,20 @@ static void do_asm(void)
 			if ((file_level > 0) && (asm_pass == 1))
 			{
 				if (list != NULL)
-					fprintf(list, "*** Warning %d in \"%s\": 'END' directive found inside an include file!\n", WC_EDFIIF, in_fn[file_level]);
+				{
+					fprintf(	list,
+						  		"*** Warning %d in \"%s\": 'END' directive found inside an include file!\n",
+							  	WC_EDFIIF, in_fn[file_level]);
+				}
 
-				fprintf(stderr, "*** Warning %d in \"%s\" @%d: 'END' directive found inside an include file!\n", WC_EDFIIF, in_fn[file_level], codeline[file_level]);
+				fprintf(	stderr,
+					  		"*** Warning %d in \"%s\" @%d: 'END' directive found inside an include file!\n",
+						  	WC_EDFIIF, in_fn[file_level], codeline[file_level]);
 			}
 
 			PrintList(p_text);
 			ProcessDumpBin();
+			ProcessDumpHex(1);
 
 			/*	Print symbols table, if necessary.
 			 *	---------------------------------- */	
@@ -1295,7 +1450,7 @@ static void do_asm(void)
  *	Description:		Display Help.
  *	Author(s):			Jay Cotton, Claude Sylvain
  *	Created:				2007
- *	Last modified:		26 March 2011
+ *	Last modified:		17 December 2011
  *	Parameters:			void
  *	Returns:				void
  *	Globals:
@@ -1309,7 +1464,7 @@ static void display_help(void)
 	printf("  -h           : Display Help.\n");
 	printf("  -I<dir>      : Add directory to the include file search path.\n");
 	printf("  -l<filename> : Generate listing file.\n");
-	printf("  -o<filename> : Define output file (optionnal).\n");
+	printf("  -o<filename> : Define output files (optionnal).\n");
 	printf("  -v           : Display version.\n");
 }
 
@@ -1338,7 +1493,7 @@ static void display_version(void)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	17 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -1385,10 +1540,14 @@ static void AddLabel(char *text)
 				 *	  So, we have to tell where is the error, by adding the
 				 *	  line number to the print out.
 				 *	*/
-				fprintf(list, "*** Error %d in \"%s\" @%d: Duplicate Label (%s)!\n", EC_DL, in_fn[file_level], codeline[file_level], label);
+				fprintf(	list,
+					  		"*** Error %d in \"%s\" @%d: Duplicate Label (%s)!\n",
+						  	EC_DL, in_fn[file_level], codeline[file_level], label);
 			}
 
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Duplicate Label (%s)!\n", EC_DL, in_fn[file_level], codeline[file_level], label);
+			fprintf(	stderr,
+				  		"*** Error %d in \"%s\" @%d: Duplicate Label (%s)!\n",
+					  	EC_DL, in_fn[file_level], codeline[file_level], label);
 		}
 
 		return;
@@ -1414,7 +1573,7 @@ static void AddLabel(char *text)
  *	Description:	Dump Binary.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	17 December 2011
  *	Parameters:		void
  *	Returns:			void
  *
@@ -1502,11 +1661,13 @@ static void DumpBin(void)
 					Image[target.pc]	= LStack->word & 0xFF;
 					update_pc(1);
 				}
+				/*	Assuming "LIST_WORDS".
+				 *	---------------------- */
 				else
 				{
-					Image[target.pc]	= LStack->word & 0x00FF;
+					Image[target.pc]	= (char) (LStack->word >> 8);
 					update_pc(1);
-					Image[target.pc]	= (LStack->word & 0xFF00) >> 8;
+					Image[target.pc]	= (char) (LStack->word & 0xFF);
 					update_pc(1);
 				}
 
@@ -1543,7 +1704,7 @@ static void DumpBin(void)
  *	Description:	Assembler Pass #1.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	11 December 2011
+ *	Last modified:	17 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1558,6 +1719,7 @@ static void asm_pass1(void)
 		codeline[i]	= 0;
 
 	target.pc			= 0x0000;
+	target.pc_org		= 0x0000;
 	target.pc_lowest	= 0xFFFF;
 	target.pc_highest	= 0;
 	target.pc_or		= 0;					/*	No PC Over Range. */
@@ -1574,7 +1736,7 @@ static void asm_pass1(void)
  *	Description:	Assembler Pass #2.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	11 December 2011
+ *	Last modified:	17 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1589,6 +1751,7 @@ static void asm_pass2(void)
 		codeline[i]	= 0;
 
 	target.pc			= 0x0000;
+	target.pc_org		= 0x0000;
 	target.pc_lowest	= 0xFFFF;
 	target.pc_highest	= 0;
 	target.pc_or		= 0;					/*	No PC Over Range. */
@@ -1715,7 +1878,7 @@ static int process_option_i(char *text)
  *	Description:	Process Option "-l".
  *	Author(s):		Claude Sylvain
  *	Created:			26 March 2011
- *	Last modified:	26 November 2011
+ *	Last modified:	17 December 2011
  *
  *	Parameters:		char *text:
  *							Pointer to text that hold "-l" option.
@@ -1740,8 +1903,13 @@ static int process_option_l(char *text)
 	 *	--------------------------------------------------------------------- */	
 	if (list_file != NULL)
 	{
-		fprintf(stderr, "*** Warning %d: Extra \"-l\" option specified (\"%s\")!\n", WC_ELOS, text);
-		fprintf(stderr, "                This option will be ignored!\n");
+		fprintf(	stderr,
+			  		"*** Warning %d: Extra \"-l\" option specified (\"%s\")!\n",
+				  	WC_ELOS, text);
+		
+		fprintf(	stderr,
+			  		"    This option will be ignored!\n");
+
 		return (-1);
 	}
 
@@ -1843,8 +2011,12 @@ static int process_option_l(char *text)
 		{
 			char	*default_lst_file_name	= "a.lst";
 
-			fprintf(stderr, "*** Warning %d: No input file specified at time \"-l\" option was processed!\n", WC_NIFSATLOP);
-			fprintf(stderr, "                Using default name (\"a.lst\")!\n");
+			fprintf(	stderr,
+				  		"*** Warning %d: No input file specified at time \"-l\" option was processed!\n",
+					  	WC_NIFSATLOP);
+
+			fprintf(	stderr,
+				  		"    Using default name (\"a.lst\")!\n");
 
 			/*	Allocate memory for the listing file name.
 			 *	*/
@@ -1873,7 +2045,7 @@ static int process_option_l(char *text)
  *	Description:	Process Option "-o".
  *	Author(s):		Claude Sylvain
  *	Created:			26 March 2011
- *	Last modified:	26 November 2011
+ *	Last modified:	17 December 2011
  *
  *	Parameters:		char *text:
  *							Pointer to text that hold "-o" option.
@@ -1883,6 +2055,7 @@ static int process_option_l(char *text)
  *							0	: Operation successfull.
  *
  *	Globals:			char	*bin_file
+ *						char	*hex_file
  *
  *	Notes:
  *	************************************************************************* */
@@ -1897,10 +2070,15 @@ static int process_option_o(char *text)
 
 	/*	If an "-o" option already processed, alert user, and exit with error.
 	 *	--------------------------------------------------------------------- */	
-	if (bin_file != NULL)
+	if ((bin_file != NULL) || (hex_file != NULL))
 	{
-		fprintf(stderr, "*** Warning %d: Extra \"-o\" option specified (\"%s\")!\n", WC_EOOS, text);
-		fprintf(stderr, "                This option will be ignored!\n");
+		fprintf(	stderr,
+			  		"*** Warning %d: Extra \"-o\" option specified (\"%s\")!\n",
+				  	WC_EOOS, text);
+
+		fprintf(	stderr,
+			  		"    This option will be ignored!\n");
+
 		return (-1);
 	}
 
@@ -1926,69 +2104,76 @@ static int process_option_o(char *text)
 			}
 		}
 
-		/*	- If a file extension is present, init. output file name
-		 *	  without adding an extension.
-		 *	-------------------------------------------------------- */
-		if (dot_pos > 0)
+		/*	- If a file name extension is present, hack the file name
+		 *	  to remove the file name extension.
+		 *	--------------------------------------------------------- */
+		if (dot_pos > 0)	
 		{
-			/*	Allocate memory for the binary file name.
-			 *	*/
-			bin_file	= (char *) malloc(string_len + 1);
+			fprintf(	stderr,
+				  		"*** Warning %d: Output file name have an extension (\"%s\")!\n",
+					  	WC_OFNHE, text);
 
-			/*	Built binary file name, if possible.
-			 *	------------------------------------ */	
-			if (bin_file != NULL)
-			{
-				strcpy(bin_file, text);
-				rv	= 0;		/*	Success! */
-			}
-			else
-			{
-				fprintf(stderr, msg_cam, EC_CAM);
-			}
+			fprintf(	stderr,
+				  		"    The extension will be ignored!\n");
+
+			text[dot_pos]	= '\0';
+			string_len		= strlen(text);
 		}
-		/*	- No file extension is present, init. binary file name,
-		 *	  and add an extension to it.
-		 *	------------------------------------------------------- */	 
+
+		/*	Allocate memory for the binary file name.
+		 *	*/
+		bin_file	= (char *) malloc(string_len + 4 + 1);
+
+		/*	Allocate memory for the Intel hexadecimal file name.
+		 *	*/
+		hex_file	= (char *) malloc(string_len + 4 + 1);
+
+		/*	Built binary file name, if possible.
+		 *	------------------------------------ */	
+		if ((bin_file != NULL) && (hex_file != NULL))
+		{
+			strcpy(bin_file, text);
+			strcat(bin_file, ".bin");
+
+			strcpy(hex_file, text);
+			strcat(hex_file, ".hex");
+
+			rv	= 0;		/*	Success! */
+		}
 		else
 		{
-			/*	Allocate memory for the binary file name.
-			 *	*/
-			bin_file	= (char *) malloc(string_len + 4 + 1);
-
-			/*	Built binary file name, if possible.
-			 *	------------------------------------ */	
-			if (bin_file != NULL)
-			{
-				strcpy(bin_file, text);
-				strcat(bin_file, ".bin");
-				rv	= 0;		/*	Success! */
-			}
-			else
-			{
-				fprintf(stderr, msg_cam, EC_CAM);
-			}
+			fprintf(stderr, msg_cam, EC_CAM);
 		}
 	}
 	/*	- No binary file name follow "-o" option, use the input
-	 *	  file base name as the binary base file name.
+	 *	  file base name as the binary base file name and Intel
+	 *	  hexadecimal base file name.
  	 *	------------------------------------------------------- */
 	else
 	{
-		/*	If input file base name exist, use it as binary base file name.
-		 *	--------------------------------------------------------------- */	
+		/*	- If input file base name exist, use it as binary base file
+		 *	  name and Intel hexadecimal base file name.
+		 *	----------------------------------------------------------- */	
 		if (strlen(fn_base) > 0)
 		{
 			/*	Allocate memory for the binary file name.
 			 *	*/
 			bin_file	= (char *) malloc(strlen(fn_base) + 4 + 1);
 
-			/*	Built binary file name, if possible.
-			 *	------------------------------------ */	
-			if (bin_file != NULL)
+			/*	Allocate memory for the Intel hexadecimal file name.
+			 *	*/
+			hex_file	= (char *) malloc(strlen(fn_base) + 4 + 1);
+
+			/*	Built binary and Intel hexadecimal file names, if possible.
+			 *	----------------------------------------------------------- */	
+			if ((bin_file != NULL) && (hex_file != NULL))
 			{
 				strcpy(bin_file, fn_base);
 				strcat(bin_file, ".bin");
+
+				strcpy(hex_file, fn_base);
+				strcat(hex_file, ".hex");
+
 				rv	= 0;		/*	Success! */
 			}
 			else
@@ -1996,24 +2181,37 @@ static int process_option_o(char *text)
 				fprintf(stderr, msg_cam, EC_CAM);
 			}
 		}
-		/*	No input file base name exist, use default binary file name.
-		 *	------------------------------------------------------------ */	
+		/*	- No input file base name exist, use default binary file
+		 *	  name and Intel hexadecimal file name.
+		 *	-------------------------------------------------------- */	
 		else
 		{
 			char	*default_bin_file_name	= "a.bin";
+			char	*default_hex_file_name	= "a.hex";
 
-			fprintf(stderr, "*** Warning %d: No input file specified at time \"-o\" option was processed!\n", WC_NIFSATOOP);
-			fprintf(stderr, "                Using default name (\"a.bin\")!\n");
+			fprintf(	stderr,
+				  		"*** Warning %d: No input file specified at time \"-o\" option was processed!\n",
+				  		WC_NIFSATOOP);
+
+			fprintf(	stderr,
+				  		"    Using default names (\"a.bin, a.hex\")!\n");
 
 			/*	Allocate memory for the binary file name.
 			 *	*/
 			bin_file	= (char *) malloc(strlen(default_bin_file_name) + 1);
 
-			/*	Built binary file name, if possible.
-			 *	------------------------------------ */	
-			if (bin_file != NULL)
+			/*	Allocate memory for the Intel hexadecimal file name.
+			 *	*/
+			hex_file	= (char *) malloc(strlen(default_hex_file_name) + 1);
+
+			/*	- Built binary file name and Intel hexadecimal
+			 *	  file name, if possible.
+			 *	---------------------------------------------- */	
+			if ((bin_file != NULL) && (hex_file != NULL))
 			{
 				strcpy(bin_file, default_bin_file_name);
+				strcpy(hex_file, default_hex_file_name);
+
 				rv	= 0;		/*	Success! */
 			}
 			else
@@ -2029,10 +2227,10 @@ static int process_option_o(char *text)
 
 /*	*************************************************************************
  *	Function name:	check_set_output_fn
- *	Description:	Check Output File Name, and Set it if necessary.
+ *	Description:	Check Output Files Names, and Set them if necessary.
  *	Author(s):		Claude Sylvain
  *	Created:			26 March 2011
- *	Last modified:
+ *	Last modified:	17 December 2011
  *	Parameters:		void
  *
  *	Returns:			int:
@@ -2046,17 +2244,24 @@ static int process_option_o(char *text)
 
 static int check_set_output_fn(void)
 {
-	int	rv	= -1;		/*	Return Value (default == -1). */
+	int	rv	= 0;		/*	Return Value (default == 0). */
 
+	/*	- If No input file specified, and no "-o" option specified,
+	 *	  this is a fatal error, and must be handled carefully
+	 *	  by the caller (main())!
+	 *	----------------------------------------------------------- */	 
+	if (strlen(fn_base) == 0)
+	{
+		fprintf(	stderr,
+					"*** Error %d: No input file and no \"-o\" option specified!\n",
+					EC_NIFSNOOS);
 
-	/*	If binary file name already set, do nothing.
-	 *	-------------------------------------------- */	
-	if (bin_file != NULL)
-		return (0);
+		return (-1);
+	}
 
-	/*	If input file base name exist, use it as binary base file name.
-	 *	--------------------------------------------------------------- */	
-	if (strlen(fn_base) > 0)
+	/*	Set binary file name, if not already set.
+	 *	----------------------------------------- */
+	if (bin_file == NULL)
 	{
 		/*	Allocate memory for the binary file name.
 		 *	*/
@@ -2068,22 +2273,34 @@ static int check_set_output_fn(void)
 		{
 			strcpy(bin_file, fn_base);
 			strcat(bin_file, ".bin");
-			rv	= 0;		/*	Success! */
 		}
 		else
 		{
 			fprintf(stderr, "*** Error %d: Can't allocate memory!\n", EC_CAM);
+			rv	= -1;
 		}
 	}
-	/*	- No input file specified, and no "-o" option specified.
-	 *	- This is a fatal error, and must be handled carefully
-	 *	  by the caller (main())!
- 	 *	-------------------------------------------------------- */	 
-	else
+
+	/*	Set Intel hexadecimal file name, if not already set.
+	 *	---------------------------------------------------- */
+	if (hex_file == NULL)
 	{
-		fprintf(	stderr,
-			  		"*** Error %d: No input file and no \"-o\" option specified!\n",
-				  	EC_NIFSNOOS);
+		/*	Allocate memory for the Intel hexadecimal file name.
+		 *	*/
+		hex_file	= (char *) malloc(strlen(fn_base) + 4 + 1);
+
+		/*	Built Intel hexadecimal file name, if possible.
+		 *	----------------------------------------------- */	
+		if (hex_file != NULL)
+		{
+			strcpy(hex_file, fn_base);
+			strcat(hex_file, ".hex");
+		}
+		else
+		{
+			fprintf(stderr, "*** Error %d: Can't allocate memory!\n", EC_CAM);
+			rv	= -1;
+		}
 	}
 
 	return (rv);
@@ -2095,7 +2312,7 @@ static int check_set_output_fn(void)
  *	Description:	Clean Up before exiting.
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	26 March 2011
+ *	Last modified:	17 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -2133,6 +2350,7 @@ static void clean_up(void)
 	{
 		p_option_i_cur		= p_option_i_next;
 		p_option_i_next	= p_option_i_cur->next;
+
 		free(p_option_i_cur->path);
 		free(p_option_i_cur);
 	}
@@ -2142,6 +2360,7 @@ static void clean_up(void)
 	free(list_file);
 
 	free(bin_file);
+	free(hex_file);
 }
 
 
@@ -2150,7 +2369,7 @@ static void clean_up(void)
  *	Description:	Process Input File.
  *	Author(s):		Claude Sylvain
  *	Created:			31 December 2010
- *	Last modified:	27 March 2011
+ *	Last modified:	17 December 2011
  *
  *	Parameters:		char *text:
  *							Pointer to text that hold input file.
@@ -2179,8 +2398,13 @@ static int process_input_file(char *text)
 	 *	------------------------------------------------- */	
 	if (if_processed)
 	{
-		fprintf(stderr, "*** Error %d: Extra Input file specified (\"%s\")!\n", EC_EIFS, text);
-		fprintf(stderr, "              This file will be ignored!\n");
+		fprintf(	stderr,
+			  		"*** Error %d: Extra Input file specified (\"%s\")!\n",
+				  	EC_EIFS, text);
+
+		fprintf(	stderr,
+			  		"    This file will be ignored!\n");
+
 		return (-1);
 	}
 
@@ -2211,7 +2435,10 @@ static int process_input_file(char *text)
 		}
 		else
 		{
-			fprintf(stderr, "*** Error %d: Input file name too long (\"%s\")!\n", EC_IFNTL, text);
+			fprintf(	stderr,
+				  		"*** Error %d: Input file name too long (\"%s\")!\n",
+					  	EC_IFNTL, text);
+
 			return (-1);
 		}
 	}
@@ -2229,7 +2456,10 @@ static int process_input_file(char *text)
 		}
 		else
 		{
-			fprintf(stderr, "*** Error %d: Input file name too long (\"%s\")!\n", EC_IFNTL, text);
+			fprintf(	stderr,
+				  		"*** Error %d: Input file name too long (\"%s\")!\n",
+					  	EC_IFNTL, text);
+
 			return (-1);
 		}
 	}

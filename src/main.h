@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	17 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -111,6 +111,7 @@ extern SYMBOL	*Symbols;
 
 int get_file_from_path(char *fn, char* fn_path, size_t fn_path_size);
 void ProcessDumpBin(void);
+void ProcessDumpHex(char end_of_asm);
 
 
 

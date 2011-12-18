@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	4 December 2011
+ *	Last modified:	17 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -60,7 +60,8 @@ char *AdvancePast(char *text, char x);
 char *AdvanceToAscii(char *text);
 char *AdvancePastSpace(char *text);
 int util_is_cs_enable(void);
-
+void byte_to_hex(uint8_t byte, char *string);
+void word_to_hex(uint16_t word, char *string);
 
 
 #endif

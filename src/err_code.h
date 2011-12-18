@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	4 December 2011
+ *	Last modified:	17 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -90,6 +90,7 @@
 #define 	EC_FLBOF			45		/*	"FindLabel()" Buffer OverFlow. */
 #define 	EC_RNA			46		/*	Register Not Allowed. */
 #define 	EC_NIFSNOOS		47		/*	No Input File Specified; No "-o" Option Specified. */
+#define 	EC_COHF			48		/*	Can't Open Intel Hexadecimal File. */
 
 
 

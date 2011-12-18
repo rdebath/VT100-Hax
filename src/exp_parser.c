@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	10 December 2011
+ *	Last modified:	17 December 2011
  *
  *	Notes:			- This module implement an expression parser using
  *						  DAL (Direct Algebraic Logic) format.
@@ -725,7 +725,7 @@ static int remove_stack(void)
  *	Description:	DAL (Direct Algebraic Logic) Expression Parser.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	17 December 2011
  *
  *	Parameters:		char *text:
  *							- Point to a string that hold expression to parse
@@ -797,9 +797,15 @@ static int dalep(char *text)
 					if (asm_pass == 1)
 					{
 						if (list != NULL)
-							fprintf(list, "*** Error %d in \"%s\": No matching ')'!\n", EC_NMEP, in_fn[file_level]);
+						{
+							fprintf(	list,
+								  		"*** Error %d in \"%s\": No matching ')'!\n",
+									  	EC_NMEP, in_fn[file_level]);
+						}
 
-						fprintf(stderr, "*** Error %d in \"%s\" @%d: No matching ')'!\n", EC_NMEP, in_fn[file_level], codeline[file_level]);
+						fprintf(	stderr,
+							  		"*** Error %d in \"%s\" @%d: No matching ')'!\n",
+								  	EC_NMEP, in_fn[file_level], codeline[file_level]);
 					}
 				}
 				/*	Bypass matching ')'.
@@ -948,9 +954,15 @@ static int dalep(char *text)
 								if (asm_pass == 1)
 								{
 									if (list != NULL)
-										fprintf(list, "*** Error %d in \"%s\": Label not found (%s)!\n", EC_LNF, in_fn[file_level], label);
+									{
+										fprintf(	list,
+											  		"*** Error %d in \"%s\": Label not found (%s)!\n",
+												  	EC_LNF, in_fn[file_level], label);
+									}
 
-									fprintf(stderr, "*** Error %d in \"%s\" @%d: Label not found (%s)!\n", EC_LNF, in_fn[file_level], codeline[file_level], label);
+									fprintf(	stderr,
+										  		"*** Error %d in \"%s\" @%d: Label not found (%s)!\n",
+											  	EC_LNF, in_fn[file_level], codeline[file_level], label);
 								}
 
 								return (0);
@@ -970,9 +982,15 @@ static int dalep(char *text)
 						if (asm_pass == 1)
 						{
 							if (list != NULL)
-								fprintf(list, "*** Error %d in \"%s\": Missing field!\n", EC_MF, in_fn[file_level]);
+							{
+								fprintf(	list,
+									  		"*** Error %d in \"%s\": Missing field!\n",
+										  	EC_MF, in_fn[file_level]);
+							}
 
-							fprintf(stderr, "*** Error %d in \"%s\" @%d: Missing field!\n", EC_MF, in_fn[file_level], codeline[file_level]);
+							fprintf(	stderr,
+								  		"*** Error %d in \"%s\" @%d: Missing field!\n",
+									  	EC_MF, in_fn[file_level], codeline[file_level]);
 						}
 
 						return (0);

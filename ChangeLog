@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	10 December 2011
+Last modified:	17 December 2011
 Notes:
 *******************************************************************************
 
@@ -428,7 +428,30 @@ Notes:		- Program Counter management improvement.  Now, PC is
 		  can handle more levels.
 
 		- Now, can built "test/als8.asm" successfully.
+
+		- Binary object file (.bin) do not have multiple code sections
+		  anymore.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		17 December 2011
+By:		Claude Sylvain
+Version:	0.9.7
+
+Notes:		- Removed "USE_BINARY_HEADER" option and all associated
+		  code, because "header" is usually not emmbedded in
+		  binary object file.  Futhermore, support of multi-code
+		  sections in binary object file have been removed in
+		  asm8080 V0.9.6.
+
+		- Added Intel hexadecimal object file support.
+
+		- Updated the user manual (v0.9.4).
+
+		- In "main.c", in "DumpBin()", "LIST_WORDS" was not
+		  handled properly (MSB, LSB inverted).
+-------------------------------------------------------------------------------
+
 
 
 

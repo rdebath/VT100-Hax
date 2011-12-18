@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	11 December 2011
+ *	Last modified:	17 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -41,10 +41,6 @@
 /*	*************************************************************************
  *											  CONSTANTS
  *	************************************************************************* */
-
-/*	Define to "1", to include an header in the binary file.
- *	*/	
-#define USE_BINARY_HEADER			0
 
 /*	Symbol Maximum Size.
  *	*/	
@@ -106,11 +102,10 @@ typedef struct Instructions
 typedef struct targ
 {
 	int	pc;			/*	Program Counter. */
+	int	pc_org;		/*	Program Counter, value set by "ORG" directive. */
 	int	pc_lowest;	/*	Program Counter, Lowest value. */
 	int	pc_highest;	/*	Program Counter, Highest value. */
-//	int	mem_size;	/*	Memory Size. */
 	char	pc_or;		/*	Program Counter Over Range (0=No OR, 1=OR). */
-//	short	addr;
 } TARG;
 
 

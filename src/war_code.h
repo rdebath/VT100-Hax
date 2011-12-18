@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	26 March 2011
+ *	Last modified:	17 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -48,6 +48,7 @@
 #define	WC_EOOS			3		/* Extra "-o" Option Specified. */
 #define	WC_NIFSATLOP	4		/* No Input File Specified At Time "-l" Option was Processed. */
 #define	WC_NIFSATOOP	5		/* No Input File Specified At Time "-o" Option was Processed. */
+#define	WC_OFNHE			6		/*	Output File Name Have an Extension. */
 
 
 

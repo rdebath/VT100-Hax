@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	11 December 2011
+ *	Last modified:	17 December 2011
  * Notes:
  *	************************************************************************* */
 
@@ -364,7 +364,7 @@ static int proc_db(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	17 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -397,9 +397,11 @@ static int proc_dw(char *label, char *equation)
 	if (Local)
 		Local->Symbol_Value = target.pc;
 
+#if 0
 	b1		= target.pc & 0x00ff;
 	b2		= (target.pc & 0xff00) >> 8;
 	value	= 0;
+#endif
 
 	/* The list could be strings, labels, or digits. */
 
@@ -456,8 +458,11 @@ static int proc_dw(char *label, char *equation)
 					if (asm_pass == 1)
 					{
 						if (list != NULL)
+						{
 							fprintf(	list,
-								  		"*** Warning %d in \"%s\": Missing quote!\n", WC_MQ, in_fn[file_level]);
+								  		"*** Warning %d in \"%s\": Missing quote!\n",
+									  	WC_MQ, in_fn[file_level]);
+						}
 
 						fprintf(	stderr,
 							  		"*** Warning %d in \"%s\" @%d: Missing quote!\n",
@@ -912,7 +917,7 @@ static int proc_equ(char *label, char *equation)
  *	Description:	ORG directive Processing.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	11 December 2011
+ *	Last modified:	17 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -934,6 +939,12 @@ static int proc_org(char *label, char *equation)
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
+
+	/*	- Process Intel Hexadecimal object file.
+	 *	- Notes: This must be done before setting PC accordingly
+	 *	  to the "ORG" assembler directive.
+	 */
+	ProcessDumpHex(0);
 
 	Local = FindLabel(label);
 
@@ -960,13 +971,10 @@ static int proc_org(char *label, char *equation)
 		}
 	}
 
-	b1 = target.pc & 0x00FF;
-	b2 = (target.pc & 0xFF00) >> 8;
-
-#if 0
-	ProcessDumpBin();
-	target.addr = target.pc;
-#endif
+	target.pc_org	= target.pc;
+	
+	b1	= target.pc & 0x00FF;
+	b2	= (target.pc & 0xFF00) >> 8;
 
 	return (TEXT);
 }

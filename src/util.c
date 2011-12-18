@@ -511,6 +511,79 @@ int util_is_cs_enable(void)
 }
 
 
+/*	*************************************************************************
+ *	Function name:	byte_to_hex
+ *	Description:	Convert a byte (8-bit data) to an Hexadecimal string.
+ *	Author(s):		Claude Sylvain
+ *	Created:			17 December 2011
+ *	Last modified:
+ *
+ *	Parameters:		uint8_t byte:
+ *							8-bit data to convert to hexadecimal.
+ *
+ *						char *string:
+ *							- Point to a string that will be filled with
+ *							  the hexadecimal representation of "byte".
+ *							- Notes: "string" must have a minimal size
+ *							  of 3 bytes (2 digits + string delimitor).
+ *
+ *	Returns:			void
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+void byte_to_hex(uint8_t byte, char *string)
+{
+	int		i;
+	uint8_t	nibble;
+
+	/*	Process all nibbles.
+	 *	-------------------- */	
+	for (i = 1; i >= 0; i--)
+	{
+		nibble	= byte & 0x0F;		/*	Get the nibble. */
+
+		/*	Convert and store nibble.
+		 *	------------------------- */	
+		if (nibble >= 10)
+			string[i]	= (char) (nibble + ('A' - 10));
+		else
+			string[i]	= (char) (nibble + '0');
+
+		byte	>>= 4;			/*	Select next nibble. */
+	}
+
+	string[2]	= '\0';		/*	Add string delimitor. */
+}
+
+
+/*	*************************************************************************
+ *	Function name:	word_to_hex
+ *	Description:	Convert a word (16-bit data) to an Hexadecimal string.
+ *	Author(s):		Claude Sylvain
+ *	Created:			17 December 2011
+ *	Last modified:
+ *
+ *	Parameters:		uint16_t word:
+ *							16-bit data to convert to hexadecimal.
+ *
+ *						char *string:
+ *							- Point to a string that will be filled with
+ *							  the hexadecimal representation of "word".
+ *							- Notes: "string" must have a minimal size
+ *							  of 5 bytes (4 digits + string delimitor).
+ *
+ *	Returns:			void
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+void word_to_hex(uint16_t word, char *string)
+{
+	byte_to_hex((uint8_t) (word >> 8), string);
+	byte_to_hex((uint8_t) (word & 0x00FF), &string[2]);
+}
+
 
 
 
