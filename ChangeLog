@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	17 December 2011
+Last modified:	18 December 2011
 Notes:
 *******************************************************************************
 
@@ -451,6 +451,35 @@ Notes:		- Removed "USE_BINARY_HEADER" option and all associated
 		- In "main.c", in "DumpBin()", "LIST_WORDS" was not
 		  handled properly (MSB, LSB inverted).
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		18 December 2011
+By:		Claude Sylvain
+Version:	0.9.8
+
+Notes:		- In "asm_dir.c", in "proc_ds()", call "ProcessDumpHex()"
+		  and update "target.pc_org" to make "DS" memory
+		  section not included in Intel hexadecimal object file.
+
+		- In "main.c", in "ProcessDumpHex()", process
+		  "End Of File" record even if there is no data record
+		  generated.
+
+		- There was no check on "DS" negative value, and this
+		  was making program corrupted without user knowing
+		  that problem.
+
+		- In "als8.asm" (the patched version), "OUTP8" and
+		  "INP8" was not set correctly, and this make some
+		  "DS" directive having negative value.
+
+		- Now, there is no more "roll over" effect applied
+		  to "target.pc".  So, filtering must be applied
+		  when using "target.pc" to handle properly PC
+		  over range condition.
+-------------------------------------------------------------------------------
+
+
 
 
 

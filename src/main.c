@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	17 December 2011
+ *	Last modified:	18 December 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -110,7 +110,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 0;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 9;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 7;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 8;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -213,7 +213,7 @@ static struct	option_i_t	option_i	= {NULL, NULL};
  *	Description:	Check the New Program Counter value.
  *	Author(s):		Claude Sylvain
  *	Created:			4 December 2011
- *	Last modified:	17 December 2011
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		int count:
  *							Count that will be added to the program counter.
@@ -227,22 +227,29 @@ static void check_new_pc(int count)
 {
 	int	new_pc	= target.pc + count;	/*	Calculate new PC value. */
 
+#if 0
 	/*	- Check if the new program counter is out of range, and
 	 *	  manage messages if necessary.
 	 *	------------------------------------------------------- */	 
 	if (	((target.pc_or != 0) || ((new_pc < 0) || (new_pc > 0x10000))) &&
 		  	(asm_pass == 1))
+#endif
+	/*	- Check if the new program counter is out of range, and
+	 *	  manage messages if necessary.
+	 *	------------------------------------------------------- */	 
+	if (((new_pc < 0) || (new_pc > 0x10000)) && (asm_pass == 1))
 	{
 		if (list != NULL)
 		{
 			fprintf(	list,
-				  		"*** Error %d in \"%s\": Program counter over range (%d)!\n",
-				  		EC_PCOR, in_fn[file_level], target.pc);
+				  		"*** Error %d in \"%s\": Program counter over range!\n",
+				  		EC_PCOR, in_fn[file_level]);
 		}
 
 		fprintf(	stderr,
 			  		"*** Error %d in \"%s\" @%d: Program counter over range (%d)!\n",
-			  		EC_PCOR, in_fn[file_level], codeline[file_level], target.pc);
+			  		EC_PCOR, in_fn[file_level], codeline[file_level],
+				  	target.pc & 0xFFFF);
 	}
 }
 
@@ -252,7 +259,7 @@ static void check_new_pc(int count)
  *	Description:	Update Program Counter.
  *	Author(s):		Claude Sylvain
  *	Created:			4 December 2011
- *	Last modified:	11 December 2011
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		int count:
  *							Count to add to the program counter.
@@ -295,15 +302,18 @@ static int update_pc(int count)
 	 *	  same with Target PC Highest value.
 	 *	-------------------------------------------------------- */
 	else
-		target.pc_highest	= 0;
+	{
+//		target.pc_highest	= 0;
+		target.pc_highest	= 0x10000;
+	}
 
 	/*	- Check if program counter is out of range, and
 	 *	  reset it if necessary.
 	 *	----------------------------------------------- */	 
 	if ((target.pc < 0) || (target.pc > 0xFFFF))
 	{
-		target.pc		= 0;
-		target.pc_or	= 1;		/*	PC Over Range detected! */
+//		target.pc		= 0;
+//		target.pc_or	= 1;		/*	PC Over Range detected! */
 		rv					= -1;		/*	Program counter is out of range. */
 	}
 
@@ -930,7 +940,7 @@ static int src_line_parser(char *text)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	17 December 2011
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -947,6 +957,8 @@ static void PrintList(char *text)
 {
 	STACK	*LStack	= ByteWordStack;
 	int	space		= 0;
+	int	pc			= target.pc & 0xFFFF;
+
 
 	/*	Don't print list if not in assembler pass 1.
 	 *	*/
@@ -967,8 +979,10 @@ static void PrintList(char *text)
 					check_new_pc(data_size);		/*	Check the new PC value. */
 
 					if (list != NULL)
+					{
 						fprintf(	list, "%6d %04X %02X\t\t%s\n", codeline[file_level],
-							  		target.pc, b1, text);
+							  		pc, b1, text);
+					}
 
 					break;
 
@@ -976,8 +990,10 @@ static void PrintList(char *text)
 					check_new_pc(data_size);		/*	Check the new PC value. */
 
 					if (list != NULL)
+					{
 						fprintf(	list, "%6d %04X %02X %02X\t%s\n",
-									codeline[file_level], target.pc, b1, b2, text);
+									codeline[file_level], pc, b1, b2, text);
+					}
 
 					break;
 
@@ -985,8 +1001,10 @@ static void PrintList(char *text)
 					check_new_pc(data_size);		/*	Check the new PC value. */
 
 					if (list != NULL)
+					{
 						fprintf(	list, "%6d %04X %02X %02X %02X\t%s\n",
-									codeline[file_level], target.pc, b1, b2, b3, text);
+									codeline[file_level], pc, b1, b2, b3, text);
+					}
 
 					break;
 
@@ -994,8 +1012,10 @@ static void PrintList(char *text)
 					check_new_pc(data_size);		/*	Check the new PC value. */
 
 					if (list != NULL)
+					{
 						fprintf(	list, "%6d %04X %02X %02X %02X %02X\t%s\n",
-									codeline[file_level], target.pc, b1, b2, b3, b4, text);
+									codeline[file_level], pc, b1, b2, b3, b4, text);
+					}
 
 					break;
 
@@ -1019,11 +1039,31 @@ static void PrintList(char *text)
 		/*	List "DS" (Data Storage).
 		 *	------------------------- */	
 		case LIST_DS:
-			check_new_pc(data_size);		/*	Check the new PC value. */
+			/*	Negative value is not accepted, on "DS" assembler directive.
+			 *	Print an error in case such situation happen.
+			 *	Update "PC" only if "data_size" is positive.
+			 *	------------------------------------------------------------ */	
+			if (data_size < 0)
+			{
+				if (list != NULL)
+				{
+					fprintf(	list,
+						  		"*** Error %d in \"%s\": Negative value on \"DS\"!\n",
+							  	EC_NVDS, in_fn[file_level]);
+				}
+
+				fprintf(	stderr,
+					  		"*** Error %d in \"%s\" @%d: Negative value on \"DS\"!\n",
+						  	EC_NVDS, in_fn[file_level], codeline[file_level]);
+			}
+			else
+				check_new_pc(data_size);		/*	Check the new PC value. */
 
 			if (list != NULL)
+			{
 				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
-					  		target.pc, text);
+					  		pc, text);
+			}
 
 			break;
 
@@ -1056,7 +1096,7 @@ static void PrintList(char *text)
 			if (list != NULL)
 			{
 				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
-					  		target.pc, text);
+					  		pc, text);
 
 				fprintf(list, "            ");
 			}
@@ -1146,7 +1186,7 @@ void ProcessDumpBin(void)
  *	Description:	Process Dump of Intel Hexadecimal code.a
  *	Author(s):		Claude Sylvain
  *	Created:			17 December 2011
- *	Last modified:
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		char end_of_asm:
  *							0	: This is not the End Of Assembly process.
@@ -1163,10 +1203,15 @@ void ProcessDumpBin(void)
 
 void ProcessDumpHex(char end_of_asm)
 {
+	/*	Process only on assembler pass #2.
+	 *	---------------------------------- */	
+	if (asm_pass != 1)
+		return;
+
 	/*	- Process Intel hexadecimal object file only if there is something
 	 *	  to process.
 	 *	------------------------------------------------------------------ */
-	if ((target.pc > target.pc_org) && (asm_pass == 1))
+	if (target.pc > target.pc_org)
 	{
 		int		addr			= target.pc_org;
 		int		i;
@@ -1197,8 +1242,8 @@ void ProcessDumpHex(char end_of_asm)
 
 			/*	Process address.
 			 *	---------------- */
-			checksum	+= (uint8_t) (addr >> 8);		/*	Address MSB part. */
-			checksum	+= (uint8_t) (addr & 0xFF);	/*	Address LSB part. */
+			checksum	+= (uint8_t) ((addr & 0xFFFF) >> 8);	/*	Address MSB part. */
+			checksum	+= (uint8_t) (addr & 0xFF);				/*	Address LSB part. */
 			word_to_hex((uint16_t) addr, string);
 			fprintf(hex, "%s", string);
 
@@ -1208,9 +1253,9 @@ void ProcessDumpHex(char end_of_asm)
 			 *	--------------------- */
 			for (i = 0; i < byte_count; ++i)
 			{
-				checksum	+= Image[addr + i];
+				checksum	+= Image[(addr & 0xFFFF) + i];
 
-				byte_to_hex(Image[addr + i], string);
+				byte_to_hex(Image[(addr & 0xFFFF) + i], string);
 				fprintf(hex, "%s", string);
 			}
 
@@ -1222,12 +1267,143 @@ void ProcessDumpHex(char end_of_asm)
 
 			addr	+= byte_count;					/*	Update byte location. */
 		}
+	}
 
-		/*	- If this is the end of assembly process, put the End Of File
-		 *	  record in the hex file.
-		 *	------------------------------------------------------------- */	  
-		if (end_of_asm != 0)
-			fprintf(hex, ":00000001FF\n");
+	/*	- If this is the end of assembly process, put the End Of File
+	 *	  record in the hex file.
+	 *	------------------------------------------------------------- */	  
+	if (end_of_asm != 0)
+		fprintf(hex, ":00000001FF\n");
+}
+
+
+/*	*************************************************************************
+ *	Function name:	DumpBin
+ *	Description:	Dump Binary.
+ *	Author(s):		Jay Cotton, Claude Sylvain
+ *	Created:			2007
+ *	Last modified:	18 December 2011
+ *	Parameters:		void
+ *	Returns:			void
+ *
+ *	Globals:			int type
+ *						int data_size
+ *						int target.pc
+ *
+ *	Notes:
+ *	************************************************************************* */
+
+static void DumpBin(void)
+{
+	STACK	*DLStack;
+	STACK	*LStack	= ByteWordStack;
+
+
+	switch (type)
+	{
+		case TEXT:
+			switch (data_size)
+			{
+				case 1:
+					Image[target.pc & 0xFFFF] = b1;
+					update_pc(1);
+					break;
+
+				case 2:
+					Image[target.pc & 0xFFFF] = b1;
+					update_pc(1);
+					Image[target.pc & 0xFFFF] = b2;
+					update_pc(1);
+					break;
+
+				case 3:
+					Image[target.pc & 0xFFFF] = b1;
+					update_pc(1);
+					Image[target.pc & 0xFFFF] = b2;
+					update_pc(1);
+					Image[target.pc & 0xFFFF] = b3;
+					update_pc(1);
+					break;
+
+				case 4:
+					Image[target.pc & 0xFFFF] = b1;
+					update_pc(1);
+					Image[target.pc & 0xFFFF] = b2;
+					update_pc(1);
+					Image[target.pc & 0xFFFF] = b3;
+					update_pc(1);
+					Image[target.pc & 0xFFFF] = b4;
+					update_pc(1);
+					break;
+
+				default:
+					break;	
+			}
+
+			break;
+
+		case LIST_DS:
+		{	
+			int	i;
+
+			/*	Fill space.
+			 *	Notes: 0x00 is also known as "NOP" opcode.
+			 *	------------------------------------------ */
+			for (i = 0; i < data_size; i++)
+			{
+				Image[target.pc & 0xFFFF] = 0x00;
+				update_pc(1);
+			}
+
+			break;
+		}
+
+		case LIST_BYTES:
+		case LIST_WORDS:
+		case LIST_STRINGS:
+			/* Don't count last byte/word.
+			 *	--------------------------- */
+			while (LStack->next)
+			{
+				if ((type == LIST_BYTES) || (type == LIST_STRINGS))
+				{
+					Image[target.pc & 0xFFFF]	= LStack->word & 0xFF;
+					update_pc(1);
+				}
+				/*	Assuming "LIST_WORDS".
+				 *	---------------------- */
+				else
+				{
+					Image[target.pc & 0xFFFF]	= (char) (LStack->word >> 8);
+					update_pc(1);
+					Image[target.pc & 0xFFFF]	= (char) (LStack->word & 0xFF);
+					update_pc(1);
+				}
+
+				LStack = (STACK *) LStack->next;
+			}
+
+			/*	Always keep the stack root.
+			 *	--------------------------- */
+			LStack	= ByteWordStack;
+			DLStack	= LStack = (STACK *) LStack->next;
+
+			if (LStack)
+			{
+				do
+				{
+					LStack	= (STACK *) LStack->next;
+					free(DLStack);
+					DLStack	= LStack;
+				} while (LStack);
+
+				LStack			= ByteWordStack;
+				LStack->next	= NULL;
+			}
+			break;
+
+		default:
+			break;	
 	}
 }
 
@@ -1493,7 +1669,7 @@ static void display_version(void)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	17 December 2011
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -1563,139 +1739,9 @@ static void AddLabel(char *text)
 		Local = (SYMBOL *) Local->next;
 
 	strcpy(Local->Symbol_Name, label);
-	Local->Symbol_Value	= target.pc;
+//	Local->Symbol_Value	= target.pc;
+	Local->Symbol_Value	= target.pc & 0xFFFF;
 	Local->next				= (SYMBOL *) calloc(1, sizeof(SYMBOL));
-}
-
-
-/*	*************************************************************************
- *	Function name:	DumpBin
- *	Description:	Dump Binary.
- *	Author(s):		Jay Cotton, Claude Sylvain
- *	Created:			2007
- *	Last modified:	17 December 2011
- *	Parameters:		void
- *	Returns:			void
- *
- *	Globals:			int type
- *						int data_size
- *						int target.pc
- *
- *	Notes:
- *	************************************************************************* */
-
-static void DumpBin(void)
-{
-	STACK	*DLStack;
-	STACK	*LStack	= ByteWordStack;
-
-
-	switch (type)
-	{
-		case TEXT:
-			switch (data_size)
-			{
-				case 1:
-					Image[target.pc] = b1;
-					update_pc(1);
-					break;
-
-				case 2:
-					Image[target.pc] = b1;
-					update_pc(1);
-					Image[target.pc] = b2;
-					update_pc(1);
-					break;
-
-				case 3:
-					Image[target.pc] = b1;
-					update_pc(1);
-					Image[target.pc] = b2;
-					update_pc(1);
-					Image[target.pc] = b3;
-					update_pc(1);
-					break;
-
-				case 4:
-					Image[target.pc] = b1;
-					update_pc(1);
-					Image[target.pc] = b2;
-					update_pc(1);
-					Image[target.pc] = b3;
-					update_pc(1);
-					Image[target.pc] = b4;
-					update_pc(1);
-					break;
-
-				default:
-					break;	
-			}
-
-			break;
-
-		case LIST_DS:
-		{	
-			int	i;
-
-			/*	Fill space.
-			 *	Notes: 0x00 is also known as "NOP" opcode.
-			 *	------------------------------------------ */
-			for (i = 0; i < data_size; i++)
-			{
-				Image[target.pc] = 0x00;
-				update_pc(1);
-			}
-
-			break;
-		}
-
-		case LIST_BYTES:
-		case LIST_WORDS:
-		case LIST_STRINGS:
-			/* Don't count last byte/word.
-			 *	--------------------------- */
-			while (LStack->next)
-			{
-				if ((type == LIST_BYTES) || (type == LIST_STRINGS))
-				{
-					Image[target.pc]	= LStack->word & 0xFF;
-					update_pc(1);
-				}
-				/*	Assuming "LIST_WORDS".
-				 *	---------------------- */
-				else
-				{
-					Image[target.pc]	= (char) (LStack->word >> 8);
-					update_pc(1);
-					Image[target.pc]	= (char) (LStack->word & 0xFF);
-					update_pc(1);
-				}
-
-				LStack = (STACK *) LStack->next;
-			}
-
-			/*	Always keep the stack root.
-			 *	--------------------------- */
-			LStack	= ByteWordStack;
-			DLStack	= LStack = (STACK *) LStack->next;
-
-			if (LStack)
-			{
-				do
-				{
-					LStack	= (STACK *) LStack->next;
-					free(DLStack);
-					DLStack	= LStack;
-				} while (LStack);
-
-				LStack			= ByteWordStack;
-				LStack->next	= NULL;
-			}
-			break;
-
-		default:
-			break;	
-	}
 }
 
 
@@ -1704,7 +1750,7 @@ static void DumpBin(void)
  *	Description:	Assembler Pass #1.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	17 December 2011
+ *	Last modified:	18 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1722,7 +1768,7 @@ static void asm_pass1(void)
 	target.pc_org		= 0x0000;
 	target.pc_lowest	= 0xFFFF;
 	target.pc_highest	= 0;
-	target.pc_or		= 0;					/*	No PC Over Range. */
+//	target.pc_or		= 0;					/*	No PC Over Range. */
 	type					= LIST_ONLY;
 	asm_pass 			= 0;
 
@@ -1736,7 +1782,7 @@ static void asm_pass1(void)
  *	Description:	Assembler Pass #2.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	17 December 2011
+ *	Last modified:	18 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1754,7 +1800,7 @@ static void asm_pass2(void)
 	target.pc_org		= 0x0000;
 	target.pc_lowest	= 0xFFFF;
 	target.pc_highest	= 0;
-	target.pc_or		= 0;					/*	No PC Over Range. */
+//	target.pc_or		= 0;					/*	No PC Over Range. */
 	type					= LIST_ONLY;
 	asm_pass				= 1;
 

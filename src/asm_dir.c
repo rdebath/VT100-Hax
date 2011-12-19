@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	17 December 2011
+ *	Last modified:	18 December 2011
  * Notes:
  *	************************************************************************* */
 
@@ -237,7 +237,7 @@ static int proc_endif(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -268,10 +268,13 @@ static int proc_db(char *label, char *equation)
 	/* Record the address of the label.
 	 * -------------------------------- */
 	if (Local)
-		Local->Symbol_Value = target.pc;
+	{
+//		Local->Symbol_Value = target.pc;
+		Local->Symbol_Value = target.pc & 0xFFFF;
+	}
 
-	b1		= target.pc & 0x00ff;
-	b2		= (target.pc & 0xff00) >> 8;
+	b1		= target.pc & 0x00FF;
+	b2		= (target.pc & 0xFF00) >> 8;
 	value	= 0;
 
 	/* The list could be strings, labels, or digits */
@@ -364,7 +367,7 @@ static int proc_db(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	17 December 2011
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -395,7 +398,10 @@ static int proc_dw(char *label, char *equation)
 	/* Record the address of the label.
 	 * -------------------------------- */
 	if (Local)
-		Local->Symbol_Value = target.pc;
+	{
+//		Local->Symbol_Value = target.pc;
+		Local->Symbol_Value = target.pc & 0xFFFF;
+	}
 
 #if 0
 	b1		= target.pc & 0x00ff;
@@ -516,7 +522,7 @@ static int proc_dw(char *label, char *equation)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -544,10 +550,43 @@ static int proc_ds(char *label, char *equation)
 	/* Record the address of the label.
 	 * -------------------------------- */
 	if (Local)
-		Local->Symbol_Value = target.pc;
+	{
+//		Local->Symbol_Value = target.pc;
+		Local->Symbol_Value = target.pc & 0xFFFF;
+	}
 
 	data_size	= exp_parser(equation);	/*	Get memory to reserve. */
 	check_evor(data_size, 0xFFFF);		/*	Check Expression Value Over Range. */
+
+	/*	Process Intel Hexadecimal object file.
+	 *	*/
+	ProcessDumpHex(0);
+
+	/*	- If "data_size" is positive, update "target.pc_org" the normal
+	 *	  way.
+	 *	- Otherwise, just set "target.pc_org" to "target.pc", since
+	 *	  "target.pc" is not updated when "data_size" is negative.
+	 * --------------------------------------------------------------- */	  	  
+	if (data_size >= 0)
+	{
+		/*	- Adjust "target.pc_org" to bypass the "DS" memory section.
+		 *	- Notes: This is necessary since "DS" memory section do not contain
+		 *	  any useful information.
+		 *	*/
+		target.pc_org	= target.pc + data_size;
+
+#if 0
+		/*	- Check for Program Counter Origin Over Range.
+		 *	- If there is an over range, just reset it to 0, because
+		 *	  "target.pc_org" is an internal, and error message will be
+		 *	  displayed later when updating the program counter ("target.pc").
+		 *	------------------------------------------------------------------ */	
+		if (target.pc_org > 0xFFFF)
+			target.pc_org	= 0;
+#endif
+	}
+	else
+		target.pc_org	= target.pc;
 
 	return (LIST_DS);
 }
@@ -858,7 +897,6 @@ static int proc_include(char *label, char *equation)
 
 static int proc_local(char *label, char *equation)
 {
-
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
@@ -917,7 +955,7 @@ static int proc_equ(char *label, char *equation)
  *	Description:	ORG directive Processing.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	17 December 2011
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -957,17 +995,24 @@ static int proc_org(char *label, char *equation)
 	 *	------------------------------------- */	
 	if ((target.pc < 0) || (target.pc > 0xFFFF))
 	{
+#if 0
 		target.pc		= 0;
 		target.pc_or	= 1;		/*	PC Over Range. */
+#endif
 
 		if (asm_pass == 1)
 		{
 			if (list != NULL)
-				fprintf(	list, "*** Error %d in \"%s\": Program counter over range (%d)!\n",
-					  		EC_PCOR, in_fn[file_level], target.pc);
+			{
+				fprintf(	list,
+					  		"*** Error %d in \"%s\": Program counter over range!\n",
+					  		EC_PCOR, in_fn[file_level]);
+			}
 
-			fprintf(	stderr, "*** Error %d in \"%s\" @%d: Program counter over range (%d)!\n",
-				  		EC_PCOR, in_fn[file_level], codeline[file_level], target.pc);
+			fprintf(	stderr,
+				  		"*** Error %d in \"%s\" @%d: Program counter over range (%d)!\n",
+				  		EC_PCOR, in_fn[file_level], codeline[file_level],
+					  	target.pc & 0xFFFF);
 		}
 	}
 

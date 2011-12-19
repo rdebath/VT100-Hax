@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	10 December 2011
+ *	Last modified:	18 December 2011
  *	************************************************************************* */
 
 /*
@@ -97,7 +97,7 @@ int islabelchar(int c)
  *
  *	Author(s):		Claude Sylvain
  *	Created:			4 December 2011
- *	Last modified:
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		int value:
  *							Expression Value to check.
@@ -120,10 +120,14 @@ int check_evor(int value, int limit)
 	if ((value > limit) && (asm_pass == 1))
 	{
 		if (list != NULL)
-			fprintf(	list, "*** Error %d in \"%s\": Expression value over range (%d)!\n",
+		{
+			fprintf(	list,
+				  		"*** Error %d in \"%s\": Expression value over range (%d)!\n",
 				  		EC_EVOR, in_fn[file_level], value);
+		}
 
-		fprintf(	stderr, "*** Error %d in \"%s\" @%d: Expression value over range (%d)!\n",
+		fprintf(	stderr,
+			  		"*** Error %d in \"%s\" @%d: Expression value over range (%d)!\n",
 			  		EC_EVOR, in_fn[file_level], codeline[file_level], value);
 
 		rv	= -1;
@@ -141,7 +145,7 @@ int check_evor(int value, int limit)
  *
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	28 December 2010
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		int value:
  *							Value to check.
@@ -164,9 +168,15 @@ int check_oor(int value, int limit)
 	if ((value > limit) && (asm_pass == 1))
 	{
 		if (list != NULL)
-			fprintf(list, "*** Error %d in \"%s\": Operand over range (%d)!\n", EC_OOR, in_fn[file_level], value);
+		{
+			fprintf(	list,
+				  		"*** Error %d in \"%s\": Operand over range (%d)!\n",
+					  	EC_OOR, in_fn[file_level], value);
+		}
 
-		fprintf(stderr, "*** Error %d in \"%s\" @%d: Operand over range (%d)!\n", EC_OOR, in_fn[file_level], codeline[file_level], value);
+		fprintf(	stderr,
+			  		"*** Error %d in \"%s\" @%d: Operand over range (%d)!\n",
+				  	EC_OOR, in_fn[file_level], codeline[file_level], value);
 
 		rv	= -1;
 	}
@@ -180,7 +190,7 @@ int check_oor(int value, int limit)
  *	Description:	Label processing.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		char *text:
  *							"text" that possibly contain label.
@@ -195,6 +205,7 @@ int check_oor(int value, int limit)
 SYMBOL *FindLabel(char *text)
 {
 	char		tmp[SYMBOL_SIZE_MAX];
+
 	SYMBOL	*Local	= Symbols;
 	int		i			= 0;
 
@@ -218,9 +229,15 @@ SYMBOL *FindLabel(char *text)
 			if (asm_pass == 1)
 			{
 				if (list != NULL)
-					fprintf(list, "*** Error %d in \"%s\": \"FindLabel\" buffer overflow!\n", EC_FLBOF, in_fn[file_level]);
+				{
+					fprintf(	list,
+						  		"*** Error %d in \"%s\": \"FindLabel\" buffer overflow!\n",
+							  	EC_FLBOF, in_fn[file_level]);
+				}
 
-				fprintf(stderr, "*** Error %d in \"%s\" @%d: \"FindLabel\" buffer overflow!\n", EC_FLBOF, in_fn[file_level], codeline[file_level]);
+				fprintf(	stderr,
+					  		"*** Error %d in \"%s\" @%d: \"FindLabel\" buffer overflow!\n",
+						  	EC_FLBOF, in_fn[file_level], codeline[file_level]);
 			}
 
 			break;
@@ -246,7 +263,7 @@ SYMBOL *FindLabel(char *text)
  *	Description:	Process Label.
  *	Author(s):		Claude Sylvain
  *	Created:			28 December 2010
- *	Last modified:	10 December 2011
+ *	Last modified:	18 December 2011
  *
  *	Parameters:		char *label:
  *							Point to a string that hold label.
@@ -263,7 +280,10 @@ void process_label(char *label)
 	/* Record the address of the label.
 	 * -------------------------------- */
 	if (Local)
-		Local->Symbol_Value = target.pc;
+	{
+//		Local->Symbol_Value = target.pc;
+		Local->Symbol_Value = target.pc & 0xFFFF;
+	}
 }
 
 

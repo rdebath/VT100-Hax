@@ -2,8 +2,8 @@
 
 ;The above symbols was missing from the original file.
 ;-----------------------------------------------------
-OUTP8	equ	CRLF + 2
-INP8	equ	OUTP8 + 1
+OUTP8	equ	CRLF - 2
+INP8	equ	OUTP8 - 1
 
 
 ;

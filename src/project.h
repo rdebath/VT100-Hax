@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	17 December 2011
+ *	Last modified:	18 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -105,7 +105,7 @@ typedef struct targ
 	int	pc_org;		/*	Program Counter, value set by "ORG" directive. */
 	int	pc_lowest;	/*	Program Counter, Lowest value. */
 	int	pc_highest;	/*	Program Counter, Highest value. */
-	char	pc_or;		/*	Program Counter Over Range (0=No OR, 1=OR). */
+//	char	pc_or;		/*	Program Counter Over Range (0=No OR, 1=OR). */
 } TARG;
 
 
