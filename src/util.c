@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *	************************************************************************* */
 
 /*
@@ -58,6 +58,16 @@
 #include "project.h"
 #include "err_code.h"
 #include "main.h"
+
+
+/*	*************************************************************************
+ *	                           FUNCTIONS DEFINITION
+ *	************************************************************************* */
+
+/*	Private functions.
+ *	****************** */
+
+//static void AddLabel(char *label);
 
 
 /*	*************************************************************************
@@ -259,11 +269,105 @@ SYMBOL *FindLabel(char *text)
 
 
 /*	*************************************************************************
+ *	Function name:	AddLabel
+ *	Description:	Add a Label to the label's linked list.
+ *	Author(s):		Jay Cotton, Claude Sylvain
+ *	Created:			2007
+ *	Last modified:	24 December 2011
+ *
+ *	Parameters:		char *label:
+ *							String that contain Label to Add.
+ *
+ *	Returns:			void
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+//static void AddLabel(char *text)
+void AddLabel(char *label)
+{
+//	char   label[LABEL_SIZE_MAX];
+//	int    i			= 0;
+	SYMBOL *Local	= Symbols;
+	int    phantom	= 0;
+
+
+//	if (asm_pass != 0)				return;
+//	if (isspace((int) *text))		return;
+//	if (util_is_cs_enable() == 0)	return;
+
+#if 0
+	if (*text == '&')
+		label[i++] = *text++;
+
+	if (*text == '%')
+	{
+		label[i++] = *text++;
+		phantom++;
+	}
+#endif
+	if (*label == '&')
+		label++;
+
+	if (*label == '%')
+	{
+		label++;
+		phantom++;
+	}
+
+#if 0
+	while (isalnum((int) *text) || (*text == '_'))
+		label[i++] = *(text++);
+
+	label[i] = '\0';
+#endif
+
+	if (FindLabel(label) != NULL)
+	{
+		if (phantom == 0)
+		{
+			if (list != NULL)
+			{
+				/*	- Notes: Since this error is printed on assembler pass #1 only,
+				 *	  it is printed at beginning of the listing file.
+				 *	  So, we have to tell where is the error, by adding the
+				 *	  line number to the print out.
+				 *	*/
+				fprintf(	list,
+					  		"*** Error %d in \"%s\" @%d: Duplicate Label (%s)!\n",
+						  	EC_DL, in_fn[file_level], codeline[file_level], label);
+			}
+
+			fprintf(	stderr,
+				  		"*** Error %d in \"%s\" @%d: Duplicate Label (%s)!\n",
+					  	EC_DL, in_fn[file_level], codeline[file_level], label);
+		}
+
+		return;
+	}
+
+
+	/* Now add it to the list.
+	 *	*********************** */
+
+	/* find end of list.
+	 * ----------------- */
+	while (Local->next)
+		Local = (SYMBOL *) Local->next;
+
+	strcpy(Local->Symbol_Name, label);
+
+//	Local->Symbol_Value	= target.pc & 0xFFFF;
+	Local->next				= (SYMBOL *) calloc(1, sizeof(SYMBOL));
+}
+
+
+/*	*************************************************************************
  *	Function name:	process_label
  *	Description:	Process Label.
  *	Author(s):		Claude Sylvain
  *	Created:			28 December 2010
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							Point to a string that hold label.
@@ -275,14 +379,59 @@ SYMBOL *FindLabel(char *text)
 
 void process_label(char *label)
 {
-	SYMBOL	*Local = FindLabel(label);
+	SYMBOL	*Local;
 
-	/* Record the address of the label.
-	 * -------------------------------- */
-	if (Local)
+	/*	If no label, do nothing.
+	 *	*/	
+	if (*label == '\0')	return;
+
+	/*	If in first assembly pass, add and initialize label.
+	 *	---------------------------------------------------- */	
+	if (asm_pass == 0)
 	{
-//		Local->Symbol_Value = target.pc;
-		Local->Symbol_Value = target.pc & 0xFFFF;
+//		SYMBOL	*Local;
+
+		AddLabel(label);
+
+		Local = FindLabel(label);
+
+		if (Local != NULL)
+			Local->Symbol_Value = target.pc;
+	}
+	/*	We assume we are in second assembler pass...
+	 * Check for phasing error.	
+	 *	In case there is phasing error, synchronize the label.
+	 *	------------------------------------------------------ */	
+	else
+	{
+//		SYMBOL	*Local = FindLabel(label);
+		Local = FindLabel(label);
+
+#if 0
+		/* Record the address of the label.
+		 * -------------------------------- */
+		if (Local)
+		{
+			Local->Symbol_Value = target.pc & 0xFFFF;
+		}
+#endif
+		if ((Local != NULL) && (Local->Symbol_Value != target.pc))
+		{
+			if (list != NULL)
+			{
+				fprintf(	list,
+					  		"*** Error %d in \"%s\": Phasing error (\"%s\")!\n",
+						  	EC_PE, in_fn[file_level], label);
+			}
+
+			fprintf(	stderr,
+				  		"*** Error %d in \"%s\" @%d: Phasing error (\"%s\")!\n",
+					  	EC_PE, in_fn[file_level], codeline[file_level], label);
+
+			/*	Sync label value.
+			 *	*/	
+			Local->Symbol_Value = target.pc;
+		}
 	}
 }
 

@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	17 December 2011
+ *	Last modified:	24 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -53,6 +53,7 @@ int islabelchar(char c);
 int check_evor(int value, int limit);
 int check_oor(int value, int limit);
 SYMBOL *FindLabel(char *text);
+void AddLabel(char *label);
 void process_label(char *label);
 int util_get_number_base_inc(char *text);
 char *AdvanceTo(char *text, char x);

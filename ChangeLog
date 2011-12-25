@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	18 December 2011
+Last modified:	24 December 2011
 Notes:
 *******************************************************************************
 
@@ -479,6 +479,21 @@ Notes:		- In "asm_dir.c", in "proc_ds()", call "ProcessDumpHex()"
 		  over range condition.
 -------------------------------------------------------------------------------
 
+-------------------------------------------------------------------------------
+Date:		24 December 2011
+By:		Claude Sylvain
+Version:	0.9.9
+
+Notes:		- Added "Phasing error" detection.
+		- Improved Program Counter management.
+		- Improved labels management.
+
+		- Bad code generation when building "als8.asm" test case, was
+		  due to misplaced "EQU" ("OUTP8" and "INP8" equate) that
+		  was producing phasing errors.
+		  Now that asm8080 can detect phasing error, such coding
+		  errors can be detected, and bad code generation avoided.
+-------------------------------------------------------------------------------
 
 
 

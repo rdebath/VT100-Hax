@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -110,7 +110,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 0;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 9;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 8;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 9;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -136,7 +136,6 @@ static void do_asm(void);
 static void PrintList(char *text);
 static void display_help(void);
 static int src_line_parser(char *text);
-static void AddLabel(char *text);
 static void asm_pass1(void);
 static void asm_pass2(void);
 static void clean_up(void);
@@ -209,11 +208,45 @@ static struct	option_i_t	option_i	= {NULL, NULL};
 
 
 /*	*************************************************************************
+ *	Function name:	set_pc
+ *	Description:	Set Program Counter.
+ *	Author(s):		Claude Sylvain
+ *	Created:			24 December 2011
+ *	Last modified:
+ *
+ *	Parameters:		int pc_value:
+ *							New Program Counter Value.
+ *
+ *	Returns:			int:
+ *							-1	: Program Counter out of range.
+ *							0	: Program counter updated successfully.
+ *
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+int set_pc(int pc_value)
+{
+	int	rv	= 0;				/*	Return Value. */
+
+	target.addr	= pc_value;
+	target.pc	= target.addr & 0xFFFF;
+
+	/*	Check if program counter is valid.
+	 *	---------------------------------- */	
+	if ((target.addr < 0) || (target.addr > 0xFFFF))
+		rv	= -1;
+
+	return (rv);
+}
+
+
+/*	*************************************************************************
  *	Function name:	check_new_pc
  *	Description:	Check the New Program Counter value.
  *	Author(s):		Claude Sylvain
  *	Created:			4 December 2011
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		int count:
  *							Count that will be added to the program counter.
@@ -225,15 +258,8 @@ static struct	option_i_t	option_i	= {NULL, NULL};
 
 static void check_new_pc(int count)
 {
-	int	new_pc	= target.pc + count;	/*	Calculate new PC value. */
+	int	new_pc	= target.addr + count;	/*	Calculate new PC value. */
 
-#if 0
-	/*	- Check if the new program counter is out of range, and
-	 *	  manage messages if necessary.
-	 *	------------------------------------------------------- */	 
-	if (	((target.pc_or != 0) || ((new_pc < 0) || (new_pc > 0x10000))) &&
-		  	(asm_pass == 1))
-#endif
 	/*	- Check if the new program counter is out of range, and
 	 *	  manage messages if necessary.
 	 *	------------------------------------------------------- */	 
@@ -249,7 +275,7 @@ static void check_new_pc(int count)
 		fprintf(	stderr,
 			  		"*** Error %d in \"%s\" @%d: Program counter over range (%d)!\n",
 			  		EC_PCOR, in_fn[file_level], codeline[file_level],
-				  	target.pc & 0xFFFF);
+				  	target.pc);
 	}
 }
 
@@ -259,7 +285,7 @@ static void check_new_pc(int count)
  *	Description:	Update Program Counter.
  *	Author(s):		Claude Sylvain
  *	Created:			4 December 2011
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		int count:
  *							Count to add to the program counter.
@@ -284,38 +310,33 @@ static int update_pc(int count)
 	if (target.pc < target.pc_lowest)
 		target.pc_lowest	= target.pc;
 
-	target.pc	+= count;	/*	Update program counter. */
+	target.addr	+= count;						/*	Update Address. */
+	target.pc	= target.addr & 0xFFFF;		/*	Update Program Counter. */
 
 	/*	Keep track of the highest PC value.
 	 *	----------------------------------- */
-	if (target.pc <= 0x10000)
+	if (target.addr <= 0x10000)
 	{
 		/*	- Update Target PC Highest value only if current PC
 		 *	  is higher.  This is necessary to handle properly
 		 *	  program using multiple "ORG" directives, that are
 		 *	  not necessarily in ascendant order.
 		 *	--------------------------------------------------- */	  
-		if (target.pc > target.pc_highest)
-			target.pc_highest	= target.pc;
+		if (target.addr > target.pc_highest)
+			target.pc_highest	= target.addr;
 	}
 	/*	- PC is not valid, and will be reseted to 0.  So, do the
 	 *	  same with Target PC Highest value.
 	 *	-------------------------------------------------------- */
 	else
 	{
-//		target.pc_highest	= 0;
 		target.pc_highest	= 0x10000;
 	}
 
-	/*	- Check if program counter is out of range, and
-	 *	  reset it if necessary.
-	 *	----------------------------------------------- */	 
-	if ((target.pc < 0) || (target.pc > 0xFFFF))
-	{
-//		target.pc		= 0;
-//		target.pc_or	= 1;		/*	PC Over Range detected! */
-		rv					= -1;		/*	Program counter is out of range. */
-	}
+	/*	Check if program counter is out of range.
+	 *	----------------------------------------- */	 
+	if ((target.addr < 0) || (target.addr > 0xFFFF))
+		rv	= -1;
 
 	return (rv);
 }
@@ -602,7 +623,7 @@ static void CloseFiles(void)
  *	Description:	Break down a source line.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	17 December 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -656,14 +677,12 @@ static int src_line_parser(char *text)
 		 *	  blank will be a symbol.
 		 * ------------------------------------------------------------- */
 		if (isascii(text[0]) != 0)
-	  	{
-			/*	- FIXME: No check done to see if label start with a
-			 *	  character :-/
-		 	 *	*/
-
+		{
+#if 0
 			/*	TODO: Is there overflow check done in this function.
 		 	 * */
 			AddLabel(text);
+#endif
 
 			/*	TODO: Is this standard Intel assembler code?
 			 *	-------------------------------------------- */	
@@ -740,8 +759,19 @@ static int src_line_parser(char *text)
 			text++;
 
 
+		/*	If nothing else than the label on the line...
+		 *	--------------------------------------------- */	
 		if ((*text == '\0') || (*text == ';'))
 		{
+			/*	- If code section is activated, process label.
+			 *	- Notes: There is no assembler directive, neither mnemonic
+			 *	  on the line.  So, label processing will not be
+		 	 *	  done by external function.  We must do label
+			 *	  processing here.
+			 *	---------------------------------------------------------- */
+			if (util_is_cs_enable() != 0)
+				process_label(label);
+
 			/*	TODO: Why "type" and "status" are not the same ???
 			 *	*/
 
@@ -905,6 +935,15 @@ static int src_line_parser(char *text)
 				type		= COMMENT;
 				status	= COMMENT;
 
+				/*	- If code section is activated, process label.
+				 *	- Notes: Label was not processed by either assembler
+				 *	  directive processing function or assembler mnemonic
+				 *	  processing function.  So, we have to explicitly call
+				 *	  label processing.
+				 *	------------------------------------------------------ */
+				if (util_is_cs_enable() != 0)
+					process_label(label);
+
 				if (asm_pass == 1)
 				{
 					if (list != NULL)
@@ -940,7 +979,7 @@ static int src_line_parser(char *text)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -957,7 +996,6 @@ static void PrintList(char *text)
 {
 	STACK	*LStack	= ByteWordStack;
 	int	space		= 0;
-	int	pc			= target.pc & 0xFFFF;
 
 
 	/*	Don't print list if not in assembler pass 1.
@@ -981,7 +1019,7 @@ static void PrintList(char *text)
 					if (list != NULL)
 					{
 						fprintf(	list, "%6d %04X %02X\t\t%s\n", codeline[file_level],
-							  		pc, b1, text);
+							  		target.pc, b1, text);
 					}
 
 					break;
@@ -992,7 +1030,7 @@ static void PrintList(char *text)
 					if (list != NULL)
 					{
 						fprintf(	list, "%6d %04X %02X %02X\t%s\n",
-									codeline[file_level], pc, b1, b2, text);
+									codeline[file_level], target.pc, b1, b2, text);
 					}
 
 					break;
@@ -1003,7 +1041,7 @@ static void PrintList(char *text)
 					if (list != NULL)
 					{
 						fprintf(	list, "%6d %04X %02X %02X %02X\t%s\n",
-									codeline[file_level], pc, b1, b2, b3, text);
+									codeline[file_level], target.pc, b1, b2, b3, text);
 					}
 
 					break;
@@ -1014,7 +1052,8 @@ static void PrintList(char *text)
 					if (list != NULL)
 					{
 						fprintf(	list, "%6d %04X %02X %02X %02X %02X\t%s\n",
-									codeline[file_level], pc, b1, b2, b3, b4, text);
+									codeline[file_level], target.pc, b1, b2, b3, b4,
+								  	text);
 					}
 
 					break;
@@ -1062,7 +1101,7 @@ static void PrintList(char *text)
 			if (list != NULL)
 			{
 				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
-					  		pc, text);
+					  		target.pc, text);
 			}
 
 			break;
@@ -1096,7 +1135,7 @@ static void PrintList(char *text)
 			if (list != NULL)
 			{
 				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
-					  		pc, text);
+					  		target.pc, text);
 
 				fprintf(list, "            ");
 			}
@@ -1186,7 +1225,7 @@ void ProcessDumpBin(void)
  *	Description:	Process Dump of Intel Hexadecimal code.a
  *	Author(s):		Claude Sylvain
  *	Created:			17 December 2011
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char end_of_asm:
  *							0	: This is not the End Of Assembly process.
@@ -1203,15 +1242,23 @@ void ProcessDumpBin(void)
 
 void ProcessDumpHex(char end_of_asm)
 {
+	int	addr_end;
+
 	/*	Process only on assembler pass #2.
-	 *	---------------------------------- */	
-	if (asm_pass != 1)
-		return;
+	 *	*/
+	if (asm_pass != 1)	return;
+
+	/*	Set Highest Address accordingly to "target.addr".
+	 *	------------------------------------------------- */	
+	if (target.addr <= 0x10000)
+		addr_end	= target.addr;
+	else
+		addr_end	= target.pc;
 
 	/*	- Process Intel hexadecimal object file only if there is something
 	 *	  to process.
 	 *	------------------------------------------------------------------ */
-	if (target.pc > target.pc_org)
+	if (addr_end > target.pc_org)
 	{
 		int		addr			= target.pc_org;
 		int		i;
@@ -1221,14 +1268,14 @@ void ProcessDumpHex(char end_of_asm)
 
 		/*	Process target bytes.
 		 *	--------------------- */
-		while (addr < target.pc)
+		while (addr < addr_end)
 		{
 			/*	Set bytes count.
 			 *	---------------- */
-			if ((target.pc - addr) >= 16)
+			if ((addr_end - addr) >= 16)
 				byte_count	= 16;
 			else
-				byte_count	= target.pc - addr;
+				byte_count	= addr_end - addr;
 
 			checksum	= 0x00;							/*	Reset checksum. */
 
@@ -1242,8 +1289,8 @@ void ProcessDumpHex(char end_of_asm)
 
 			/*	Process address.
 			 *	---------------- */
-			checksum	+= (uint8_t) ((addr & 0xFFFF) >> 8);	/*	Address MSB part. */
-			checksum	+= (uint8_t) (addr & 0xFF);				/*	Address LSB part. */
+			checksum	+= (uint8_t) (addr >> 8);		/*	Address MSB part. */
+			checksum	+= (uint8_t) (addr & 0xFF);	/*	Address LSB part. */
 			word_to_hex((uint16_t) addr, string);
 			fprintf(hex, "%s", string);
 
@@ -1253,9 +1300,9 @@ void ProcessDumpHex(char end_of_asm)
 			 *	--------------------- */
 			for (i = 0; i < byte_count; ++i)
 			{
-				checksum	+= Image[(addr & 0xFFFF) + i];
+				checksum	+= Image[(addr) + i];
 
-				byte_to_hex(Image[(addr & 0xFFFF) + i], string);
+				byte_to_hex(Image[addr + i], string);
 				fprintf(hex, "%s", string);
 			}
 
@@ -1282,7 +1329,7 @@ void ProcessDumpHex(char end_of_asm)
  *	Description:	Dump Binary.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *	Parameters:		void
  *	Returns:			void
  *
@@ -1305,34 +1352,34 @@ static void DumpBin(void)
 			switch (data_size)
 			{
 				case 1:
-					Image[target.pc & 0xFFFF] = b1;
+					Image[target.pc] = b1;
 					update_pc(1);
 					break;
 
 				case 2:
-					Image[target.pc & 0xFFFF] = b1;
+					Image[target.pc] = b1;
 					update_pc(1);
-					Image[target.pc & 0xFFFF] = b2;
+					Image[target.pc] = b2;
 					update_pc(1);
 					break;
 
 				case 3:
-					Image[target.pc & 0xFFFF] = b1;
+					Image[target.pc] = b1;
 					update_pc(1);
-					Image[target.pc & 0xFFFF] = b2;
+					Image[target.pc] = b2;
 					update_pc(1);
-					Image[target.pc & 0xFFFF] = b3;
+					Image[target.pc] = b3;
 					update_pc(1);
 					break;
 
 				case 4:
-					Image[target.pc & 0xFFFF] = b1;
+					Image[target.pc] = b1;
 					update_pc(1);
-					Image[target.pc & 0xFFFF] = b2;
+					Image[target.pc] = b2;
 					update_pc(1);
-					Image[target.pc & 0xFFFF] = b3;
+					Image[target.pc] = b3;
 					update_pc(1);
-					Image[target.pc & 0xFFFF] = b4;
+					Image[target.pc] = b4;
 					update_pc(1);
 					break;
 
@@ -1351,7 +1398,7 @@ static void DumpBin(void)
 			 *	------------------------------------------ */
 			for (i = 0; i < data_size; i++)
 			{
-				Image[target.pc & 0xFFFF] = 0x00;
+				Image[target.pc] = 0x00;
 				update_pc(1);
 			}
 
@@ -1367,16 +1414,16 @@ static void DumpBin(void)
 			{
 				if ((type == LIST_BYTES) || (type == LIST_STRINGS))
 				{
-					Image[target.pc & 0xFFFF]	= LStack->word & 0xFF;
+					Image[target.pc]	= LStack->word & 0xFF;
 					update_pc(1);
 				}
 				/*	Assuming "LIST_WORDS".
 				 *	---------------------- */
 				else
 				{
-					Image[target.pc & 0xFFFF]	= (char) (LStack->word >> 8);
+					Image[target.pc]	= (char) (LStack->word >> 8);
 					update_pc(1);
-					Image[target.pc & 0xFFFF]	= (char) (LStack->word & 0xFF);
+					Image[target.pc]	= (char) (LStack->word & 0xFF);
 					update_pc(1);
 				}
 
@@ -1665,92 +1712,11 @@ static void display_version(void)
 
 
 /*	*************************************************************************
- *	Function name:	AddLabel
- *	Description:
- *	Author(s):		Jay Cotton, Claude Sylvain
- *	Created:			2007
- *	Last modified:	18 December 2011
- *
- *	Parameters:		char *text:
- *							...
- *
- *	Returns:			void
- *	Globals:
- *	Notes:
- *	************************************************************************* */
-
-static void AddLabel(char *text)
-{
-	char   label[LABEL_SIZE_MAX];
-	int    i			= 0;
-	SYMBOL *Local	= Symbols;
-	int    phantom	= 0;
-
-
-	if (asm_pass == 1)				return;
-	if (isspace((int) *text))		return;
-	if (util_is_cs_enable() == 0)	return;
-
-	if (*text == '&')
-		label[i++] = *text++;
-
-	if (*text == '%')
-	{
-		label[i++] = *text++;
-		phantom++;
-	}
-
-	while (isalnum((int) *text) || (*text == '_'))
-		label[i++] = *(text++);
-
-	label[i] = '\0';
-
-	if (FindLabel(label))
-	{
-		if (!phantom)
-		{
-			if (list != NULL)
-			{
-				/*	- Notes: Since this error is printed on assembler pass #1 only,
-				 *	  it is printed at beginning of the listing file.
-				 *	  So, we have to tell where is the error, by adding the
-				 *	  line number to the print out.
-				 *	*/
-				fprintf(	list,
-					  		"*** Error %d in \"%s\" @%d: Duplicate Label (%s)!\n",
-						  	EC_DL, in_fn[file_level], codeline[file_level], label);
-			}
-
-			fprintf(	stderr,
-				  		"*** Error %d in \"%s\" @%d: Duplicate Label (%s)!\n",
-					  	EC_DL, in_fn[file_level], codeline[file_level], label);
-		}
-
-		return;
-	}
-
-
-	/* Now add it to the list.
-	 *	*********************** */
-
-	/* find end of list.
-	 * ----------------- */
-	while (Local->next)
-		Local = (SYMBOL *) Local->next;
-
-	strcpy(Local->Symbol_Name, label);
-//	Local->Symbol_Value	= target.pc;
-	Local->Symbol_Value	= target.pc & 0xFFFF;
-	Local->next				= (SYMBOL *) calloc(1, sizeof(SYMBOL));
-}
-
-
-/*	*************************************************************************
  *	Function name:	asm_pass1
  *	Description:	Assembler Pass #1.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1764,11 +1730,11 @@ static void asm_pass1(void)
 	for (i = 0; i < FILES_LEVEL_MAX; i++)
 		codeline[i]	= 0;
 
+	target.addr			= 0;
 	target.pc			= 0x0000;
 	target.pc_org		= 0x0000;
 	target.pc_lowest	= 0xFFFF;
 	target.pc_highest	= 0;
-//	target.pc_or		= 0;					/*	No PC Over Range. */
 	type					= LIST_ONLY;
 	asm_pass 			= 0;
 
@@ -1782,7 +1748,7 @@ static void asm_pass1(void)
  *	Description:	Assembler Pass #2.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1796,11 +1762,11 @@ static void asm_pass2(void)
 	for (i = 0; i < FILES_LEVEL_MAX; i++)
 		codeline[i]	= 0;
 
+	target.addr			= 0;
 	target.pc			= 0x0000;
 	target.pc_org		= 0x0000;
 	target.pc_lowest	= 0xFFFF;
 	target.pc_highest	= 0;
-//	target.pc_or		= 0;					/*	No PC Over Range. */
 	type					= LIST_ONLY;
 	asm_pass				= 1;
 

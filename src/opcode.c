@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	26 November 2011
+ *	Last modified:	24 December 2011
  * Notes:
  *	************************************************************************* */
 
@@ -772,7 +772,7 @@ static int proc_mvi(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	15 January 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...

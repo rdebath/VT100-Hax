@@ -1,11 +1,5 @@
 
 
-;The above symbols was missing from the original file.
-;-----------------------------------------------------
-OUTP8	equ	CRLF - 2
-INP8	equ	OUTP8 - 1
-
-
 ;
 ; Disassembly of ALS-8 System
 ; by Barry A. Watzman
@@ -5037,6 +5031,14 @@ LFFF3	LHLD	BBUF		;GET VALUE OF UPPER LIMIT
 ;
 ;
 	ORG	DATA		;START OF SYSTEM GLOBAL
+
+
+;The above symbols was missing from the original file.
+;-----------------------------------------------------
+OUTP8	equ	CRLF - 2
+INP8	equ	OUTP8 - 1
+
+
 ;
 ;SYSTEM GLOBAL AREA
 ;

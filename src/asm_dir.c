@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  * Notes:
  *	************************************************************************* */
 
@@ -117,7 +117,7 @@ const keyword_t	asm_dir[] =
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -134,6 +134,8 @@ const keyword_t	asm_dir[] =
 
 static int proc_if(char *label, char *equation)
 {
+//	process_label(label);
+
 	if (++if_nest < (sizeof (if_true) / sizeof (int)))
 	{
 		if_true[if_nest] = exp_parser(equation);
@@ -162,7 +164,7 @@ static int proc_if(char *label, char *equation)
  *	Description:	"ELSE" assembler directive processing.
  *	Author(s):		Claude Sylvain
  *	Created:			24 December	2010
- *	Last modified:
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -179,6 +181,8 @@ static int proc_if(char *label, char *equation)
 
 static int proc_else(char *label, char *equation)
 {
+//	process_label(label);
+
 	/*	Just toggle current "if_true[]" state.
 	 *	So simple :-)
 	 * */	 
@@ -193,7 +197,7 @@ static int proc_else(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	19 December 2010
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -210,6 +214,8 @@ static int proc_else(char *label, char *equation)
 
 static int proc_endif(char *label, char *equation)
 {
+//	process_label(label);
+
 	if_true[if_nest] = 0;
 
 	if (--if_nest < 0)
@@ -237,7 +243,7 @@ static int proc_endif(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -254,7 +260,7 @@ static int proc_endif(char *label, char *equation)
 
 static int proc_db(char *label, char *equation)
 {
-	SYMBOL	*Local;
+//	SYMBOL	*Local;
 	STACK		*LStack	= ByteWordStack;
 	int		value;
 
@@ -263,6 +269,7 @@ static int proc_db(char *label, char *equation)
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
+#if 0
 	Local = FindLabel(label);
 
 	/* Record the address of the label.
@@ -272,6 +279,8 @@ static int proc_db(char *label, char *equation)
 //		Local->Symbol_Value = target.pc;
 		Local->Symbol_Value = target.pc & 0xFFFF;
 	}
+#endif
+	process_label(label);
 
 	b1		= target.pc & 0x00FF;
 	b2		= (target.pc & 0xFF00) >> 8;
@@ -367,7 +376,7 @@ static int proc_db(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -384,7 +393,7 @@ static int proc_db(char *label, char *equation)
 
 static int proc_dw(char *label, char *equation)
 {
-	SYMBOL	*Local;
+//	SYMBOL	*Local;
 	STACK		*LStack	= ByteWordStack;
 	int		value;
 
@@ -393,6 +402,7 @@ static int proc_dw(char *label, char *equation)
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
+#if 0
 	Local = FindLabel(label);
 
 	/* Record the address of the label.
@@ -402,6 +412,8 @@ static int proc_dw(char *label, char *equation)
 //		Local->Symbol_Value = target.pc;
 		Local->Symbol_Value = target.pc & 0xFFFF;
 	}
+#endif
+	process_label(label);
 
 #if 0
 	b1		= target.pc & 0x00ff;
@@ -522,7 +534,7 @@ static int proc_dw(char *label, char *equation)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -539,21 +551,11 @@ static int proc_dw(char *label, char *equation)
 
 static int proc_ds(char *label, char *equation)
 {
-	SYMBOL	*Local;
-
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
-	Local = FindLabel(label);
-
-	/* Record the address of the label.
-	 * -------------------------------- */
-	if (Local)
-	{
-//		Local->Symbol_Value = target.pc;
-		Local->Symbol_Value = target.pc & 0xFFFF;
-	}
+	process_label(label);
 
 	data_size	= exp_parser(equation);	/*	Get memory to reserve. */
 	check_evor(data_size, 0xFFFF);		/*	Check Expression Value Over Range. */
@@ -573,17 +575,7 @@ static int proc_ds(char *label, char *equation)
 		 *	- Notes: This is necessary since "DS" memory section do not contain
 		 *	  any useful information.
 		 *	*/
-		target.pc_org	= target.pc + data_size;
-
-#if 0
-		/*	- Check for Program Counter Origin Over Range.
-		 *	- If there is an over range, just reset it to 0, because
-		 *	  "target.pc_org" is an internal, and error message will be
-		 *	  displayed later when updating the program counter ("target.pc").
-		 *	------------------------------------------------------------------ */	
-		if (target.pc_org > 0xFFFF)
-			target.pc_org	= 0;
-#endif
+		target.pc_org	= (target.pc + data_size) & 0xFFFF;
 	}
 	else
 		target.pc_org	= target.pc;
@@ -880,7 +872,7 @@ static int proc_include(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -901,6 +893,8 @@ static int proc_local(char *label, char *equation)
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
+	process_label(label);
+
 	return (LIST_ONLY);
 }
 
@@ -910,7 +904,7 @@ static int proc_local(char *label, char *equation)
  *	Description:	Process "EQU" assembler directive.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -934,19 +928,68 @@ static int proc_equ(char *label, char *equation)
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
+	tmp	= exp_parser(equation);
+
+	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
+
+#if 0
+	/*	- TODO: Compare "EQU" value on pass #1 and pass #2.
+	 *	  Is it really necessary?	
+	 *	*/
+
+	/*	Add label on first assembler pass.
+	 *	---------------------------------- */	
+	if (asm_pass == 0)
+		AddLabel(label);
+
 	Local = FindLabel(label);
 
 	if (Local)
-		tmp = Local->Symbol_Value = exp_parser(equation);
-	else
-		tmp = exp_parser(equation);
+		Local->Symbol_Value = tmp;
+#endif
 
-	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
+	/*	If in first assembly pass, add and initialize label.
+	 *	---------------------------------------------------- */	
+	if (asm_pass == 0)
+	{
+		AddLabel(label);
+
+		Local = FindLabel(label);
+
+		if (Local)
+			Local->Symbol_Value = tmp;
+	}
+	/*	We assume we are in second assembler pass...
+	 * Check for phasing error.	
+	 *	In case there is phasing error, synchronize the label.
+	 *	------------------------------------------------------ */	
+	else
+	{
+		Local = FindLabel(label);
+
+		if ((Local != NULL) && (Local->Symbol_Value != tmp))
+		{
+			if (list != NULL)
+			{
+				fprintf(	list,
+					  		"*** Error %d in \"%s\": Phasing error (\"%s\")!\n",
+						  	EC_PE, in_fn[file_level], label);
+			}
+
+			fprintf(	stderr,
+				  		"*** Error %d in \"%s\" @%d: Phasing error (\"%s\")!\n",
+					  	EC_PE, in_fn[file_level], codeline[file_level], label);
+
+			/*	Sync label value.
+			 *	*/	
+			Local->Symbol_Value = tmp;
+		}
+	}
 
 	b1	= tmp & 0x00FF;
 	b2	= (tmp & 0xFF00) >> 8;
 
-	return TEXT;
+	return (TEXT);
 }
 
 
@@ -955,7 +998,7 @@ static int proc_equ(char *label, char *equation)
  *	Description:	ORG directive Processing.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	18 December 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -972,7 +1015,7 @@ static int proc_equ(char *label, char *equation)
 
 static int proc_org(char *label, char *equation)
 {
-	SYMBOL	*Local;
+//	SYMBOL	*Local;
 
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
@@ -984,22 +1027,24 @@ static int proc_org(char *label, char *equation)
 	 */
 	ProcessDumpHex(0);
 
+#if 0
+	target.addr = exp_parser(equation);
+	target.pc	= target.addr & 0xFFFF;
+#endif
+	set_pc(exp_parser(equation));		/*	Set the program counter. */
+
+#if 0
 	Local = FindLabel(label);
 
 	if (Local)
-		target.pc = Local->Symbol_Value = exp_parser(equation);
-	else
-		target.pc = exp_parser(equation);
+		Local->Symbol_Value	= target.pc;
+#endif
+	process_label(label);
 
 	/*	Check for Program Counter Over Range.
 	 *	------------------------------------- */	
-	if ((target.pc < 0) || (target.pc > 0xFFFF))
+	if ((target.addr < 0) || (target.addr > 0xFFFF))
 	{
-#if 0
-		target.pc		= 0;
-		target.pc_or	= 1;		/*	PC Over Range. */
-#endif
-
 		if (asm_pass == 1)
 		{
 			if (list != NULL)
@@ -1030,7 +1075,7 @@ static int proc_org(char *label, char *equation)
  *	Description:	Process "END" assembler directive.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	24 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1051,7 +1096,7 @@ static int proc_end(char *label, char *equation)
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
-	type				= PROCESSED_END;
+	type	= PROCESSED_END;
 
 	return (PROCESSED_END);
 }

@@ -1,10 +1,10 @@
 
 
 
+	if 0
 _HIGH	equ	start / 256
 _LOW	equ	start & 0FFh
-
-
+	endif
 
 
 	org	0
@@ -14,6 +14,10 @@ _LOW	equ	start & 0FFh
 
 
 start
+
+_HIGH	equ	start / 256
+_LOW	equ	start & 0FFh
+
 ;	mvi	a, start
 ;	mvi	a, start >> 8
 ;	mvi	a, (start >> 8)
