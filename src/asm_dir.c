@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  * Notes:
  *	************************************************************************* */
 
@@ -62,6 +62,7 @@
 #include "util.h"
 #include "exp_parser.h"
 #include "main.h"
+#include "msg.h"
 #include "asm_dir.h"
 
 
@@ -81,6 +82,7 @@ static int proc_ds(char *label, char *equation);
 static int proc_include(char *label, char *equation);
 static int proc_local(char *label, char *equation);
 static int proc_equ(char *, char *);
+static int proc_set(char *label, char *equation);
 static int proc_org(char *, char *);
 static int proc_end(char *, char *);
 
@@ -102,7 +104,7 @@ const keyword_t	asm_dir[] =
 	{"ORG", proc_org},				{"DS", proc_ds},
 	{"IF", proc_if},
 	{"ELSE", proc_else},				{"ENDIF", proc_endif},
-	{"SET", proc_equ},				{"LOCAL", proc_local},
+	{"SET", proc_set},				{"LOCAL", proc_local},
 	{0, NULL}
 };
 
@@ -117,7 +119,7 @@ const keyword_t	asm_dir[] =
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -134,7 +136,6 @@ const keyword_t	asm_dir[] =
 
 static int proc_if(char *label, char *equation)
 {
-//	process_label(label);
 
 	if (++if_nest < (sizeof (if_true) / sizeof (int)))
 	{
@@ -143,16 +144,7 @@ static int proc_if(char *label, char *equation)
 	else
 	{
 		if_nest--;
-
-		/*	Print/Display error, on assembler second pass only.
-		 *	--------------------------------------------------- */	
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": 'if' nesting overflow!\n", EC_INO, in_fn[file_level]);
-			
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: 'if' nesting overflow!\n", EC_INO, in_fn[file_level], codeline[file_level]);
-		}
+		msg_error("\"IF\" nesting overflow!", EC_INO);
 	}
 
 	return (LIST_ONLY);
@@ -164,7 +156,7 @@ static int proc_if(char *label, char *equation)
  *	Description:	"ELSE" assembler directive processing.
  *	Author(s):		Claude Sylvain
  *	Created:			24 December	2010
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -181,8 +173,6 @@ static int proc_if(char *label, char *equation)
 
 static int proc_else(char *label, char *equation)
 {
-//	process_label(label);
-
 	/*	Just toggle current "if_true[]" state.
 	 *	So simple :-)
 	 * */	 
@@ -197,7 +187,7 @@ static int proc_else(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -214,8 +204,6 @@ static int proc_else(char *label, char *equation)
 
 static int proc_endif(char *label, char *equation)
 {
-//	process_label(label);
-
 	if_true[if_nest] = 0;
 
 	if (--if_nest < 0)
@@ -223,15 +211,7 @@ static int proc_endif(char *label, char *equation)
 		if_nest++;
 		if_true[0] = 1;			/*	Restore 'if' nesting base level. */
 
-		/*	Print/Display error, on assembler second pass only.
-		 *	--------------------------------------------------- */	
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": 'if' nesting underflow!\n", EC_INU, in_fn[file_level]);
-
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: 'if' nesting underflow!\n", EC_INU, in_fn[file_level], codeline[file_level]);
-		}
+		msg_error("\"IF\" nesting underflow!", EC_INU);
 	}
 
 	return (LIST_ONLY);
@@ -243,7 +223,7 @@ static int proc_endif(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -260,7 +240,6 @@ static int proc_endif(char *label, char *equation)
 
 static int proc_db(char *label, char *equation)
 {
-//	SYMBOL	*Local;
 	STACK		*LStack	= ByteWordStack;
 	int		value;
 
@@ -269,17 +248,6 @@ static int proc_db(char *label, char *equation)
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
-#if 0
-	Local = FindLabel(label);
-
-	/* Record the address of the label.
-	 * -------------------------------- */
-	if (Local)
-	{
-//		Local->Symbol_Value = target.pc;
-		Local->Symbol_Value = target.pc & 0xFFFF;
-	}
-#endif
 	process_label(label);
 
 	b1		= target.pc & 0x00FF;
@@ -321,16 +289,7 @@ static int proc_db(char *label, char *equation)
 			 	 *	---------------------------------------------------- */	 
 				if (in_quote)
 				{
-					if (asm_pass == 1)
-					{
-						if (list != NULL)
-							fprintf(	list,
-								  		"*** Warning %d in \"%s\": Missing quote!\n", WC_MQ, in_fn[file_level]);
-
-						fprintf(	stderr,
-							  		"*** Warning %d in \"%s\" @%d: Missing quote!\n",
-								  	WC_MQ, in_fn[file_level], codeline[file_level]);
-					}
+					msg_warning("Missing quote!", WC_MQ);
 
 					/*	- Notes: We must not select next character at this
 					 *	  point, because "equation" have been evalued entirely,
@@ -376,7 +335,7 @@ static int proc_db(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -393,7 +352,6 @@ static int proc_db(char *label, char *equation)
 
 static int proc_dw(char *label, char *equation)
 {
-//	SYMBOL	*Local;
 	STACK		*LStack	= ByteWordStack;
 	int		value;
 
@@ -402,24 +360,7 @@ static int proc_dw(char *label, char *equation)
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
-#if 0
-	Local = FindLabel(label);
-
-	/* Record the address of the label.
-	 * -------------------------------- */
-	if (Local)
-	{
-//		Local->Symbol_Value = target.pc;
-		Local->Symbol_Value = target.pc & 0xFFFF;
-	}
-#endif
 	process_label(label);
-
-#if 0
-	b1		= target.pc & 0x00ff;
-	b2		= (target.pc & 0xff00) >> 8;
-	value	= 0;
-#endif
 
 	/* The list could be strings, labels, or digits. */
 
@@ -473,19 +414,7 @@ static int proc_dw(char *label, char *equation)
 			 	 *	---------------------------------------------------- */	 
 				if (in_quote)
 				{
-					if (asm_pass == 1)
-					{
-						if (list != NULL)
-						{
-							fprintf(	list,
-								  		"*** Warning %d in \"%s\": Missing quote!\n",
-									  	WC_MQ, in_fn[file_level]);
-						}
-
-						fprintf(	stderr,
-							  		"*** Warning %d in \"%s\" @%d: Missing quote!\n",
-								  	WC_MQ, in_fn[file_level], codeline[file_level]);
-					}
+					msg_warning("Missing quote!", WC_MQ);
 
 					/*	- Notes: We must not select next character at this
 					 *	  point, because "equation" have been evalued entirely,
@@ -589,7 +518,7 @@ static int proc_ds(char *label, char *equation)
  *	Description:	"INCLUDE" assembler directive processing.
  *	Author(s):		Claude Sylvain
  *	Created:			27 December	2010
- *	Last modified:	26 November 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -622,8 +551,6 @@ static int proc_include(char *label, char *equation)
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
 
-	process_label(label);
-
 	/*	Allocate memory.
 	 *	---------------- */	
 	p_name 		= (char *) malloc(OpenIncludeFile_TEXT_SIZE_MAX);
@@ -633,13 +560,7 @@ static int proc_include(char *label, char *equation)
 	 *	------------------------------------------------ */
 	if ((p_name == NULL) || (p_name_path == NULL))
 	{
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": Memory allocation error!\n", EC_MAE, in_fn[file_level]);
-
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Memory allocation error!\n", EC_MAE, in_fn[file_level], codeline[file_level]);
-		}
+		msg_error("Memory allocation error!", EC_MAE);
 
 		/*	Free allocated memory.
 		 *	---------------------- */	
@@ -681,13 +602,7 @@ static int proc_include(char *label, char *equation)
 		 *	----------------------------------------------------------------- */
 		if (*equation == '\0')
 		{
-			if (asm_pass == 1)
-			{
-				if (list != NULL)
-					fprintf(list, "*** Error %d in \"%s\": No starting quote!\n", EC_NSQ, in_fn[file_level]);
-
-				fprintf(stderr, "*** Error %d in \"%s\" @%d: No starting quote!\n", EC_NSQ, in_fn[file_level], codeline[file_level]);
-			}
+			msg_error("No starting quote!", EC_NSQ);
 
 			/*	Free allocated memory.
 			 *	---------------------- */	
@@ -713,13 +628,7 @@ static int proc_include(char *label, char *equation)
 			 *	-------------------------------------------- */	
 			if (++i >= OpenIncludeFile_TEXT_SIZE_MAX)
 			{
-				if (asm_pass == 1)
-				{
-					if (list != NULL)
-						fprintf(list, "*** Error %d in \"%s\": Buffer overflow!\n", EC_BOF, in_fn[file_level]);
-
-					fprintf(stderr, "*** Error %d in \"%s\" @%d: Buffer overflow!\n", EC_BOF, in_fn[file_level], codeline[file_level]);
-				}
+				msg_error("Buffer overflow!", EC_BOF);
 
 				/*	Free allocated memory.
 				 *	---------------------- */	
@@ -735,13 +644,7 @@ static int proc_include(char *label, char *equation)
 		 *	------------------------------------------------------- */	 
 		if (*equation == '\0')
 		{
-			if (asm_pass == 1)
-			{
-				if (list != NULL)
-					fprintf(list, "*** Error %d in \"%s\": No ending quote!\n", EC_NEQ, in_fn[file_level]);
-
-				fprintf(stderr, "*** Error %d in \"%s\" @%d: No ending quote!\n", EC_NEQ, in_fn[file_level], codeline[file_level]);
-			}
+			msg_error("No ending quote!", EC_NEQ);
 
 			/*	Free allocated memory.
 			 *	---------------------- */	
@@ -765,13 +668,7 @@ static int proc_include(char *label, char *equation)
 			 *	-------------------------------------------- */	
 			if (++i >= OpenIncludeFile_TEXT_SIZE_MAX)
 			{
-				if (asm_pass == 1)
-				{
-					if (list != NULL)
-						fprintf(list, "*** Error %d in \"%s\": Buffer overflow!\n", EC_BOF, in_fn[file_level]);
-
-					fprintf(stderr, "*** Error %d in \"%s\" @%d: Buffer overflow!\n", EC_BOF, in_fn[file_level], codeline[file_level]);
-				}
+				msg_error("Buffer overflow!", EC_BOF);
 
 				/*	Free allocated memory.
 				 *	---------------------- */	
@@ -803,17 +700,7 @@ static int proc_include(char *label, char *equation)
 			{
 				--file_level;				/*	Restore. */
 				file_openned	= 0;
-
-				/*	Display/print error, if possible.
-				 *	--------------------------------- */	
-				if (asm_pass == 1)
-				{
-					if (list != NULL)
-						fprintf(list, "*** Error %d in \"%s\": Can't open include file (\"%s\")!\n", EC_COIF, in_fn[file_level], p_name);
-
-					fprintf(stderr, "*** Error %d in \"%s\" @%d: Can't open include file (\"%s\")!\n", EC_COIF, in_fn[file_level], codeline[file_level], p_name);
-				}
-
+				msg_error_s("Can't open include file!", EC_COIF, p_name);
 				break;
 			}
 		}
@@ -829,19 +716,9 @@ static int proc_include(char *label, char *equation)
 			/*	Check for memory allocation error.
 			 *	--------------------------------- */	
 			if (in_fn[file_level] != NULL)
-			{
-				strcpy(in_fn[file_level], p_name_path);		/*	Save input file name. */
-			}
+				strcpy(in_fn[file_level], p_name_path);	/*	Save input file name. */
 			else
-			{
-				if (asm_pass == 1)
-				{
-					if (list != NULL)
-						fprintf(list, "*** Error %d in \"%s\": Memory allocation error!\n", EC_MAE, in_fn[file_level]);
-
-					fprintf(stderr, "*** Error %d in \"%s\" @%d: Memory allocation error!\n", EC_MAE, in_fn[file_level], codeline[file_level]);
-				}
-			}
+				msg_error("Memory allocation error!", EC_MAE);
 		}
 
 	}
@@ -849,13 +726,7 @@ static int proc_include(char *label, char *equation)
 	{
 		--file_level;			/*	Abort "include". */
 
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": Include overflow!\n", EC_IOF, in_fn[file_level]);
-
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Include overflow!\n", EC_IOF, in_fn[file_level], codeline[file_level]);
-		}
+		msg_error("Include overflow!", EC_IOF);
 	}
 
 	/*	Free allocated memory.
@@ -904,7 +775,7 @@ static int proc_local(char *label, char *equation)
  *	Description:	Process "EQU" assembler directive.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -932,57 +803,322 @@ static int proc_equ(char *label, char *equation)
 
 	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
 
-#if 0
-	/*	- TODO: Compare "EQU" value on pass #1 and pass #2.
-	 *	  Is it really necessary?	
-	 *	*/
-
-	/*	Add label on first assembler pass.
-	 *	---------------------------------- */	
+	/*	If in first assembly pass, add and initialize label.
+	 *	---------------------------------------------------- */	
 	if (asm_pass == 0)
-		AddLabel(label);
+	{
+		/*	- Notes: Do not display error message if no symbol
+		 *	  found, since we are in first assembler pass.
+	 	 *	-------------------------------------------------- */	 
+		Local = FindLabel(label);
 
-	Local = FindLabel(label);
-
-	if (Local)
-		Local->Symbol_Value = tmp;
+		/*	If symbol was found...
+		 *	---------------------- */	
+		if (Local != NULL)
+		{
+#if 0
+			/*	If previously defined as a "SET", we can re-define it.
+			 *	------------------------------------------------------ */	
+			if (Local->Symbol_Type == SYMBOL_NAME_SET)
+			{
+				Local->Symbol_Value	= tmp;
+				Local->Symbol_Type	= SYMBOL_NAME_EQU;
+			}
 #endif
+		}
+		/*	If symbol do not exist, add it.
+		 *	------------------------------- */	
+		else
+		{
+			/*	Add Symbol.
+			 *	If able to add it, set its value.
+		 	 *	--------------------------------- */	 
+			if (AddLabel(label) != -1)
+			{
+				Local = FindLabel(label);
+
+				if (Local)
+				{
+					Local->Symbol_Value	= tmp;
+					Local->Symbol_Type	= SYMBOL_NAME_EQU;
+				}
+			}
+		}
+	}
+	/*	- We assume we are in second assembler pass...
+	 *   Check for phasing error and/or label/name duplicated.
+	 *	- In case there is phasing error and/or label/name
+	 *	  duplicated, synchronize the label.
+	 *	------------------------------------------------------- */	
+	else
+	{
+		/*	- Notes: Since we are in assembler second pass, if no
+		 *	  symbol is found, an error message is displayed.
+	 	 *	------------------------------------------------------ */	 
+		Local = FindLabel(label);
+
+		/*	If symbol was found...
+		 *	---------------------- */	
+		if (Local != NULL)
+		{
+			/*	If previously defined as a "EQU" name...
+			 *	---------------------------------------- */	
+			if (Local->Symbol_Type == SYMBOL_NAME_EQU)
+			{
+				/*	- If this is the same "EQU" as defined in the symbols list,
+				 *	  check for phasing error.
+				 *	----------------------------------------------------------- */	
+				if (	(strcmp(in_fn[file_level], Local->src_filename) == 0) &&
+					  	(codeline[file_level] == Local->code_line))
+				{
+					/*	If there is a phasing error.
+					 *	---------------------------- */	
+					if (tmp != Local->Symbol_Value)
+					{
+						msg_error_s("Phasing error!", EC_PE, label);
+
+						/*	- When there is a phasing error, we assume that
+						 *	  the actual "EQU" value is the best one.
+						 *	  So, update the symbol value.
+					 	 *	*/	 
+						Local->Symbol_Value	= tmp;
+					}
+				}
+				/*	"EQU" was already defined.
+				 *	Display an error message, since "EQU" can not be re-defined.
+				 *	------------------------------------------------------------ */	 
+				else
+				{
+					msg_error_s("\"EQU\" already exist!", EC_EAE, label);
+				}
+			}
+			/*	If previously defined as a "SET", we can re-define it.
+			 *	------------------------------------------------------ */	
+			else if (Local->Symbol_Type == SYMBOL_NAME_SET)
+			{
+				Local->Symbol_Value	= tmp;
+				Local->Symbol_Type	= SYMBOL_NAME_EQU;
+				Local->code_line		= codeline[file_level];
+
+				/*	Update source file name.
+				 *	************************ */
+
+				Local->src_filename	=
+					(char *) realloc(Local->src_filename, strlen(in_fn[file_level]) + 1);
+
+				if (Local->src_filename != NULL)
+				{
+					strcpy(Local->src_filename, in_fn[file_level]);
+				}
+				else
+				{
+					msg_error_s("Can't allocate memory!", EC_CAM, label);
+
+					/*	Get it pointing something.
+					 *	*/	
+					Local->src_filename	= empty_string;
+				}
+			}
+			/*	If already defined as a name, we can not re-defined it.
+			 *	------------------------------------------------------- */	
+			else if (Local->Symbol_Type == SYMBOL_NAME)
+			{
+				msg_error_s("Already defined as a \"Name\"!", EC_ADAN, label);
+			}
+			/*	- We assume that symbol was already defined as a "label",
+			 *	  and can not be re-defined.
+		 	 *	--------------------------------------------------------- */
+			else
+			{
+				msg_warning_s("Symbol already used as \"label\"!", WC_SAUAL, label);
+			}
+		}
+	}
+
+	b1	= tmp & 0x00FF;
+	b2	= (tmp & 0xFF00) >> 8;
+
+	return (TEXT);
+}
+
+
+/*	*************************************************************************
+ *	Function name:	proc_set
+ *	Description:	Process "SET" assembler directive.
+ *	Author(s):		Claude Sylvain
+ *	Created:			25 December 2011
+ *	Last modified:	27 December 2011
+ *
+ *	Parameters:		char *label:
+ *							...
+ *
+ *						char *equation:
+ *							...
+ *
+ *	Returns:			int:
+ *							...
+ *
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+static int proc_set(char *label, char *equation)
+{
+	SYMBOL	*Local;
+	int		tmp;
+
+	/*	Don't do anything, if code section is desactivated.
+	 *	*/
+	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
+
+	tmp	= exp_parser(equation);
+
+	check_oor(tmp, 0xFFFF);		/*	Check Operand Over Range. */
 
 	/*	If in first assembly pass, add and initialize label.
 	 *	---------------------------------------------------- */	
 	if (asm_pass == 0)
 	{
-		AddLabel(label);
-
+		/*	- Notes: Do not display error message if no symbol
+		 *	  found, since we are in first assembler pass.
+	 	 *	-------------------------------------------------- */	 
 		Local = FindLabel(label);
 
-		if (Local)
-			Local->Symbol_Value = tmp;
+		/*	If Symbol already exist...
+		 *	-------------------------- */
+		if (Local != NULL)
+		{
+			/*	If Symbol is the "name" of a "SET", we can re-define it.
+			 *	-------------------------------------------------------- */	
+			if (Local->Symbol_Type == SYMBOL_NAME_SET)
+			{
+				Local->Symbol_Value	= tmp;
+				Local->code_line		= codeline[file_level];
+
+				/*	Update source file name.
+				 *	************************ */
+
+				Local->src_filename	=
+					(char *) realloc(Local->src_filename, strlen(in_fn[file_level]) + 1);
+
+				if (Local->src_filename != NULL)
+				{
+					strcpy(Local->src_filename, in_fn[file_level]);
+				}
+				else
+				{
+					msg_error_s("Can't allocate memory!", EC_CAM, label);
+
+					/*	Get it pointing something.
+					 *	*/	
+					Local->src_filename	= empty_string;
+				}
+			}
+		}
+		/*	Name do not still exist.
+		 *	Add it.
+		 *	------------------------ */
+		else
+		{
+			/*	Add symbol.
+			 *	If able to add it, set its value.
+			 *	--------------------------------- */	 
+			if (AddLabel(label) != -1)
+			{
+				Local = FindLabel(label);
+
+				if (Local != NULL)
+				{
+					Local->Symbol_Value	= tmp;
+					Local->Symbol_Type	= SYMBOL_NAME_SET;
+				}
+			}
+		}
 	}
-	/*	We assume we are in second assembler pass...
-	 * Check for phasing error.	
-	 *	In case there is phasing error, synchronize the label.
-	 *	------------------------------------------------------ */	
+	/*	- We assume we are in second assembler pass...
+	 *   Check for phasing error and/or label/name duplicated.
+	 *	- In case there is phasing error and/or label/name
+	 *	  duplicated, synchronize the label.
+	 *	------------------------------------------------------- */	
 	else
 	{
 		Local = FindLabel(label);
 
-		if ((Local != NULL) && (Local->Symbol_Value != tmp))
+		/*	If Symbol already exist...
+		 *	-------------------------- */
+		if (Local != NULL)
 		{
-			if (list != NULL)
+			/*	- If Symbol is the "name" of an "EQU", we can
+			 *	  not re-define it.
+			 *	--------------------------------------------- */	
+			if (Local->Symbol_Type == SYMBOL_NAME_EQU)
 			{
-				fprintf(	list,
-					  		"*** Error %d in \"%s\": Phasing error (\"%s\")!\n",
-						  	EC_PE, in_fn[file_level], label);
+				msg_error_s("Already defined as an \"EQU\"!", EC_ADAE, label);
 			}
+			/*	If previously defined as a "SET" name...
+			 *	---------------------------------------- */	
+			else if (Local->Symbol_Type == SYMBOL_NAME_SET)
+			{
+				/*	- If this is the same "SET" as defined in the symbols list,
+				 *	  check for phasing error.
+				 *	----------------------------------------------------------- */	
+				if (	(strcmp(in_fn[file_level], Local->src_filename) == 0) &&
+					  	(codeline[file_level] == Local->code_line))
+				{
+					/*	If there is a phasing error.
+					 *	---------------------------- */	
+					if (tmp != Local->Symbol_Value)
+					{
+						msg_error_s("Phasing error!", EC_PE, label);
 
-			fprintf(	stderr,
-				  		"*** Error %d in \"%s\" @%d: Phasing error (\"%s\")!\n",
-					  	EC_PE, in_fn[file_level], codeline[file_level], label);
+						/*	- When there is a phasing error, we assume that
+						 *	  the actual "EQU" value is the best one.
+						 *	  So, update the symbol value.
+					 	 *	*/	 
+						Local->Symbol_Value	= tmp;
+					}
+				}
+				/*	"SET" was already defined, and can be re-defined.
+				 *	So, re-defined it.	
+				 *	------------------------------------------------- */	 
+				else
+				{
+					Local->Symbol_Value	= tmp;
+					Local->code_line		= codeline[file_level];
 
-			/*	Sync label value.
-			 *	*/	
-			Local->Symbol_Value = tmp;
+					/*	Update source file name.
+					 *	************************ */
+
+					Local->src_filename	=
+						(char *) realloc(Local->src_filename, strlen(in_fn[file_level]) + 1);
+
+					if (Local->src_filename != NULL)
+					{
+						strcpy(Local->src_filename, in_fn[file_level]);
+					}
+					else
+					{
+						msg_error_s("Can't allocate memory!", EC_CAM, label);
+
+						/*	Get it pointing something.
+						 *	*/	
+						Local->src_filename	= empty_string;
+					}
+				}
+			}
+			/*	If symbol is a "name", do not re-define it.
+			 *	------------------------------------------- */	
+			else if (Local->Symbol_Type == SYMBOL_NAME)
+			{
+				msg_error_s("Already defined as a \"Name\"", EC_ADAN, label);
+			}
+			/*	- If symbol is not a "name", we assume that this is
+			 *	  a "label"...
+	 		 *	--------------------------------------------------- */	 
+			else
+			{
+				msg_warning_s("Symbol already used as \"Label\"!", WC_SAUAL, label);
+			}
 		}
 	}
 
@@ -998,7 +1134,7 @@ static int proc_equ(char *label, char *equation)
  *	Description:	ORG directive Processing.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -1015,8 +1151,6 @@ static int proc_equ(char *label, char *equation)
 
 static int proc_org(char *label, char *equation)
 {
-//	SYMBOL	*Local;
-
 	/*	Don't do anything, if code section is desactivated.
 	 *	*/
 	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
@@ -1027,39 +1161,14 @@ static int proc_org(char *label, char *equation)
 	 */
 	ProcessDumpHex(0);
 
-#if 0
-	target.addr = exp_parser(equation);
-	target.pc	= target.addr & 0xFFFF;
-#endif
 	set_pc(exp_parser(equation));		/*	Set the program counter. */
 
-#if 0
-	Local = FindLabel(label);
-
-	if (Local)
-		Local->Symbol_Value	= target.pc;
-#endif
 	process_label(label);
 
 	/*	Check for Program Counter Over Range.
 	 *	------------------------------------- */	
 	if ((target.addr < 0) || (target.addr > 0xFFFF))
-	{
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-			{
-				fprintf(	list,
-					  		"*** Error %d in \"%s\": Program counter over range!\n",
-					  		EC_PCOR, in_fn[file_level]);
-			}
-
-			fprintf(	stderr,
-				  		"*** Error %d in \"%s\" @%d: Program counter over range (%d)!\n",
-				  		EC_PCOR, in_fn[file_level], codeline[file_level],
-					  	target.pc & 0xFFFF);
-		}
-	}
+		msg_error("Program counter over range!", EC_PCOR);
 
 	target.pc_org	= target.pc;
 	

@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	24 December 2011
+ *	Last modified:	26 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -47,12 +47,18 @@
 #define SYMBOL_SIZE_MAX				64
 
 /*	Label Maximum Size.
+ *	Notes: This value is (only) 6 in 8080 legacy assembler.	
  *	*/	
 #define LABEL_SIZE_MAX				SYMBOL_SIZE_MAX
 
+
+/*	When "1", accept '_' character in label/name.
+ *	*/	
+#define ACCEPT_UNDERSCORE_CHAR_IN_LN	1
+
 /*	Temporary debug.
  *	*/	
-#define DEBUG_TMP_ACTIVE			0
+#define DEBUG_TMP_ACTIVE					0
 
 
 /*	*************************************************************************
@@ -78,12 +84,26 @@
  *	                                 TYPEDEF
  *	************************************************************************* */
 
+/*	Types of Symbols.
+ *	----------------- */	
+enum symbol_type_t
+{
+	SYMBOL_LABEL,
+	SYMBOL_NAME,
+	SYMBOL_NAME_EQU,
+	SYMBOL_NAME_SET
+};
+
 /*	Symbol table storage.
  *	--------------------- */
 typedef struct Symbol
 {
-	char	Symbol_Name[SYMBOL_SIZE_MAX];
+//	char	Symbol_Name[SYMBOL_SIZE_MAX];
+	char	*Symbol_Name;
 	int	Symbol_Value;
+	enum	symbol_type_t	Symbol_Type;
+	int	code_line;
+	char	*src_filename;
 	void	*next;
 } SYMBOL;
 

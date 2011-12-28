@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	17 December 2011
+ *	Last modified:	27 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -42,13 +42,19 @@
  *											  CONSTANTS
  *	************************************************************************* */
 
-#define	WC_MQ				0		/* Missing Quote. */
-#define	WC_EDFIIF		1		/* 'END' Directive Found Inside an Include File. */
-#define	WC_ELOS			2		/* Extra "-l" Option Specified. */
-#define	WC_EOOS			3		/* Extra "-o" Option Specified. */
-#define	WC_NIFSATLOP	4		/* No Input File Specified At Time "-l" Option was Processed. */
-#define	WC_NIFSATOOP	5		/* No Input File Specified At Time "-o" Option was Processed. */
-#define	WC_OFNHE			6		/*	Output File Name Have an Extension. */
+#define WC_MQ				0		/* Missing Quote. */
+#define WC_EDFIIF			1		/* 'END' Directive Found Inside an Include File. */
+#define WC_ELOS			2		/* Extra "-l" Option Specified. */
+#define WC_EOOS			3		/* Extra "-o" Option Specified. */
+#define WC_NIFSATLOP		4		/* No Input File Specified At Time "-l" Option was Processed. */
+#define WC_NIFSATOOP		5		/* No Input File Specified At Time "-o" Option was Processed. */
+#define WC_OFNHE			6		/*	Output File Name Have an Extension. */
+#define WC_LNBFC			7		/*	Label/Name, Bad First Character. */
+#define WC_SCNS			8		/*	Special Command Not Supported. */
+#define WC_LTL				9		/* Label Too Long. */
+#define WC_ILNC			10		/*	Invalid Label/Name Character. */
+#define	WC_IFNHNE		11		/*	Input File Name Have No Extension. */
+#define WC_SAUAL			12		/*	Symbol Already Used As Label. */
 
 
 

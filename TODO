@@ -4,7 +4,7 @@ Description:	asm8080 To Do list.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	10 April 2011
+Last modified:	26 December 2011
 Notes:
 *******************************************************************************
 
@@ -35,7 +35,22 @@ DEALINGS IN THE SOFTWARE.
 
 
 -------------------------------------------------------------------------------
+Created:	26 December 2011
+Last modified:
+By:		Claude Sylvain
+Version:	1.00
+
+To do:		- Expression parser process expression linearly.  This
+		  can make problem with program that use expression
+		  like below:
+		  	MY_SYMBOL + 16 * 64
+		  The above expression must be modified like below:
+		  	MY_SYMBOL + (16 * 64)
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
 Date:		8 January 2011
+Last modified:	26 December 2011
 By:		Claude Sylvain
 Version:	1.00
 To do:
@@ -47,6 +62,8 @@ To do:
 
 		- Assembler directives that is not (still) implemented:
 			- SET
+			* Done (26 December 2011)
+
 			- ENDM
 			- EXITM
 			- IRP

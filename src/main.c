@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -67,6 +67,7 @@
 #include "asm_dir.h"
 #include "opcode.h"
 #include "exp_parser.h"
+#include "msg.h"
 #include "main.h"
 
 
@@ -108,9 +109,9 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
 
 /*	Program Version.
  *	---------------- */
-static const unsigned char	pgm_version_v	= 0;	/*	Version. */
-static const unsigned char	pgm_version_sv	= 9;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 9;	/*	Revision Number. */
+static const unsigned char	pgm_version_v	= 1;	/*	Version. */
+static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
+static const unsigned char	pgm_version_rn	= 0;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -133,6 +134,8 @@ static void CloseFiles(void);
 static void RewindFiles(void);
 static void DumpBin(void);
 static void do_asm(void);
+static int print_symbols_type(	enum symbol_type_t symbol_type,
+	  										int symbol_field_size, int tab_length);
 static void PrintList(char *text);
 static void display_help(void);
 static int src_line_parser(char *text);
@@ -184,6 +187,11 @@ int	file_level	= 0;
 SYMBOL	*Symbols;
 
 char Image[1024 * 64];
+
+/*	- This "Empty String" is used for initializing string pointers, when
+ *	  unable to initialize them using memory allocated dynamically.
+ *	*/
+char	*empty_string	= "";
 
 
 /*	Private variables.
@@ -264,19 +272,7 @@ static void check_new_pc(int count)
 	 *	  manage messages if necessary.
 	 *	------------------------------------------------------- */	 
 	if (((new_pc < 0) || (new_pc > 0x10000)) && (asm_pass == 1))
-	{
-		if (list != NULL)
-		{
-			fprintf(	list,
-				  		"*** Error %d in \"%s\": Program counter over range!\n",
-				  		EC_PCOR, in_fn[file_level]);
-		}
-
-		fprintf(	stderr,
-			  		"*** Error %d in \"%s\" @%d: Program counter over range (%d)!\n",
-			  		EC_PCOR, in_fn[file_level], codeline[file_level],
-				  	target.pc);
-	}
+		msg_error_d("Program counter over range!", EC_PCOR, target.pc);
 }
 
 
@@ -422,11 +418,115 @@ int get_file_from_path(char *fn, char* fn_path, size_t fn_path_size)
 
 
 /*	*************************************************************************
+ *	Function name:	print_symbols_type
+ *	Description:	Print Symbols having a specific type.
+ *	Author(s):		Claude Sylvain
+ *	Created:			27 December 2011
+ *	Last modified:
+ *
+ *	Parameters:		enum symbol_type_t symbol_type:
+ *							Symbol Type.
+ *
+ *						int symbol_field_size:
+ *							Symbols Field Size.
+ *
+ *						int tab_length:
+ *							Tab Length.	
+ *
+ *	Returns:			int:
+ *							Number of symbol printed.
+ *
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+static int print_symbols_type(	enum symbol_type_t symbol_type,
+	  										int symbol_field_size, int tab_length)
+{
+	int		symbols_num				= 0;
+	char		string_type[16];
+	SYMBOL	*local	= Symbols;
+	size_t	str_len;
+	int		tab_cnt;
+	int		i;
+
+
+	/*	Set Type String.
+	 *	---------------- */
+	switch (symbol_type)
+	{
+		case SYMBOL_LABEL:
+			strcpy(string_type, "Label");
+			break;
+
+		case SYMBOL_NAME:
+			strcpy(string_type, "Name");
+			break;
+
+		case SYMBOL_NAME_EQU:
+			strcpy(string_type, "EQU");
+			break;
+
+		case SYMBOL_NAME_SET:
+			strcpy(string_type, "SET");
+			break;
+
+		default:
+			strcpy(string_type, "?");
+			break;
+	}
+
+	/*	Print symbols of type "symbol_type".
+	 *	------------------------------------ */	
+	while (local->next != NULL)
+	{
+		if (local->Symbol_Type == symbol_type)
+		{
+			symbols_num++;			/*	One more symbols. */
+
+			str_len	= strlen(local->Symbol_Name);
+
+			/*	If there is something to print...
+			 *	--------------------------------- */	
+			if (str_len > 0)
+			{
+				/*	Calculate number of tabulation character to print.
+				 *	*/
+				tab_cnt	= (symbol_field_size - (int) str_len) / tab_length;
+
+				/*	- Add "1" if space to fill is not multiple of
+				 *	  tabulation size.  This can be seen directly
+				 *	  from "str_len".
+				 *	--------------------------------------------- */	 
+				if ((str_len % tab_length) != 0)
+					tab_cnt++;
+
+				fprintf(list, "%s", local->Symbol_Name);			/*	Name. */
+
+				/*	Space between fields (filled with "tab").
+				 *	----------------------------------------- */	
+				for (i = 0; i < tab_cnt; i++)
+					fprintf(list, "\t");
+
+				fprintf(list, "%s", string_type);
+				fprintf(list, "\t");
+				fprintf(list, "%05Xh\n", local->Symbol_Value);	/*	Value. */
+			}
+		}
+
+		local = (SYMBOL *) local->next;		/*	Select next symbols. */
+	}
+	
+	return (symbols_num);
+}
+
+
+/*	*************************************************************************
  *	Function name:	print_symbols_table
  *	Description:	Print Symbols Table.
  *	Author(s):		Claude Sylvain
  *	Created:			31 December 2010
- *	Last modified:
+ *	Last modified:	27 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -435,61 +535,93 @@ int get_file_from_path(char *fn, char* fn_path, size_t fn_path_size)
 
 static void print_symbols_table(void)
 {
-#define pst_TAB_LENGHT				8
-#define pst_SYMBOL_FIELD_SIZE		(9 * pst_TAB_LENGHT)
+#define pst_TAB_LENGTH				8
 
 	/*	Print symbols table only on second assembly pass.
 	 *	------------------------------------------------- */	
 	if (asm_pass == 1)
 	{
 		int		i;
-		int		tab_cnt;
 		size_t	str_len;
-		SYMBOL	*Local	= Symbols;
+		int		name_num		= 0;
+		int		equ_num		= 0;
+		int		set_num		= 0;
+		int		label_num	= 0;
+		SYMBOL	*local		= Symbols;
+		
+		int		symbol_name_len_max	= 0;
+		int		symbol_field_size;
+
+
+		/*	Get the length of the longuest symbol name.
+		 *	------------------------------------------- */	
+		while (local->next != NULL)
+		{
+			str_len	= strlen(local->Symbol_Name);
+
+			if (str_len > symbol_name_len_max)
+				symbol_name_len_max	= str_len;
+
+			local = (SYMBOL *) local->next;		/*	Select next symbols. */
+		}
+
+		/*	Calculate the number of "TAB" for the symbols field.
+		 *	*/
+		symbol_field_size	=	((symbol_name_len_max / pst_TAB_LENGTH) + 1) *
+		  							pst_TAB_LENGTH;
+
+		/*	Add additionnal space if minimal space is less than 4 spaces.
+		 *	------------------------------------------------------------- */
+		if ((symbol_field_size % symbol_name_len_max) <= 4)
+			symbol_field_size	+= pst_TAB_LENGTH;
+
+
+		local	= Symbols;		/*	Sync. */
+
+		/*	Print header.
+		 *	************* */
 
 		fprintf(list, "\n\n");
 		fprintf(list, "*******************************************************************************\n");
 		fprintf(list, "                                 Symbols table\n");
 		fprintf(list, "*******************************************************************************\n");
 		fprintf(list, "\n");
-		fprintf(list, "Names\t\t\t\t\t\t\t\t\tValues\n");
-		fprintf(list, "-----\t\t\t\t\t\t\t\t\t------\n");
 
-		/*	Print symbols name and value.
-		 *	----------------------------- */	
-		do
-		{
-			str_len	= strlen(Local->Symbol_Name);
+		fprintf(list, "Names");
 
-			/*	If there is something to print...
-			 *	--------------------------------- */	
-			if (str_len > 0)
-			{
-				/*	- Calculate number of tabulation character to
-				 *	  print.
-			 	 *	--------------------------------------------- */	 
-				tab_cnt	= (pst_SYMBOL_FIELD_SIZE - (int) str_len) / 8;
+		for (i = 0; i < (symbol_field_size / pst_TAB_LENGTH); i++)
+			fprintf(list, "\t");
 
-				/*	- Add "1" if space to fill is not multiple of
-				 *	  tabulation size.  This can be seen directly
-				 *	  from "str_len".
-			 	 *	--------------------------------------------- */	 
-				if ((str_len % pst_TAB_LENGHT) != 0)
-					tab_cnt++;
+		fprintf(list, "Types\tValues\n");
 
-				fprintf(list, "%s", Local->Symbol_Name);			/*	Name. */
+		fprintf(list, "-----");
 
-				/*	Space between fields (filled with "tab").
-				 *	----------------------------------------- */	
-				for (i = 0; i < tab_cnt; i++)
-					fprintf(list, "\t");
+		for (i = 0; i < (symbol_field_size / pst_TAB_LENGTH); i++)
+			fprintf(list, "\t");
 
-				fprintf(list, "%05Xh\n", Local->Symbol_Value);	/*	Value. */
-			}
+		fprintf(list, "-----\t------\n");
 
-			Local = (SYMBOL *) Local->next;		/*	Select next symbols. */
-		}
-		while (Local);
+		/*	Print each type of symbols by group.
+		 *	------------------------------------ */
+		name_num		=
+		  	print_symbols_type(SYMBOL_NAME, symbol_field_size, pst_TAB_LENGTH);
+		equ_num		=
+		  	print_symbols_type(SYMBOL_NAME_EQU, symbol_field_size, pst_TAB_LENGTH);
+		set_num		=
+		  	print_symbols_type(SYMBOL_NAME_SET, symbol_field_size, pst_TAB_LENGTH);
+		label_num	=
+		  	print_symbols_type(SYMBOL_LABEL, symbol_field_size, pst_TAB_LENGTH);
+
+		fprintf(list, "\n");
+
+		/*	Print statistics.
+		 *	----------------- */
+		fprintf(list, "Statistics\n");
+		fprintf(list, "----------\n");
+		fprintf(list, "\"Name\"\t= %d\n", name_num);
+		fprintf(list, "\"EQU\"\t= %d\n", equ_num);
+		fprintf(list, "\"SET\"\t= %d\n", set_num);
+		fprintf(list, "Labels\t= %d\n", label_num);
 
 		fprintf(list, "\n\n");
 	}
@@ -623,7 +755,7 @@ static void CloseFiles(void)
  *	Description:	Break down a source line.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	26 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -632,7 +764,9 @@ static void CloseFiles(void)
  *							...
  *
  *	Globals:
- *	Notes:
+ *
+ *	Notes:			- We assume that "text" always contain something, and
+ *						  do not check for empty line.
  *	************************************************************************* */
 
 static int src_line_parser(char *text)
@@ -655,11 +789,23 @@ static int src_line_parser(char *text)
 		/* Process comment statement in source stream.
 		 * */
 		type		= COMMENT;
-
-//		status	= LIST_ONLY;
 	}
-	/* Record any symbol and the cop.
-	 * ------------------------------ */
+	/*	- Some 8080 assemblers seems to support special commands beginning
+	 *	  with '$' character.
+	 *	  For the moment, just ignore lines that contain such special
+	 *	  command.
+	 *	------------------------------------------------------------------ */
+	else if (text[0] == '$')
+	{
+		msg_error_s("Special command not supported!", WC_SCNS, text);
+
+		/* Process comment statement in source stream.
+		 * */
+		type		= COMMENT;
+	}
+	/*	- Process label/name field, opcode field, operand field, and
+	 *	  comment field.
+	 * ------------------------------------------------------------ */
   	else
   	{
 		keyword_t   *p_keyword;
@@ -670,97 +816,114 @@ static int src_line_parser(char *text)
 		memset(Equation, 0, sizeof (Equation));
 
 
-		/*	Grab the label, if any.
-		 *	*********************** */
+		/*	Grab the label/name, if any.
+		 *	**************************** */
 
-		/*	- Notes: Because we filter comments above, we know that a non
-		 *	  blank will be a symbol.
-		 * ------------------------------------------------------------- */
-		if (isascii(text[0]) != 0)
+		/*	If there is a label/name, process it.
+		 * ------------------------------------- */
+		if (isspace((int) *text) == 0)
 		{
-#if 0
-			/*	TODO: Is there overflow check done in this function.
-		 	 * */
-			AddLabel(text);
-#endif
+			/*	Check for non valid first label/name character.
+			 *	----------------------------------------------- */
+			if (	(isdigit((int) *text) != 0) ||
+			  		((isalpha((int) *text) == 0) &&
+					((*text != '?') && (*text != '@') && (*text != '&') &&
+					(*text != '%')))
+				)
+			{
+				msg_warning_c(	"Bad first character on label/name!", WC_LNBFC,
+					  				*text);
+
+				/*	- Bypass all character(s) that can not be used as first
+				 *	  label/name character.
+				 *	*/
+				while (	(isdigit((int) *text) != 0) ||
+					  		((isalpha((int) *text) == 0) &&
+							((*text != '?') && (*text != '@') && (*text != '&') &&
+							(*text != '%')))
+						)
+				{
+					text++;
+				}
+			}
 
 			/*	TODO: Is this standard Intel assembler code?
 			 *	-------------------------------------------- */	
 			if (*text == '&')	label[i++] = *(text++);
 			if (*text == '%')	label[i++] = *(text++);
 
-			while (isalnum((int) *text) || (*text == '_'))
+			/*	- First label/name character can be '?' or '@'
+			 *	  special character.
+			 *	---------------------------------------------- */
+			if ((*text == '?') || (*text == '@'))
+				label[i++] = *(text++);
+
+			/*	Grab remaining of label/name characters.
+			 *	---------------------------------------- */	
+			while (1)
 			{
-				if (i < (sizeof (label) - 3))
+				if (islabelchar((int) *text) != 0)
 				{
-					label[i]	= *(text++);
-					i++;
+					if (i < (sizeof (label) - 3))
+					{
+						label[i]	= *(text++);
+						i++;
+					}
+					else
+					{
+						text++;
+
+						/*	- Display/Print error message, if not already done,
+						 *	  and necessary.
+						 *	--------------------------------------------------- */
+						if (!msg_displayed && (asm_pass == 1))
+						{
+							msg_displayed	= 1;	/*	No more message. */
+
+							msg_warning_s("Label too long!", WC_LTL, label);
+						}
+					}
 				}
 				else
 				{
-					text++;
-
-					/*	- Display/Print error message, if not already done,
-					 *	  and necessary.
-					 *	--------------------------------------------------- */
-					if (!msg_displayed && (asm_pass == 1))
+					/*	If this is the end of label.
+					 *	---------------------------- */
+					if (	(isspace((int) *text) != 0) || (*text == '\0') ||
+						  	(*text == ':'))
 					{
-						msg_displayed	= 1;	/*	No more message. */
+						/*	- TODO: Add the possibility to make "asm8080" check
+						 *	  for the presence of ':' at end of labels.
+						 *	- Notes: "Name" do not need to end with ':'.
+						 *	*/
 
-						if (list != NULL)
-						{
-							fprintf(	list,
-								  		"*** Error %d in \"%s\": Label too long (\"%s\")!\n",
-									  	EC_LTL, in_fn[file_level], label);
-						}
+						/*	Destroy ':', if necessary.
+						 *	-------------------------- */
+						if (*text == ':')
+							text++;
 
-						fprintf(	stderr,
-							  		"*** Error %d in \"%s\" @%d: Label too long (\"%s\")!\n",
-								  	EC_LTL, in_fn[file_level], codeline[file_level], label);
+						break;
+					}
+					/*	This is not a valid label/name character.
+					 *	Bypass the invalid character.
+					 *	----------------------------------------- */
+					else
+					{
+						msg_warning_c(	"Invalid label/name character!", WC_ILNC,
+							  				*text);
+
+						text++;
 					}
 				}
 			}
 		}
-		/*	Not an ASCII character :-/
-		 *	-------------------------- */	
-		else
-		{
-			if (asm_pass == 1)
-			{
-				if (list != NULL)
-				{
-					fprintf(	list,
-						  		"*** Error %d in \"%s\": Non ASCII character ('%c')!\n",
-							  	EC_NAC, in_fn[file_level], *text);
-				}
 
-				fprintf(	stderr,
-					  		"*** Error %d in \"%s\" @%d: Non ASCII character ('%c')!\n",
-						  	EC_NAC, in_fn[file_level], codeline[file_level], *text);
-			}
-
-			/*	Flush non ASCII characters.
-			 *	--------------------------- */	
-			while ((isascii(*text) == 0) && (*text != '\0'))
-				text++;
-		}
-
-
-		/*	Bypass label delimitors, if necessary.
-		 *	************************************** */
-
-		while (isspace((int) *text))
+		/*	Bypass space character(s).
+		 *	-------------------------- */
+		while (isspace((int) *text) != 0)
 			text++;
 
-		if (*text == ':')
-			text++;
-
-		while (isspace((int) *text))
-			text++;
-
-
-		/*	If nothing else than the label on the line...
-		 *	--------------------------------------------- */	
+		/*	If nothing else than the label/name on the line...
+		 *	-------------------------------------------------- */	
 		if ((*text == '\0') || (*text == ';'))
 		{
 			/*	- If code section is activated, process label.
@@ -809,16 +972,7 @@ static int src_line_parser(char *text)
 				{
 					msg_displayed	= 1;	/*	No more message. */
 
-					if (list != NULL)
-					{
-						fprintf(	list,
-							  		"*** Error %d in \"%s\": Keyword too long (\"%s\")!\n",
-								  	EC_KTL, in_fn[file_level], keyword);
-					}
-
-					fprintf(	stderr,
-						  		"*** Error %d in \"%s\" @%d: Keyword too long (\"%s\")!\n",
-							  	EC_KTL, in_fn[file_level], codeline[file_level], keyword);
+					msg_error_s("Keyword too long!", EC_KTL, keyword);
 				}
 			}
 		}
@@ -854,16 +1008,7 @@ static int src_line_parser(char *text)
 					{
 						msg_displayed	= 1;	/*	No more message. */
 
-						if (list != NULL)
-						{
-							fprintf(	list,
-								  		"*** Error %d in \"%s\": Equation too long (\"%s\")!\n",
-									  	EC_ETL, in_fn[file_level], Equation);
-						}
-
-						fprintf(	stderr,
-							  		"*** Error %d in \"%s\" @%d: Equation too long (\"%s\")!\n",
-								  	EC_ETL, in_fn[file_level], codeline[file_level], Equation);
+						msg_error_s("Equation too long!", EC_ETL, Equation);
 					}
 				}
 			}
@@ -944,19 +1089,7 @@ static int src_line_parser(char *text)
 				if (util_is_cs_enable() != 0)
 					process_label(label);
 
-				if (asm_pass == 1)
-				{
-					if (list != NULL)
-					{
-						fprintf(	list,
-							  		"*** Error %d in \"%s\": Can't find keyword \"%s\"!\n",
-								  	EC_CNFK, in_fn[file_level], keyword);
-					}
-
-					fprintf(	stderr,
-						  		"*** Error %d in \"%s\" @%d: Can't find keyword \"%s\"!\n",
-							  	EC_CNFK, in_fn[file_level], codeline[file_level], keyword);
-				}
+				msg_error_s("Can't find keyword", EC_CNFK, keyword);
 			}
 		}
 		else
@@ -979,7 +1112,7 @@ static int src_line_parser(char *text)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	26 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -1062,7 +1195,7 @@ static void PrintList(char *text)
 				 * - */
 				default:
 					if (list != NULL)
-						fprintf(list, "           %02X %02X\t%s\n", b2, b1, text);
+						fprintf(list, "            %02X %02X\t%s\n", b2, b1, text);
 
 					break;
 			}
@@ -1084,16 +1217,7 @@ static void PrintList(char *text)
 			 *	------------------------------------------------------------ */	
 			if (data_size < 0)
 			{
-				if (list != NULL)
-				{
-					fprintf(	list,
-						  		"*** Error %d in \"%s\": Negative value on \"DS\"!\n",
-							  	EC_NVDS, in_fn[file_level]);
-				}
-
-				fprintf(	stderr,
-					  		"*** Error %d in \"%s\" @%d: Negative value on \"DS\"!\n",
-						  	EC_NVDS, in_fn[file_level], codeline[file_level]);
+				msg_error("Negative value on \"DS\"!", EC_NVDS);
 			}
 			else
 				check_new_pc(data_size);		/*	Check the new PC value. */
@@ -1460,7 +1584,7 @@ static void DumpBin(void)
  *	Description:	Assemble source file.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	17 December 2011
+ *	Last modified:	27 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1543,14 +1667,19 @@ static void do_asm(void)
 		eol_found	= 0;
 
 		/*	Search for End Of Line.
-		 *	----------------------- */
+		 *	Notes: Some times a line can terminate with EOF!	
+		 *	------------------------------------------------ */
 		while (*p_text_1 != '\0')
 		{
 			if (*(p_text_1++) == '\n')
 				eol_found	= 1;
 		}
 
-		if (!eol_found)
+		/*	- If No end of line was found and not all file was read,
+		 *	  this tell us that line is too long :-(
+		 *	- Notes: Some times a line can terminate with EOF!	
+		 *	-------------------------------------------------------- */
+		if (!eol_found && (feof(in_fp[file_level]) == 0))
 		{
 			int	c;
 
@@ -1561,19 +1690,7 @@ static void do_asm(void)
 				c	= fgetc(in_fp[file_level]);
 			while ((c != '\n') && (c != EOF));
 
-			if (asm_pass == 1)
-			{
-				if (list != NULL)
-				{
-					fprintf(	list,
-						  		"*** Error %d in \"%s\": Line too long!\n",
-							  	EC_SLTL, in_fn[file_level]);
-				}
-
-				fprintf(	stderr,
-					  		"*** Error %d in \"%s\" @%d: Line too long!\n",
-						  	EC_SLTL, in_fn[file_level], codeline[file_level]);
-			}
+			msg_error("Line too long!", EC_SLTL);
 		}
 
 		/*	Destroy New Line character, if necessary.
@@ -1608,16 +1725,8 @@ static void do_asm(void)
 			 *	---------------------------------------------------------- */
 			if ((file_level > 0) && (asm_pass == 1))
 			{
-				if (list != NULL)
-				{
-					fprintf(	list,
-						  		"*** Warning %d in \"%s\": 'END' directive found inside an include file!\n",
-							  	WC_EDFIIF, in_fn[file_level]);
-				}
-
-				fprintf(	stderr,
-					  		"*** Warning %d in \"%s\" @%d: 'END' directive found inside an include file!\n",
-						  	WC_EDFIIF, in_fn[file_level], codeline[file_level]);
+				msg_warning(	"\"END\" directive found inside an include file!",
+					  				WC_EDFIIF);
 			}
 
 			PrintList(p_text);
@@ -2324,7 +2433,7 @@ static int check_set_output_fn(void)
  *	Description:	Clean Up before exiting.
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	17 December 2011
+ *	Last modified:	26 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -2336,7 +2445,20 @@ static void clean_up(void)
 	struct option_i_t	*p_option_i_cur;
 	struct option_i_t	*p_option_i_next;
 
+	SYMBOL	*Local	= Symbols;
+
+
+	/* Free symbols linked list.
+	 *	************************* */
+
+	do {
+		free(Local->Symbol_Name);
+		free(Local->src_filename);
+	} while ((Local = (SYMBOL *) Local->next) != NULL);
+
 	free(Symbols);
+
+
 	free(ByteWordStack);
 
 	/*	- Since "in_fn[0]" is no more used, we do not have to init.
@@ -2381,7 +2503,7 @@ static void clean_up(void)
  *	Description:	Process Input File.
  *	Author(s):		Claude Sylvain
  *	Created:			31 December 2010
- *	Last modified:	17 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *text:
  *							Pointer to text that hold input file.
@@ -2437,7 +2559,7 @@ static int process_input_file(char *text)
 	 *	---------------------------- */	
 	if (dot_pos > 0)
 	{
-		/*	Check for input file name maximum lenght.
+		/*	Check for input file name maximum length.
 		 *	----------------------------------------- */
 		if (dot_pos <= (sizeof (fn_base) - 4))
 		{
@@ -2459,7 +2581,11 @@ static int process_input_file(char *text)
 	 *	------------------------------------------------------ */	  
 	else
 	{
-		/*	Check for input file name maximum lenght.
+		fprintf(	stderr,
+			  		"*** Warning %d: Input file name have no extension. Will use \".asm\" (\"%s\")!\n",
+				  	WC_IFNHNE, text);
+
+		/*	Check for input file name maximum length.
 		 *	----------------------------------------- */
 		if (ln <= (sizeof (fn_base) - 1))
 		{

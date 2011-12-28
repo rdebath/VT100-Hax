@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	24 December 2011
+Last modified:	27 December 2011
 Notes:
 *******************************************************************************
 
@@ -494,6 +494,54 @@ Notes:		- Added "Phasing error" detection.
 		  Now that asm8080 can detect phasing error, such coding
 		  errors can be detected, and bad code generation avoided.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		25 December 2011
+By:		Claude Sylvain
+Version:	1.0.0
+
+Notes:		- Label/name processing improvement.
+		  Now, labels and names can be distinguish each from
+		  other.
+
+		- Lines begining with '$' character seems to contain special
+		  assembler directive on some 8080 assemblers.
+		  For now, "asm8080" ignore these lines, and just
+		  display a warning message.
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		26 December 2011
+By:		Claude Sylvain
+Version:	1.0.0
+
+Notes:		- Implemented "SET" assembly directive.  Was previously
+		  handle as an "EQU".
+		- Done "EQU" assembly directive improvement.
+		- Done Symbols list improvement.
+		- Done Symbols print improvement.
+		- Done several tests/corrections using assembly program
+	          that can be run on SOL-20 simulator (Solace).
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		27 December 2011
+By:		Claude Sylvain
+Version:	1.0.0
+
+Notes:		- Symbols table printing improvement.
+
+		- Now, "asm8080" warn user if no file name extension
+		  was specified on the input file name.
+
+		- Created "msg.c/h" that provide print messages
+	      	  functionnalities; and updated all project modules
+	  	  to use these functionnalities.
+-------------------------------------------------------------------------------
+
+
+
+
 
 
 

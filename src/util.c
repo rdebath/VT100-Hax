@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *	************************************************************************* */
 
 /*
@@ -58,16 +58,8 @@
 #include "project.h"
 #include "err_code.h"
 #include "main.h"
-
-
-/*	*************************************************************************
- *	                           FUNCTIONS DEFINITION
- *	************************************************************************* */
-
-/*	Private functions.
- *	****************** */
-
-//static void AddLabel(char *label);
+#include "msg.h"
+#include "util.h"
 
 
 /*	*************************************************************************
@@ -80,7 +72,7 @@
  *	Description:	Tell if character can be a label character.
  *	Author(s):		Claude Sylvain
  *	Created:			8 January 2011
- *	Last modified:
+ *	Last modified:	25 December 2011
  *
  *	Parameters:		int c:
  *							The character to test.
@@ -90,12 +82,23 @@
  *							!= 0	: Is a label character.
  *
  *	Globals:
- *	Notes:
+ *
+ *	Notes:			- Do not check for label/name first character, that
+ *						  can be '?' or '@' special character.
+ *
+ *						- '_' character is not accepted as a valid character in
+ *						  legacy 8080 assemblers.
  *	************************************************************************* */
 
 int islabelchar(int c)
 {
+/*	If Accepting Underscore Character in Label/Name.
+ *	------------------------------------------------ */	
+#if ACCEPT_UNDERSCORE_CHAR_IN_LN
 	return ((isalnum(c) != 0) || (c == '_'));
+#else
+	return (isalnum(c) != 0);
+#endif
 }
 
 
@@ -107,7 +110,7 @@ int islabelchar(int c)
  *
  *	Author(s):		Claude Sylvain
  *	Created:			4 December 2011
- *	Last modified:	18 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		int value:
  *							Expression Value to check.
@@ -127,19 +130,10 @@ int check_evor(int value, int limit)
 {
 	int	rv	= 0;
 
-	if ((value > limit) && (asm_pass == 1))
+//	if ((value > limit) && (asm_pass == 1))
+	if (value > limit)
 	{
-		if (list != NULL)
-		{
-			fprintf(	list,
-				  		"*** Error %d in \"%s\": Expression value over range (%d)!\n",
-				  		EC_EVOR, in_fn[file_level], value);
-		}
-
-		fprintf(	stderr,
-			  		"*** Error %d in \"%s\" @%d: Expression value over range (%d)!\n",
-			  		EC_EVOR, in_fn[file_level], codeline[file_level], value);
-
+		msg_error_d("Expression value over range!", EC_EVOR, value);
 		rv	= -1;
 	}
 
@@ -155,7 +149,7 @@ int check_evor(int value, int limit)
  *
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	18 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		int value:
  *							Value to check.
@@ -175,19 +169,10 @@ int check_oor(int value, int limit)
 {
 	int	rv	= 0;
 
-	if ((value > limit) && (asm_pass == 1))
+//	if ((value > limit) && (asm_pass == 1))
+	if (value > limit)
 	{
-		if (list != NULL)
-		{
-			fprintf(	list,
-				  		"*** Error %d in \"%s\": Operand over range (%d)!\n",
-					  	EC_OOR, in_fn[file_level], value);
-		}
-
-		fprintf(	stderr,
-			  		"*** Error %d in \"%s\" @%d: Operand over range (%d)!\n",
-				  	EC_OOR, in_fn[file_level], codeline[file_level], value);
-
+		msg_error_d("Operand over range!", EC_OOR, value);
 		rv	= -1;
 	}
 
@@ -197,10 +182,10 @@ int check_oor(int value, int limit)
 
 /*	*************************************************************************
  *	Function name:	FindLabel
- *	Description:	Label processing.
+ *	Description:	Find a Label (actually a symbol).
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	18 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *text:
  *							"text" that possibly contain label.
@@ -220,11 +205,16 @@ SYMBOL *FindLabel(char *text)
 	int		i			= 0;
 
 
-	while (isspace((int) *text))
-		text++;
-
+	/*	TODO: Is this standard Intel assembler code?
+	 *	-------------------------------------------- */	
 	if (*text == '&')	tmp[i++] = *text++;
 	if (*text == '%')	tmp[i++] = *text++;
+
+	/*	- First label/name character can be '?' or '@'
+	 *	  special character.
+	 *	---------------------------------------------- */
+	if ((*text == '?') || (*text == '@'))
+		tmp[i++] = *(text++);
 
 	while (islabelchar((int) *text) != 0)
 	{
@@ -235,26 +225,12 @@ SYMBOL *FindLabel(char *text)
 		if (++i >= sizeof (tmp))
 		{
 			--i;
-
-			if (asm_pass == 1)
-			{
-				if (list != NULL)
-				{
-					fprintf(	list,
-						  		"*** Error %d in \"%s\": \"FindLabel\" buffer overflow!\n",
-							  	EC_FLBOF, in_fn[file_level]);
-				}
-
-				fprintf(	stderr,
-					  		"*** Error %d in \"%s\" @%d: \"FindLabel\" buffer overflow!\n",
-						  	EC_FLBOF, in_fn[file_level], codeline[file_level]);
-			}
-
+			msg_error("\"FindLabel\" buffer overflow!", EC_FLBOF);
 			break;
 		}
 	}
 
-	tmp[i] = '\0';
+	tmp[i] = '\0';					/*	String delimitor. */
 
 	while (Local->next)
   	{
@@ -273,39 +249,26 @@ SYMBOL *FindLabel(char *text)
  *	Description:	Add a Label to the label's linked list.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *label:
  *							String that contain Label to Add.
  *
- *	Returns:			void
+ *	Returns:			int:
+ *							-1	: Can not add label because it already exist.
+ *							0	: Label/name added successfully.
+ *
  *	Globals:
  *	Notes:
  *	************************************************************************* */
 
-//static void AddLabel(char *text)
-void AddLabel(char *label)
+int AddLabel(char *label)
 {
-//	char   label[LABEL_SIZE_MAX];
-//	int    i			= 0;
-	SYMBOL *Local	= Symbols;
-	int    phantom	= 0;
+	int		rv			= 0;
+	SYMBOL	*Local	= Symbols;
+	int		phantom	= 0;
 
 
-//	if (asm_pass != 0)				return;
-//	if (isspace((int) *text))		return;
-//	if (util_is_cs_enable() == 0)	return;
-
-#if 0
-	if (*text == '&')
-		label[i++] = *text++;
-
-	if (*text == '%')
-	{
-		label[i++] = *text++;
-		phantom++;
-	}
-#endif
 	if (*label == '&')
 		label++;
 
@@ -315,13 +278,8 @@ void AddLabel(char *label)
 		phantom++;
 	}
 
-#if 0
-	while (isalnum((int) *text) || (*text == '_'))
-		label[i++] = *(text++);
-
-	label[i] = '\0';
-#endif
-
+	/*	If label/name already exist...
+	 *	------------------------------ */
 	if (FindLabel(label) != NULL)
 	{
 		if (phantom == 0)
@@ -343,7 +301,7 @@ void AddLabel(char *label)
 					  	EC_DL, in_fn[file_level], codeline[file_level], label);
 		}
 
-		return;
+		return (-1);
 	}
 
 
@@ -355,10 +313,61 @@ void AddLabel(char *label)
 	while (Local->next)
 		Local = (SYMBOL *) Local->next;
 
-	strcpy(Local->Symbol_Name, label);
 
-//	Local->Symbol_Value	= target.pc & 0xFFFF;
-	Local->next				= (SYMBOL *) calloc(1, sizeof(SYMBOL));
+	/*	Store symbol name.
+	 *	****************** */	
+
+	/*	Allocate memory.
+	 *	*/	
+	Local->Symbol_Name = (char *) malloc(strlen(label) + 1);
+
+	/*	Check for memory allocation error.
+	 *	If no memory allocation error, store the symbol name.
+ 	 *	----------------------------------------------------- */	 
+	if (Local->Symbol_Name != NULL)
+	{
+		strcpy(Local->Symbol_Name, label);
+	}
+	/*	Can not allocate memory :-(
+	 *	--------------------------- */	
+	else
+		msg_error_s("Can't allocate memory!", EC_CAM, label);
+
+
+	/*	Store source file name in which symbol is located.
+	 *	************************************************** */	
+
+	/*	Allocate memory.
+	 *	*/	
+	Local->src_filename = (char *) malloc(strlen(in_fn[file_level]) + 1);
+
+	/*	Check for memory allocation error.
+	 *	If no memory allocation error, store the source file name.
+ 	 *	---------------------------------------------------------- */	 
+	if (Local->src_filename != NULL)
+	{
+		strcpy(Local->src_filename, in_fn[file_level]);
+	}
+	/*	Can not allocate memory :-(
+	 *	--------------------------- */	
+	else
+		msg_error_s("Can't allocate memory!", EC_CAM, label);
+
+
+	/*	Store source file line number on which the symbol is located.
+	 *	*/
+	Local->code_line		= codeline[file_level];
+
+	/*	- Check for memory allocation error, and display error message
+	 *	  if necessary.
+ 	 *	- Notes: When not able to allocate memory for new symbol, this
+	 *	  will make the last symbol in the linked list destroyed next
+	 *	  time a symbol will be added :-(
+	 *	-------------------------------------------------------------- */
+	if ((Local->next = (SYMBOL *) calloc(1, sizeof(SYMBOL))) == NULL)
+		msg_error_s("Can't allocate memory!", EC_CAM, label);
+
+	return (rv);
 }
 
 
@@ -367,7 +376,7 @@ void AddLabel(char *label)
  *	Description:	Process Label.
  *	Author(s):		Claude Sylvain
  *	Created:			28 December 2010
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *label:
  *							Point to a string that hold label.
@@ -389,14 +398,19 @@ void process_label(char *label)
 	 *	---------------------------------------------------- */	
 	if (asm_pass == 0)
 	{
-//		SYMBOL	*Local;
+		/*	Add label/name.
+		 *	If able to add it, set its value.
+	 	 *	--------------------------------- */	 
+		if (AddLabel(label) != -1)
+		{
+			Local = FindLabel(label);
 
-		AddLabel(label);
-
-		Local = FindLabel(label);
-
-		if (Local != NULL)
-			Local->Symbol_Value = target.pc;
+			if (Local != NULL)
+			{
+				Local->Symbol_Value	= target.pc;
+				Local->Symbol_Type	= SYMBOL_LABEL;
+			}
+		}
 	}
 	/*	We assume we are in second assembler pass...
 	 * Check for phasing error.	
@@ -404,33 +418,16 @@ void process_label(char *label)
 	 *	------------------------------------------------------ */	
 	else
 	{
-//		SYMBOL	*Local = FindLabel(label);
 		Local = FindLabel(label);
 
-#if 0
-		/* Record the address of the label.
-		 * -------------------------------- */
-		if (Local)
-		{
-			Local->Symbol_Value = target.pc & 0xFFFF;
-		}
-#endif
 		if ((Local != NULL) && (Local->Symbol_Value != target.pc))
 		{
-			if (list != NULL)
-			{
-				fprintf(	list,
-					  		"*** Error %d in \"%s\": Phasing error (\"%s\")!\n",
-						  	EC_PE, in_fn[file_level], label);
-			}
-
-			fprintf(	stderr,
-				  		"*** Error %d in \"%s\" @%d: Phasing error (\"%s\")!\n",
-					  	EC_PE, in_fn[file_level], codeline[file_level], label);
+			msg_error_s("Phasing error!", EC_PE, label);
 
 			/*	Sync label value.
-			 *	*/	
-			Local->Symbol_Value = target.pc;
+			 *	----------------- */
+			Local->Symbol_Value	= target.pc;
+			Local->Symbol_Type	= SYMBOL_LABEL;
 		}
 	}
 }

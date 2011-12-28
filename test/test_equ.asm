@@ -1,7 +1,6 @@
 
 
-
-	if 1
+	if 0
 
 EQU_TEST1	equ	0
 EQU_TEST2	equ	"Hello!"	;"EQU" do not support string.
@@ -35,6 +34,9 @@ EQU_TEST19	equ	000000001d
 
 	endif
 
+
+	if 0
+
 EQU_TEST20	equ	-1
 EQU_TEST21	equ	-1-1
 ;EQU_TEST21	equ	(-1)-1
@@ -52,18 +54,22 @@ EQU_TEST28	EQU	(EQU_TEST4 + EQU_TEST4) + EQU_TEST4
 EQU_TEST29	EQU	((EQU_TEST4 + EQU_TEST4) + EQU_TEST4) * 2
 EQU_TEST30	EQU	(((EQU_TEST4 + EQU_TEST4) + EQU_TEST4) * 2) / 3
 
+	endif
+
+
+
+;my_symbol	set	10
+my_symbol	equ	11
+;my_symbol	set	12
+my_symbol	equ	12
+;my_symbol	set	11
+;my_symbol	set	12
+;my_symbol	set	13
 
 
 
 
 
-
-	org	0
-
-
-
-
-	end
 
 
 

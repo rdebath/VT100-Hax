@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  * Notes:
  *	************************************************************************* */
 
@@ -62,6 +62,7 @@
 #include "util.h"
 #include "exp_parser.h"
 #include "main.h"
+#include "msg.h"
 #include "opcode.h"
 
 
@@ -234,7 +235,7 @@ const keyword_t	OpCodes[] =
  *	Description:	Parse 16-bit Register.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	15 January 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -275,14 +276,7 @@ static char *parse_reg16bits(char *text, unsigned char ar)
 	 *	------------------------ */	
 	if ((text_len <= 0) || (text_len > (sizeof (buf) - 1)))
 	{
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": Bad 16-bit register (%s)!\n", EC_B16BR, in_fn[file_level], text);
-
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad 16-bit register (%s)!\n", EC_B16BR, in_fn[file_level], codeline[file_level], text);
-		}
-
+		msg_error_s("Bad 16-bit register!", EC_B16BR, text);
 		return (text);
 	}
 
@@ -354,6 +348,7 @@ static char *parse_reg16bits(char *text, unsigned char ar)
 			reg_not_allowed	= 1;
 	}
 
+#if 0
 	/*	Print/Display error on pass #2 only.
 	 *	------------------------------------ */
 	if (asm_pass == 1)
@@ -362,21 +357,24 @@ static char *parse_reg16bits(char *text, unsigned char ar)
 		 *	-------------------------- */
 		if (reg_not_allowed)
 		{
-			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": Register not allowed (%s)!\n", EC_RNA, in_fn[file_level], buf_ori);
-
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Register not allowed (%s)!\n", EC_RNA, in_fn[file_level], codeline[file_level], buf_ori);
+			msg_error_s("Register not allowed!", EC_RNA, buf_ori);
 		}
 		/*	Bad register.
 		 *	------------- */
 		else
 		{
-			if (list != NULL)
-				fprintf(list, "*** Error %d in \"%s\": Bad 16-bit register (%s)!\n", EC_B16BR, in_fn[file_level], buf_ori);
-
-			fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad 16-bit register (%s)!\n", EC_B16BR, in_fn[file_level], codeline[file_level], buf_ori);
+			msg_error_s("Bad 16-bit register!", EC_B16BR, buf_ori);
 		}
 	}
+#endif
+
+	/*	- Print error message if register is not allowed
+	 *	  or bad.
+	 *	------------------------------------------------ */
+	if (reg_not_allowed)
+		msg_error_s("Register not allowed!", EC_RNA, buf_ori);
+	else
+		msg_error_s("Bad 16-bit register!", EC_B16BR, buf_ori);
 
 	return (text);
 }
@@ -387,7 +385,7 @@ static char *parse_reg16bits(char *text, unsigned char ar)
  *	Description:	Parse Destination Register.
  *	Author(s):		Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -438,14 +436,7 @@ static char *DestReg(char *text)
 			break;
 
 		default:
-			if (asm_pass == 1)
-			{
-				if (list != NULL)
-					fprintf(list, "*** Error %d in \"%s\": Bad destination register (%c)!\n", EC_BDR, in_fn[file_level], *text);
-
-				fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad destination register (%c)!\n", EC_BDR, in_fn[file_level], codeline[file_level], *text);
-			}
-
+			msg_error_c("Bad destination register!", EC_BDR, *text);
 			break;
 	}
 
@@ -460,7 +451,7 @@ static char *DestReg(char *text)
  *	Description:	Parse Source Register.
  *	Author(s):		Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 November 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -518,14 +509,7 @@ static char *SourceReg(char *text)
 			break;
 
 		default:
-			if (asm_pass == 1)
-			{
-				if (list != NULL)
-					fprintf(list, "*** Error %d in \"%s\": Bad source register (%c)!\n", EC_BSR, in_fn[file_level], *text);
-
-				fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad source register (%c)!\n", EC_BSR, in_fn[file_level], codeline[file_level], *text);
-			}
-
+			msg_error_c("Bad source register!", EC_BSR, *text);
 			break;
 	}
 

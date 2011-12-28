@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Notes:			- This module implement an expression parser using
  *						  DAL (Direct Algebraic Logic) format.
@@ -67,6 +67,7 @@
 #include "war_code.h"		/*	Warning Codes. */
 #include "util.h"
 #include "main.h"
+#include "msg.h"
 #include "exp_parser.h"
 
 
@@ -143,7 +144,7 @@ static const struct operator_t	operator[]	=
  *	****************** */
 
 static int search_operator(char *text, int *text_bp);
-static void dpe_util_get_number_base_inc(void);
+//static void dpe_util_get_number_base_inc(void);
 static int pop(void);
 static void push(int);
 static int add_stack(void);
@@ -263,6 +264,7 @@ static int search_operator(char *text, int *text_bp)
 }
 
 
+#if 0
 /*	*************************************************************************
  *	Function name:	dpe_util_get_number_base_inc
  *
@@ -288,6 +290,7 @@ static void dpe_util_get_number_base_inc(void)
 		fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad data encoding!\n", EC_BDE, in_fn[file_level], codeline[file_level]);
 	}
 }
+#endif
 
 
 /*	*************************************************************************
@@ -295,7 +298,7 @@ static void dpe_util_get_number_base_inc(void)
  *	Description:	Extract Byte.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	31 December 2010
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -337,7 +340,8 @@ int extract_byte(char *text)
 
 					if (inc == -1)
 					{
-						dpe_util_get_number_base_inc();
+//						dpe_util_get_number_base_inc();
+						msg_error("Bad data encoding!", EC_BDE);
 						return (accum);
 					}
 
@@ -353,7 +357,8 @@ int extract_byte(char *text)
 
 					if (inc == -1)
 					{
-						dpe_util_get_number_base_inc();
+//						dpe_util_get_number_base_inc();
+						msg_error("Bad data encoding!", EC_BDE);
 						return (accum);
 					}
 
@@ -383,7 +388,8 @@ int extract_byte(char *text)
 
 					if (inc == -1)
 					{
-						dpe_util_get_number_base_inc();
+//						dpe_util_get_number_base_inc();
+						msg_error("Bad data encoding!", EC_BDE);
 						return (accum);
 					}
 
@@ -412,15 +418,7 @@ int extract_byte(char *text)
 					}
 					else
 					{
-						/*	Display/Print error, if possible.
-						 *	--------------------------------- */
-						if (asm_pass == 1)
-						{
-							if (list != NULL)
-								fprintf(list, "*** Error %d in \"%s\": Bad binary digit (%c)!\n", EC_BBD, in_fn[file_level], *text);
-
-							fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad binary digit (%c)!\n", EC_BBD, in_fn[file_level], codeline[file_level], *text);
-						}
+						msg_error_c("Bad binary digit!", EC_BBD, *text);
 
 						return (accum);	/* Punt. */
 					}
@@ -438,15 +436,7 @@ int extract_byte(char *text)
 					}
 					else
 					{
-						/*	Display/Print error, if possible.
-						 *	--------------------------------- */
-						if (asm_pass == 1)
-						{
-							if (list != NULL)
-								fprintf(list, "*** Error %d in \"%s\": Bad octal digit (%c)!\n", EC_BOC, in_fn[file_level], *text);
-
-							fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad octal digit (%c)!\n", EC_BOC, in_fn[file_level], codeline[file_level], *text);
-						}
+						msg_error_c("Bad octal digit!", EC_BOC, *text);
 
 						return (accum);	/* Punt. */
 					}
@@ -464,15 +454,7 @@ int extract_byte(char *text)
 					}
 					else
 					{
-						/*	Display/Print error, if possible.
-						 *	--------------------------------- */
-						if (asm_pass == 1)
-						{
-							if (list != NULL)
-								fprintf(list, "*** Error %d in \"%s\": Bad decimal digit (%c)!\n", EC_BDD, in_fn[file_level], *text);
-
-							fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad decimal digit (%c)!\n", EC_BDD, in_fn[file_level], codeline[file_level], *text);
-						}
+						msg_error_c("Bad decimal digit!", EC_BDD, *text);
 
 						return (accum);	/* Punt. */
 					}
@@ -494,15 +476,7 @@ int extract_byte(char *text)
 					}
 					else
 					{
-						/*	Display/Print error, if possible.
-						 *	--------------------------------- */
-						if (asm_pass == 1)
-						{
-							if (list != NULL)
-								fprintf(list, "*** Error %d in \"%s\": Bad hexadecimal digit (%c)!\n", EC_BHD, in_fn[file_level], *text);
-
-							fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad hexadecimal digit (%c)!\n", EC_BHD, in_fn[file_level], codeline[file_level], *text);
-						}
+						msg_error_c("Bad hexadecimal digit!", EC_BHD, *text);
 
 						return (accum);	/* Punt. */
 					}
@@ -510,23 +484,15 @@ int extract_byte(char *text)
 					break;
 
 				default:
-					/*	Display/Print error, if possible.
-					 *	--------------------------------- */
-					if (asm_pass == 1)
-					{
-						if (list != NULL)
-							fprintf(list, "*** Error %d in \"%s\": Bad data (\"%s\")!\n", EC_BD, in_fn[file_level], text);
-
-						fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad data (\"%s\")!\n", EC_BD, in_fn[file_level], codeline[file_level], text);
-					}
-
+					msg_error_s("Bad data!", EC_BD, text);
 					return (0);
 			}
 		}
 	}
 	else
 	{
-		dpe_util_get_number_base_inc();
+//		dpe_util_get_number_base_inc();
+		msg_error("Bad data encoding!", EC_BDE);
 	}
 
 	return (accum);
@@ -606,7 +572,7 @@ static void eval(void)
  *	Description:	Add Stack .
  *	Author(s):		Claude Sylvain
  *	Created:			2 January 2011
- *	Last modified:	10 December 2011
+ *	Last modified:	27 December 2011
  *	Parameters:		void
  *
  *	Returns:			int:
@@ -644,19 +610,7 @@ static int add_stack(void)
 	}
 	else
 	{
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-			{
-				fprintf(	list,
-					  		"*** Error %d in \"%s\": Memory Allocation Error!\n",
-						  	EC_MAE, in_fn[file_level]);
-			}
-
-			fprintf(	stderr,
-				  		"*** Error %d in \"%s\" @%d: Memory Allocation Error!\n",
-					  	EC_MAE, in_fn[file_level], codeline[file_level]);
-		}
+		msg_error("Memory Allocation Error!", EC_MAE);
 	}
 
 	return (rv);
@@ -668,7 +622,7 @@ static int add_stack(void)
  *	Description:	Remove Stack .
  *	Author(s):		Claude Sylvain
  *	Created:			2 January 2011
- *	Last modified:	10 December 2011
+ *	Last modified:	27 December 2011
  *	Parameters:		void
  *
  *	Returns:			int:
@@ -700,21 +654,7 @@ static int remove_stack(void)
 		rv	= 0;		/*	Success! */
 	}
 	else
-	{
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-			{
-				fprintf(	list,
-					  		"*** Error %d in \"%s\": Expression parser stack remove underflow!\n",
-						  	EC_EPSRUF, in_fn[file_level]);
-			}
-
-			fprintf(	stderr,
-				  		"*** Error %d in \"%s\" @%d: Expression parser stack remove underflow!\n",
-					  	EC_EPSRUF, in_fn[file_level], codeline[file_level]);
-		}
-	}
+		msg_error("Expression parser stack remove underflow!", EC_EPSRUF);
 
 	return (rv);
 }
@@ -725,7 +665,7 @@ static int remove_stack(void)
  *	Description:	DAL (Direct Algebraic Logic) Expression Parser.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		char *text:
  *							- Point to a string that hold expression to parse
@@ -741,6 +681,8 @@ static int remove_stack(void)
 
 static int dalep(char *text)
 {
+	int	msg_displayed	= 0;
+
 	while (1)
 	{
 		switch (*text)
@@ -794,19 +736,7 @@ static int dalep(char *text)
 				 *	---------------------------- */	
 				if (*text == '\0')
 				{
-					if (asm_pass == 1)
-					{
-						if (list != NULL)
-						{
-							fprintf(	list,
-								  		"*** Error %d in \"%s\": No matching ')'!\n",
-									  	EC_NMEP, in_fn[file_level]);
-						}
-
-						fprintf(	stderr,
-							  		"*** Error %d in \"%s\" @%d: No matching ')'!\n",
-								  	EC_NMEP, in_fn[file_level], codeline[file_level]);
-					}
+					msg_error("No matching ')'!", EC_NMEP);
 				}
 				/*	Bypass matching ')'.
 				 *	-------------------- */		
@@ -929,10 +859,43 @@ static int dalep(char *text)
 
 					memset(label, 0, sizeof (label));
 
-					/*	Get the label or number.
-					 *	------------------------ */	
-					while (isalnum((int) *text) || (*text == '_'))
-						label[i++] = *text++;
+					/*	- First label/name character can be '?' or '@'
+					 *	  special character.
+					 *	---------------------------------------------- */
+					if ((*text == '?') || (*text == '@'))
+						label[i++] = *(text++);
+
+					/*	Grab remaining of label/name characters.
+					 *	---------------------------------------- */	
+					while (1)
+					{
+						if (islabelchar((int) *text) != 0)
+						{
+							if (i < (sizeof (label) - 3))
+							{
+								label[i]	= *(text++);
+								i++;
+							}
+							else
+							{
+								text++;
+
+								/*	- Display/Print error message, if not already done,
+								 *	  and necessary.
+								 *	--------------------------------------------------- */
+								if (!msg_displayed && (asm_pass == 1))
+								{
+									msg_displayed	= 1;	/*	No more message. */
+
+									msg_warning_s("Label too long!", WC_LTL, label);
+								}
+							}
+						}
+						else
+						{
+							break;
+						}
+					}
 
 					/*	Process label or number only if it exist.
 					 *	----------------------------------------- */	
@@ -951,20 +914,7 @@ static int dalep(char *text)
 
 							if (!Local)
 							{
-								if (asm_pass == 1)
-								{
-									if (list != NULL)
-									{
-										fprintf(	list,
-											  		"*** Error %d in \"%s\": Label not found (%s)!\n",
-												  	EC_LNF, in_fn[file_level], label);
-									}
-
-									fprintf(	stderr,
-										  		"*** Error %d in \"%s\" @%d: Label not found (%s)!\n",
-											  	EC_LNF, in_fn[file_level], codeline[file_level], label);
-								}
-
+								msg_error_s("Label not found!", EC_LNF, label);
 								return (0);
 							}
 
@@ -977,22 +927,7 @@ static int dalep(char *text)
 					 *	------------------- */	
 					else
 					{
-						/*	Display/Print Error, if necessary.
-						 *	---------------------------------- */	
-						if (asm_pass == 1)
-						{
-							if (list != NULL)
-							{
-								fprintf(	list,
-									  		"*** Error %d in \"%s\": Missing field!\n",
-										  	EC_MF, in_fn[file_level]);
-							}
-
-							fprintf(	stderr,
-								  		"*** Error %d in \"%s\" @%d: Missing field!\n",
-									  	EC_MF, in_fn[file_level], codeline[file_level]);
-						}
-
+						msg_error("Missing field!", EC_MF);
 						return (0);
 					}
 
@@ -1129,7 +1064,7 @@ int extract_word(char *text)
  *	Description:	Push a value to the stack.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	27 December 2011
  *
  *	Parameters:		int value:
  *							Value to push to the stack.
@@ -1155,19 +1090,7 @@ static void push(int value)
 	if (++p_ep_stack->level >= (sizeof (p_ep_stack->word) / sizeof (int)))
 	{
 		p_ep_stack->level--;
-
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-			{
-				fprintf(	list,
-					  		"*** Error %d in \"%s\": Expression parser stack push overflow!\n",
-						  	EC_EPSPOF, in_fn[file_level]);
-			}
-
-			fprintf(	stderr, "*** Error %d in \"%s\" @%d: Expression parser stack push overflow!\n",
-				  		EC_EPSPOF, in_fn[file_level], codeline[file_level]);
-		}
+		msg_error("Expression parser stack push overflow!", EC_EPSPOF);
 	}
 }
 
@@ -1177,7 +1100,7 @@ static void push(int value)
  *	Description:	Pop a value from the stack.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	27 December 2011
  *	Parameters:		void
  *
  *	Returns:			int:
@@ -1202,20 +1125,7 @@ static int pop(void)
 	if (--p_ep_stack->level < 0)
 	{
 		p_ep_stack->level	= 0;
-
-		if (asm_pass == 1)
-		{
-			if (list != NULL)
-			{
-				fprintf(	list,
-					  		"*** Error %d in \"%s\": Exression parser stack pop underflow!\n",
-						  	EC_EPSPUF, in_fn[file_level]);
-			}
-
-			fprintf(	stderr,
-				  		"*** Error %d in \"%s\" @%d: Exression parser stack pop underflow!\n",
-					  	EC_EPSPUF, in_fn[file_level], codeline[file_level]);
-		}
+		msg_error("Exression parser stack pop underflow!", EC_EPSPUF);
 	}
 
 	return (value);

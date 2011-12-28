@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	26 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -103,6 +103,8 @@ extern char	*in_fn[FILES_LEVEL_MAX];		/*	Input File Name. */
 extern int codeline[FILES_LEVEL_MAX];
 
 extern SYMBOL	*Symbols;
+
+extern char	*empty_string;
 
 
 /*	*************************************************************************
