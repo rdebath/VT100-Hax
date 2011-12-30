@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	26 December 2011
+ *	Last modified:	29 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -42,6 +42,9 @@
  *											  CONSTANTS
  *	************************************************************************* */
 
+#define SRC_LINE_WIDTH_MAX			256		/*	Source Line Maximum Width. */
+#define 	FILES_LEVEL_MAX			16			/*	Maximum Files Level. */
+
 /*	Symbol Maximum Size.
  *	*/	
 #define SYMBOL_SIZE_MAX				64
@@ -55,6 +58,15 @@
 /*	When "1", accept '_' character in label/name.
  *	*/	
 #define ACCEPT_UNDERSCORE_CHAR_IN_LN	1
+
+/*	Define to 1 to make "asm8080" support language extension.
+ *	Language extension are:
+ *		"C" like operators:
+ *			>>, <<, ==, =, <, <=, >, >=, , ~, |, ||, ^, &, &&
+ *		Pascal like operators:
+ *			=
+ *	*/
+#define LANG_EXTENSION						1
 
 /*	Temporary debug.
  *	*/	

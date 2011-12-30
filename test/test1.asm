@@ -1,4 +1,7 @@
-;Copyright (c) <2007> <Jay.Cotton@Sun.COM>
+
+
+;
+;Copyright (c) <2007-2011> <jay.cotton@oracle.com>
 ;
 ;Permission is hereby granted, free of charge, to any person
 ;obtaining a copy of this software and associated documentation
@@ -21,16 +24,31 @@
 ;FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;OTHER DEALINGS IN THE SOFTWARE.
 ;
+
+
 ; Test file used to checkout the assembler 
-;
+
+
+	;- Not standard, but supported if asm8080 is build with
+	;  support for language extension.
+	;
 	DB	"Test Test Test"
+
+	DB	'Test Test Test'
+
+
 FRONT	EQU	$
 BACK	EQU	FRONT
 XYZ	EQU	7
+
+
 TEST	MOV A,B  
 TES1	MOV A,C  
-; this should produce an address of 10 (0xa)
+
+	;This should load HL with a value of 000Dh.
+	;
 	LXI	HL,((XYZ + 20)+TEST)/4
+
 	MOV A,D  
 	MOV A,E  
 	MOV A,H  
@@ -95,15 +113,20 @@ TEST4	MVI D,2
 	MVI H,2
 	MVI L,2
 	MVI M,2
-TEST3	LXI BC,0x2233 
-	LXI DE,0x2233 
-	LXI HL,0x2233 
-	LXI SP,0x2233 
+;TEST3	LXI BC,0x2233 
+TEST3	LXI BC,2233h
+;	LXI DE,0x2233 
+	LXI DE,2233h
+;	LXI HL,0x2233 
+	LXI HL,2233h
+;	LXI SP,0x2233 
+	LXI SP,2233h
 	LXI SP,TEST4
-	LXI SP,"DF"
-	LDA 0x1234
+;	LXI SP,"DF"
+;	LDA 0x1234
+	LDA 1234h
 	LDA TEST3 
-	LDA "xyay"
+;	LDA "xyay"
 	LDA 'l' 
 	LDA $
 	LDA $+8
@@ -111,9 +134,10 @@ TEST3	LXI BC,0x2233
 	LDA $+'T'
 	LDA $+TEST3	
 	LDA $-TEST3	
-	STA 0x1234
+;	STA 0x1234
+	STA 1234h
 	STA TEST3 
-	STA "xyay"
+;	STA "xyay"
 	STA 'l' 
 	STA $
 	STA $+8
@@ -121,9 +145,10 @@ TEST3	LXI BC,0x2233
 	STA $+'T'
 	STA $+TEST3	
 	STA $-TEST3	
-	LHLD 0x1234
+;	LHLD 0x1234
+	LHLD 1234h
 	LHLD TEST3 
-	LHLD "xyay"
+;	LHLD "xyay"
 	LHLD 'l' 
 	LHLD $
 	LHLD $+8
@@ -131,9 +156,10 @@ TEST3	LXI BC,0x2233
 	LHLD $+'T'
 	LHLD $+TEST3	
 	LHLD $-TEST3	
-	SHLD 0x1234
+;	SHLD 0x1234
+	SHLD 1234h
 	SHLD TEST3 
-	SHLD "xyay"
+;	SHLD "xyay"
 	SHLD 'l' 
 	SHLD $
 	SHLD $+8
@@ -154,9 +180,10 @@ TEST3	LXI BC,0x2233
 	ADD H  
 	ADD L  
 	ADD M  
-	ADI    $
+	ADI low $
 	ADI 4 
-	ADI 0x45   
+;	ADI 0x45   
+	ADI 45h
 	ADI 'T'   
 	ADI XYZ
 	ADC A   
@@ -167,9 +194,10 @@ TEST3	LXI BC,0x2233
 	ADC H   
 	ADC L   
 	ADC M   
-	ACI    $
+;	ACI    $
 	ACI 4 
-	ACI 0x45   
+;	ACI 0x45   
+	ACI 45h
 	ACI 'T'   
 	ACI XYZ
 	SUB A  
@@ -180,9 +208,10 @@ TEST3	LXI BC,0x2233
 	SUB H  
 	SUB L  
 	SUB M  
-	SUI    $
+	SUI    low $
 	SUI 4 
-	SUI 0x45   
+;	SUI 0x45   
+	SUI 45h
 	SUI 'T'   
 	SUI XYZ
 	SBB A  
@@ -193,9 +222,10 @@ TEST3	LXI BC,0x2233
 	SBB H  
 	SBB L  
 	SBB M  
-	SBI    $
+	SBI    high $
 	SBI 4 
-	SBI 0x45   
+;	SBI 0x45   
+	SBI 45h
 	SBI 'T'   
 	SBI XYZ
 	INR A 
@@ -235,9 +265,10 @@ TEST3	LXI BC,0x2233
 	ANA H  
 	ANA L  
 	ANA M  
-	ANI    $
+	ANI    low $
 	ANI 4 
-	ANI 0x45   
+;	ANI 0x45   
+	ANI 45h
 	ANI 'T'   
 	ANI XYZ
 	ORA A 
@@ -256,9 +287,10 @@ TEST3	LXI BC,0x2233
 	XRA H  
 	XRA L  
 	XRA M  
-	XRI    $
+	XRI    high $
 	XRI 4 
-	XRI 0x45   
+;	XRI 0x45   
+	XRI 45h
 	XRI 'T'   
 	XRI XYZ
 	CMP A   
@@ -269,9 +301,10 @@ TEST3	LXI BC,0x2233
 	CMP H   
 	CMP L   
 	CMP M   
-	CPI    $
+	CPI    low $
 	CPI 4 
-	CPI 0x45   
+;	CPI 0x45   
+	CPI 45h
 	CPI 'T'   
 	CPI XYZ
 	RLC   
@@ -281,9 +314,10 @@ TEST3	LXI BC,0x2233
 	CMA    
 	CMC  
 	STC   
-	JMP 0x1234
+;	JMP 0x1234
+	JMP 1234h
 	JMP TEST3 
-	JMP "xyay"
+;	JMP "xyay"
 	JMP 'l' 
 	JMP $
 	JMP $+8
@@ -291,26 +325,29 @@ TEST3	LXI BC,0x2233
 	JMP $+'T'
 	JMP $+TEST3	
 	JMP $-TEST3	
-	JNZ 0x1234
+;	JNZ 0x1234
+	JNZ 1234h
 	JZ TEST3 
-	JNC "xyay"
+;	JNC "xyay"
 	JC 'l' 
 	JPO $
 	JPE $+8
 	JP $-8
 	JM $+'T'
-	CALL 0x1234
+;	CALL 0x1234
+	CALL 1234h
 	CALL TEST3 
-	CALL "xyay"
+;	CALL "xyay"
 	CALL 'l' 
 	CALL $
 	CALL $+8
 	CALL $-8
 	CALL $+'T'
 	CALL $+TEST3	
-	CNZ 0x1234
+;	CNZ 0x1234
+	CNZ 1234h
 	CZ TEST3 
-	CNC "xyay"
+;	CNC "xyay"
 	CC 'l' 
 	CPO $
 	CPE $+8
@@ -325,14 +362,16 @@ TEST3	LXI BC,0x2233
 	RPE 
 	RP 
 	RM 
-	RST 0x1234
-	RST TEST3 
-	RST "xyay"
-	RST 'l' 
-	RST $
-	RST $+8
-	RST $-8
-	RST $+'T'
+;	RST 0x1234
+	RST 7h
+;	RST TEST3 
+	RST XYZ 
+;	RST "xyay"
+;	RST 'l' 
+;	RST $
+;	RST $+8
+;	RST $-8
+;	RST $+'T'
 	PCHL   
 	PUSH DE  
 	PUSH BC
@@ -344,24 +383,31 @@ TEST3	LXI BC,0x2233
 	POP  PSW
 	XTHL   
 	SPHL 
-	IN  0x1234
+;	IN  0x1234
+	IN  low 1234h
 	IN  TEST3 
-	IN  "xyay"
+;	IN  "xyay"
 	IN  'l' 
-	IN  $
-	IN  $+8
-	IN  $-8
-	IN  $+'T'
-	OUT 0x1234
+	IN  low $
+	IN  low ($+8)
+	IN  high ($-8)
+	IN  low ($+'T')
+;	OUT 0x1234
+	OUT high 1234h
 	OUT TEST3 
-	OUT "xyay"
+;	OUT "xyay"
 	OUT 'l' 
-	OUT $
-	OUT $+8
-	OUT $-8
-	OUT $+'T'
+	OUT low $
+	OUT high ($+8)
+	OUT low ($-8)
+	OUT high ($+'T')
 	EI    
 	DI    
 	HLT    
 	NOP   
+
+
 	END
+
+
+

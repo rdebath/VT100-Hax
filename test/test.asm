@@ -1,4 +1,7 @@
-;Copyright (c) <2007> <Jay.Cotton@Sun.COM>
+
+
+;
+;Copyright (c) <2007-2011> <jay.cotton@oracle.com>
 ;
 ;Permission is hereby granted, free of charge, to any person
 ;obtaining a copy of this software and associated documentation
@@ -21,24 +24,46 @@
 ;FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 ;OTHER DEALINGS IN THE SOFTWARE.
 ;
+
+
 ; test file
 
+
 ;$include "macro.asm"
+
 
 true	equ	1
 false	equ	0
 
+
 	if	true
 	lxi	h,end
 	endif
+
 	if	false
 	lxi	h,end1
 	endif
+
+
 start 	EQU	$
 ;
 end	equ	$
 end1	equ	$
-	org	0x420
+
+
+;	org	0x420
+	org	0420h
+
+
 LIST	equ	$
-	db	(LIST > 8) + 128 , LIST and 0xff
+
+
+;	db	(LIST > 8) + 128 , LIST and 0xff
+	db	(LIST > 8) + 128 , LIST and 0FFh
+
+
 	END
+
+
+
+

@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	27 December 2011
+ *	Last modified:	29 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -53,8 +53,9 @@
 #define WC_SCNS			8		/*	Special Command Not Supported. */
 #define WC_LTL				9		/* Label Too Long. */
 #define WC_ILNC			10		/*	Invalid Label/Name Character. */
-#define	WC_IFNHNE		11		/*	Input File Name Have No Extension. */
+#define WC_IFNHNE			11		/*	Input File Name Have No Extension. */
 #define WC_SAUAL			12		/*	Symbol Already Used As Label. */
+#define WC_MPNS			13		/*	Macro Parameters Not Supported. */
 
 
 

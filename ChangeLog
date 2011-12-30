@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	27 December 2011
+Last modified:	29 December 2011
 Notes:
 *******************************************************************************
 
@@ -538,6 +538,49 @@ Notes:		- Symbols table printing improvement.
 	      	  functionnalities; and updated all project modules
 	  	  to use these functionnalities.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		28 December 2011
+By:		Claude Sylvain
+Version:	1.0.1
+
+Notes:		- Implemented the following operators:
+			HIGH
+			LOW
+			MOD
+			SHL
+			SHR
+			EQ
+			LT
+			LE
+			GT
+			GE
+			NE
+			NOT
+			XOR
+
+		- Expression parser improvement.
+
+		- Some "C" like operators are no more supported,
+		  because of conflic with assembler special characters.
+
+		- In "project.h", added a conditionnal compilation
+		  symbol to be able compile asm8080 without
+		  support for "C" like operators.
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		29 December 2011
+By:		Claude Sylvain
+Version:	1.0.2
+
+Notes:		- Implemented "MACRO", "ENDM" assembly directive.
+		  However, macro parameters are not supported, neither
+		  "LOCAL" assembler directive.
+-------------------------------------------------------------------------------
+
+
+
 
 
 

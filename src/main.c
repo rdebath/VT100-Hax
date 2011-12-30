@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	27 December 2011
+ *	Last modified:	29 December 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -75,7 +75,6 @@
  *											  CONSTANTS
  *	************************************************************************* */
 
-#define SRC_LINE_WIDTH_MAX			256		/*	Source Line Maximum Width. */
 #define FN_BASE_SIZE					80
 #define FN_IN_SIZE					80
 #define FN_OUT_SIZE					(FN_BASE_SIZE + 4)
@@ -111,7 +110,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 1;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 0;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 2;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -526,7 +525,7 @@ static int print_symbols_type(	enum symbol_type_t symbol_type,
  *	Description:	Print Symbols Table.
  *	Author(s):		Claude Sylvain
  *	Created:			31 December 2010
- *	Last modified:	27 December 2011
+ *	Last modified:	28 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -548,8 +547,12 @@ static void print_symbols_table(void)
 		int		set_num		= 0;
 		int		label_num	= 0;
 		SYMBOL	*local		= Symbols;
-		
-		int		symbol_name_len_max	= 0;
+
+		/*	- Notes: Must have a value > 0, in case there is no
+		 *	  symbols at all.
+	 	 *	*/	 
+		int		symbol_name_len_max	= 6;
+
 		int		symbol_field_size;
 
 
@@ -755,7 +758,7 @@ static void CloseFiles(void)
  *	Description:	Break down a source line.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 December 2011
+ *	Last modified:	29 December 2011
  *
  *	Parameters:		char *text:
  *							...
@@ -775,7 +778,7 @@ static int src_line_parser(char *text)
 	char	keyword_uc[sizeof (keyword)];	/*	OpCode in Upper Case. */
 	int	i					= 0;
 	int	msg_displayed	= 0;
-	char	Equation[80];
+	char	equation[80];
 	char	label[LABEL_SIZE_MAX];
 	int	status	= LIST_ONLY;
 
@@ -797,7 +800,8 @@ static int src_line_parser(char *text)
 	 *	------------------------------------------------------------------ */
 	else if (text[0] == '$')
 	{
-		msg_error_s("Special command not supported!", WC_SCNS, text);
+		if (inside_macro == 0)
+			msg_error_s("Special command not supported!", WC_SCNS, text);
 
 		/* Process comment statement in source stream.
 		 * */
@@ -813,7 +817,7 @@ static int src_line_parser(char *text)
 		memset(label, 0, sizeof (label));
 		memset(keyword, 0, sizeof (keyword));
 		memset(keyword_uc, 0, sizeof (keyword_uc));
-		memset(Equation, 0, sizeof (Equation));
+		memset(equation, 0, sizeof (equation));
 
 
 		/*	Grab the label/name, if any.
@@ -926,13 +930,15 @@ static int src_line_parser(char *text)
 		 *	-------------------------------------------------- */	
 		if ((*text == '\0') || (*text == ';'))
 		{
-			/*	- If code section is activated, process label.
+			/*	- If code section is activated and there is no macro
+			 *	  definition processed, process label.
 			 *	- Notes: There is no assembler directive, neither mnemonic
 			 *	  on the line.  So, label processing will not be
 		 	 *	  done by external function.  We must do label
 			 *	  processing here.
 			 *	---------------------------------------------------------- */
-			if (util_is_cs_enable() != 0)
+//			if (util_is_cs_enable() != 0)
+			if ((util_is_cs_enable() != 0) && (inside_macro == 0))
 				process_label(label);
 
 			/*	TODO: Why "type" and "status" are not the same ???
@@ -952,7 +958,8 @@ static int src_line_parser(char *text)
 		i					= 0;
 		msg_displayed	= 0;
 
-		while (isalnum((int) *text))
+//		while (isalnum((int) *text))
+		while ((isalnum((int) *text)) || (*text == '_'))
 		{
 			if (i < (sizeof (keyword) - 1))
 			{
@@ -992,9 +999,9 @@ static int src_line_parser(char *text)
 
 			while ((iscntrl((int) *text) == 0) && (*text != ';'))
 			{
-				if (i < (sizeof (Equation) - 1))
+				if (i < (sizeof (equation) - 1))
 				{
-					Equation[i]	= *(text++);
+					equation[i]	= *(text++);
 					i++;
 				}
 				else
@@ -1008,7 +1015,7 @@ static int src_line_parser(char *text)
 					{
 						msg_displayed	= 1;	/*	No more message. */
 
-						msg_error_s("Equation too long!", EC_ETL, Equation);
+						msg_error_s("equation too long!", EC_ETL, equation);
 					}
 				}
 			}
@@ -1024,13 +1031,23 @@ static int src_line_parser(char *text)
 		{
 			/*	If keyword is found, call the associated function.
 			 *	-------------------------------------------------- */	
-			if (!strcmp(p_keyword->Name, keyword_uc))
+			if (strcmp(p_keyword->Name, keyword_uc) == 0)
 		  	{
-				status	= p_keyword->fnc(label, Equation);
-				type		= status;
+				if (inside_macro == 0)
+				{
+					status	= p_keyword->fnc(label, equation);
+					type		= status;
 
-				if (status == PROCESSED_END)
-					return (status);
+					if (status == PROCESSED_END)
+						return (status);
+				}
+				else if (strcmp(keyword_uc, "ENDM") == 0)
+				{
+					status	= p_keyword->fnc(label, equation);
+					type		= status;
+				}
+				else
+					type		= LIST_ONLY;
 
 				break;
 			}
@@ -1045,59 +1062,146 @@ static int src_line_parser(char *text)
 		if (p_keyword->Name != NULL)
 			return (status);
 
+		/*	- If code section is not active or inside macro definition
+		 *	  processing, do no search for opcodes and macros.
+		 *	  Just list.
+		 *	---------------------------------------------------------- */
+		if ((util_is_cs_enable() == 0) || (inside_macro == 1))
+		{
+			type		= LIST_ONLY;
+			status	= LIST_ONLY;
+			return (status);
+		}
+
 
 		/*	- Lookup for opcodes, and call associated
 		 *	  function if necessary.
 		 *	***************************************** */
 
-		/*	- Check for opcodes search result only if code section
-		 *	  is active.
-		 *	------------------------------------------------------ */
-		if (util_is_cs_enable() == 1)
+		p_keyword	= (keyword_t *) OpCodes;
+
+		while (p_keyword->Name)
 		{
-			p_keyword	= (keyword_t *) OpCodes;
-
-			while (p_keyword->Name)
+			/*	If keyword is found, call the associated function.
+			 *	-------------------------------------------------- */	
+			if (!strcmp(p_keyword->Name, keyword_uc))
 			{
-				/*	If keyword is found, call the associated function.
-				 *	-------------------------------------------------- */	
-				if (!strcmp(p_keyword->Name, keyword_uc))
-				{
-					status	= p_keyword->fnc(label, Equation);
-					type		= status;
-					break;
-				}
-				else
-				{
-					p_keyword++;
-				}
+				status	= p_keyword->fnc(label, equation);
+				type		= status;
+				break;
 			}
-
-			/*	if no opcode (and no assembler directive) found...
-			 *	-------------------------------------------------- */
-			if (p_keyword->Name == NULL)
+			else
 			{
-				type		= COMMENT;
-				status	= COMMENT;
+				p_keyword++;
+			}
+		}
 
-				/*	- If code section is activated, process label.
-				 *	- Notes: Label was not processed by either assembler
-				 *	  directive processing function or assembler mnemonic
-				 *	  processing function.  So, we have to explicitly call
-				 *	  label processing.
-				 *	------------------------------------------------------ */
-				if (util_is_cs_enable() != 0)
-					process_label(label);
+		/*	If opcode was found and processed, exit.
+		 *	---------------------------------------- */	
+		if (p_keyword->Name != NULL)
+			return (status);
 
-				msg_error_s("Can't find keyword", EC_CNFK, keyword);
+
+		/*	Try with a macro.
+		 *	***************** */
+
+		/*	Remember actual File Level.
+		 *	This will serve us later to see if macro was found or not.
+		 *	*/
+		i	= file_level;
+
+		/*	Increment File Level, and check for overflow error.
+		 *	--------------------------------------------------- */
+		if (++file_level <= FILES_LEVEL_MAX)
+		{
+			int	file_openned	= 1;
+			char	*fn_macro;
+
+			/*	Open include file.
+			 *	****************** */	
+
+			fn_macro	= (char *) malloc(strlen(keyword_uc) + 3);
+
+			if (fn_macro != NULL)
+			{
+				strcpy(fn_macro, keyword_uc);
+				strcat(fn_macro, ".m");
+
+				if ((in_fp[file_level] = fopen(fn_macro, "r")) == NULL)
+				{
+					--file_level;				/*	Restore. */
+					file_openned	= 0;
+//					msg_error_s("Can't open include file!", EC_COIF, p_name);
+				}
+
+				/*	Open include file, and check for error.
+				 *	--------------------------------------- */
+				if (file_openned)
+				{
+					/*	Allocate memory for the input file name.
+					 *	*/	
+					in_fn[file_level]	= (char *) malloc(strlen(fn_macro) + 1);
+
+					/*	Check for memory allocation error.
+					 *	--------------------------------- */	
+					if (in_fn[file_level] != NULL)
+					{
+						strcpy(in_fn[file_level], fn_macro);	/*	Save input file name. */
+
+#if 0
+						/*	- Check if macro have paramaters.
+						 *	- If macro have parameters, warn user that macro
+						 *	  parameters are not supported.
+						 *	------------------------------------------------ */
+						if (strlen(equation) > 0)
+						{
+							msg_warning_s(	"Macro parameters are not supported!",
+								  				WC_MPNS, equation);
+						}
+#endif
+					}
+					else
+					{
+						fclose(in_fp[file_level]);		/*	Close file. */
+						--file_level;						/*	Abort "include". */
+						msg_error("Memory allocation error!", EC_MAE);
+					}
+				}
+
+				free(fn_macro);
+			}
+			else
+			{
+				--file_level;			/*	Abort "include". */
+
+				msg_error("Memory allocation error!", EC_MAE);
 			}
 		}
 		else
 		{
-			type		= LIST_ONLY;
-			status	= LIST_ONLY;
+			--file_level;				/*	Abort "include". */
+
+			msg_error("Include overflow!", EC_IOF);
 		}
 
+		/*	- If code section is activated, process label.
+		 *	- Notes: Label was not processed by either assembler
+		 *	  directive processing function or assembler opcode
+		 *	  processing function.  So, we have to explicitly call
+		 *	  label processing.
+		 *	------------------------------------------------------ */
+		if (util_is_cs_enable() != 0)
+			process_label(label);
+
+		/*	If trying as a macro fails...
+		 *	----------------------------- */
+		if (file_level == i)
+		{
+			type		= COMMENT;
+			status	= COMMENT;
+
+			msg_error_s("Can't find keyword", EC_CNFK, keyword);
+		}
 	}
 
 	return (status);
@@ -1584,7 +1688,7 @@ static void DumpBin(void)
  *	Description:	Assemble source file.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	27 December 2011
+ *	Last modified:	28 December 2011
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1593,10 +1697,11 @@ static void DumpBin(void)
 
 static void do_asm(void)
 {
-	char	*p_text;
-	char	*p_text_1;
-	int	EmitBin;
-	int	eol_found;			/*	End Of Line Found. */
+	char		*p_text;
+	char		*p_text_1;
+	int		EmitBin;
+	int		eol_found;			/*	End Of Line Found. */
+	size_t	str_len;
 
 
 	/*	- Allocated memory for source line buffer, and check for
@@ -1660,6 +1765,11 @@ static void do_asm(void)
 			}
 		}
 
+		/*	If there is an active macro, save line to the macro file.
+		 *	--------------------------------------------------------- */
+		if (fp_macro != NULL)
+			fputs(p_text, fp_macro);
+
 		/*	Check if we was able to grab all the source line.
 		 *	************************************************* */
 
@@ -1698,9 +1808,16 @@ static void do_asm(void)
 		if (eol_found)			
 			p_text[strlen(p_text) - 1] = '\0';
 
-		/*	If source line contain something, process it.
-		 *	--------------------------------------------- */	
-		if (strlen(p_text) > 1)
+		str_len	= strlen(p_text);		/*	Get the length of the source line. */
+
+		/*	- If source line contain something, process it.
+		 *	- Notes: Do not parse line that only contain
+		 *	  Ctrl+Z ASCII control code, because this is
+		 *	  the end of file mark for CP/M text file; and
+		 *	  that such files comming from the old age can
+		 *	  be processed by "asm8080".
+		 *	----------------------------------------------- */
+		if ((str_len >= 1) && ((str_len > 2) || ((*p_text != 0x1A))))
 		{
 			EmitBin = src_line_parser(p_text);
 
@@ -2745,7 +2862,7 @@ static int cmd_line_parser(int argc, char *argv[])
  *	Description:	Main function.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
+ *	Last modified:	28 December 2011
  *
  *	Parameters:		int argv:
  *							...
@@ -2799,6 +2916,7 @@ int main(int argc, char *argv[])
 		CloseFiles();
 	}
 
+	asm_dir_cleanup();		/*	"asm_dir" module Cleanup. */
 	clean_up();					/*	Clean Up module. */
 
 	return (0);

@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 December 2011
+ *	Last modified:	29 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -63,8 +63,6 @@
 #define LIST_BYTES					7
 #define LIST_WORDS					8
 #define LIST_STRINGS					9
-
-#define 	FILES_LEVEL_MAX			8			/*	Maximum Files Level. */
 
 
 /*	*************************************************************************

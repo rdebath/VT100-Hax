@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	26 December 2011
+ *	Last modified:	29 December 2011
  *	Notes:
  *	************************************************************************* */
 
@@ -62,9 +62,7 @@
 #define EC_PCOR			17		/* Program Counter Over Range. */
 #define EC_KTL				18		/* Keyword Too Long. */
 #define EC_ETL				19		/* Equation Too Long. */
-//#define EC_EAEPE			20		/*	"EQU" Already Exist or Phasing Error. */
 #define EC_EAE				20		/*	"EQU" Already Exist. */
-//#define EC_ADAL			21		/*	Already Defined As a "label". */
 #define EC_ADAE			21		/*	Already Defined As an "EQU". */
 #define EC_SNS				22		/* String Not Supported. */
 #define EC_SLTL			23		/* Source Line Too Long. */
@@ -95,7 +93,10 @@
 #define EC_COHF			48		/*	Can't Open Intel Hexadecimal File. */
 #define EC_NVDS			49		/*	Negative Value on "DS". */
 #define EC_PE				50		/*	Phasing Error. */
-
+#define EC_MHNN			51		/*	Macro Have No Name. */
+#define EC_IE				52		/*	Internal Error. */
+#define EC_MQ				53		/*	Missing Quote. */
+#define EC_SCNBE			54		/*	String Can Not Be Evaluated. */
 
 
 

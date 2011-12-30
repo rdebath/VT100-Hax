@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	27 December 2011
+ *	Last modified:	29 December 2011
  * Notes:
  *	************************************************************************* */
 
@@ -74,16 +74,18 @@
  *	****************** */
 
 static int proc_if(char *label, char *equation);
+static int proc_macro(char *label, char *equation);
+static int proc_endm(char *label, char *equation);
 static int proc_else(char *label, char *equation);
 static int proc_endif(char *label, char *equation);
 static int proc_db(char *label, char *equation);
 static int proc_dw(char *label, char *equation);
 static int proc_ds(char *label, char *equation);
 static int proc_include(char *label, char *equation);
-static int proc_local(char *label, char *equation);
 static int proc_equ(char *, char *);
 static int proc_set(char *label, char *equation);
 static int proc_org(char *, char *);
+static int is_endm_present(char *string);
 static int proc_end(char *, char *);
 
 
@@ -100,13 +102,30 @@ const keyword_t	asm_dir[] =
 {
 	{"EQU", proc_equ},				{"DB", proc_db},
 	{"DW", proc_dw},					{"END", proc_end},
-  	{"INCLUDE", proc_include},
+  	{"INCLUDE", proc_include},		{"MACRO", proc_macro},
 	{"ORG", proc_org},				{"DS", proc_ds},
-	{"IF", proc_if},
+	{"IF", proc_if},					{"ENDM", proc_endm},
 	{"ELSE", proc_else},				{"ENDIF", proc_endif},
-	{"SET", proc_set},				{"LOCAL", proc_local},
+	{"SET", proc_set},
 	{0, NULL}
 };
+
+
+/*	*************************************************************************
+ *											  VARIABLES
+ *	************************************************************************* */
+
+/*	Public variables.
+ *	***************** */
+
+FILE	*fp_macro				= NULL;		/*	Macro File Pointer. */
+int	inside_macro			= 0;
+
+
+/*	Private variables.
+ *	****************** */
+
+static char	*fn_macro	= NULL;		/*	Macro File Name. */
 
 
 /*	*************************************************************************
@@ -223,7 +242,7 @@ static int proc_endif(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	27 December 2011
+ *	Last modified:	29 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -263,7 +282,9 @@ static int proc_db(char *label, char *equation)
 		switch (*equation)
 		{
 			case '\'':
+#if LANG_EXTENSION
 			case '"':
+#endif
 			{	
 				unsigned char	in_quote		= 1;		/*	Not in Quote. */
 
@@ -273,7 +294,11 @@ static int proc_db(char *label, char *equation)
 				{
 					/*	Check for empty string.
 					 *	----------------------- */	
+#if LANG_EXTENSION
 					if ((*equation == '\'') || (*equation == '"'))
+#else
+					if (*equation == '\'')
+#endif
 					{
 						in_quote	= 0;
 						break;
@@ -335,7 +360,7 @@ static int proc_db(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	27 December 2011
+ *	Last modified:	29 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -371,7 +396,9 @@ static int proc_dw(char *label, char *equation)
 		switch (*equation)
 		{
 			case '\'':
+#if LANG_EXTENSION
 			case '"':
+#endif
 			{
 				int				pos			= 0;	/*	Position in word (MSB/LSB). */
 				unsigned char	in_quote		= 1;	/*	Not in Quote. */
@@ -382,7 +409,11 @@ static int proc_dw(char *label, char *equation)
 				{
 					/*	Check for empty string.
 					 *	----------------------- */	
+#if LANG_EXTENSION
 					if ((*equation == '\'') || (*equation == '"'))
+#else
+					if (*equation == '\'')
+#endif
 					{
 						in_quote	= 0;
 						break;
@@ -518,7 +549,7 @@ static int proc_ds(char *label, char *equation)
  *	Description:	"INCLUDE" assembler directive processing.
  *	Author(s):		Claude Sylvain
  *	Created:			27 December	2010
- *	Last modified:	27 December 2011
+ *	Last modified:	28 December 2011
  *
  *	Parameters:		char *label:
  *							...
@@ -718,7 +749,11 @@ static int proc_include(char *label, char *equation)
 			if (in_fn[file_level] != NULL)
 				strcpy(in_fn[file_level], p_name_path);	/*	Save input file name. */
 			else
+			{
+				fclose(in_fp[file_level]);		/*	Close file. */
+				--file_level;						/*	Abort "include". */
 				msg_error("Memory allocation error!", EC_MAE);
+			}
 		}
 
 	}
@@ -738,6 +773,7 @@ static int proc_include(char *label, char *equation)
 }
 
 
+#if 0
 /*	*************************************************************************
  *	Function name:	proc_local
  *	Description:
@@ -768,6 +804,7 @@ static int proc_local(char *label, char *equation)
 
 	return (LIST_ONLY);
 }
+#endif
 
 
 /*	*************************************************************************
@@ -1210,6 +1247,323 @@ static int proc_end(char *label, char *equation)
 	return (PROCESSED_END);
 }
 
+
+/*	*************************************************************************
+ *	Function name:	proc_macro
+ *	Description:	Process "MACRO" assembler directive.
+ *	Author(s):		Claude Sylvain
+ *	Created:			28 December 2011
+ *	Last modified:	29 December 2011
+ *
+ *	Parameters:		char *label:
+ *							...
+ *
+ *						char *equation:
+ *							...
+ *
+ *	Returns:			int:
+ *							...
+ *
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+static int proc_macro(char *label, char *equation)
+{
+	/*	Don't do anything, if code section is desactivated.
+	 *	*/
+	if (util_is_cs_enable() == 0)	return (LIST_ONLY);
+
+	inside_macro	= 1;		/*	Now Inside Macro definition. */
+
+	/*	- Check if macro have paramaters.
+	 *	- If macro have parameters, warn user that macro parameters are
+	 *	  not supported.
+	 *	--------------------------------------------------------------- */
+	if (strlen(equation) > 0)
+		msg_warning_s("Macro parameters are not supported!", WC_MPNS, equation);
+
+	/*	Process macro only on first assembly pass.
+	 *	*/	
+	if (asm_pass != 0)				return (LIST_ONLY);
+
+	/*	If no label (no macro name) specified, abort operation.
+	 *	------------------------------------------------------- */	
+	if (strlen(label) == 0)
+	{
+		msg_error("Macro have no name!", EC_MHNN);
+		return (LIST_ONLY);
+	}
+
+	/*	Allocate memory for macro file name.
+	 *	*/
+	fn_macro	= (char *) malloc(strlen(label) + 3);
+
+	/*	If able to allocate memory for macro file name...
+	 *	------------------------------------------------- */	
+	if (fn_macro != NULL)
+	{
+		/*	Built macro file name.
+		 *	---------------------- */	
+		strcpy(fn_macro, label);
+		strcat(fn_macro, ".m");
+
+		/*	Create macro file for writing.
+		 *	*/	
+		fp_macro = fopen(fn_macro, "w");
+
+		/*	If not able to create macro file, abort operation.
+		 *	-------------------------------------------------- */	
+		if (fp_macro == NULL)
+		{
+			msg_error("Can't allocate memory!", EC_CAM);
+			free(fn_macro);
+			fn_macro	= NULL;
+		}
+	}
+	/*	Not able to allocate memory for macro file name.
+	 *	Just do print error message, and do nothing more.
+ 	 *	------------------------------------------------ */	 
+	else
+	{
+		msg_error("Can't allocate memory!", EC_CAM);
+	}
+
+	return (LIST_ONLY);
+}
+
+
+/*	*************************************************************************
+ *	Function name:	is_endm_present
+ *
+ *	Description:	- Tell is "ENDM" assembly directive is present in a
+ *						  string.
+ *
+ *	Author(s):		Claude Sylvain
+ *	Created:			29 December 2011
+ *	Last modified:
+ *
+ *	Parameters:		char *string:
+ *							String.
+ *
+ *	Returns:			int:
+ *							0	:	"ENDM" not found in the string.
+ *							1	:	"ENDM" found in the string.
+ *
+ *	Globals:
+ *	Notes:			Search for "ENDM" is not case sensitive.
+ *	************************************************************************* */
+
+static int is_endm_present(char *string)
+{
+	int	rv	= 0;
+	int	i;
+
+	size_t		string_len		= strlen(string);
+	const	char	*str_endm		= "ENDM";
+	size_t		str_endm_len	= strlen(str_endm);
+	size_t		string_lim;
+
+
+	/*	Do search only if string is enough long to hold the "ENDM" keyword.
+	 *	*/
+	if (string_len < str_endm_len)	return (0);
+
+	/*	Calculate search limit on string.
+	 *	*/
+	string_lim	= string_len - str_endm_len;
+
+	/*	Search for the keyword in the string.
+	 * ------------------------------------- */
+	for (i = 0; i <= string_lim; i++)
+	{
+		/*	If keyword found, set return value to "found", and exit loop.
+		 *	------------------------------------------------------------- */
+		if (strncasecmp(&string[i], str_endm, str_endm_len) == 0)
+		{
+			rv	= 1;
+			break;
+		}
+	}
+
+	return (rv);
+}
+
+
+/*	*************************************************************************
+ *	Function name:	proc_endm
+ *	Description:	Process "ENDM" assembler directive.
+ *	Author(s):		Claude Sylvain
+ *	Created:			28 December 2011
+ *	Last modified:	29 December 2011
+ *
+ *	Parameters:		char *label:
+ *							...
+ *
+ *						char *equation:
+ *							...
+ *
+ *	Returns:			int:
+ *							...
+ *
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+static int proc_endm(char *label, char *equation)
+{
+	char	*fn_tm	= "tmp.m";
+	FILE	*fp_tm;
+	char	*p_text;
+	char	*macro_name;
+	int	i;
+
+	size_t	fn_macro_len;
+
+
+	/*	- Don't do anything, if code section is desactivated, or not
+	 *	  inside a macro.
+	 *	*/
+	if ((util_is_cs_enable() == 0) || (inside_macro == 0))
+		return (LIST_ONLY);
+
+	inside_macro	= 0;		/*	No more Inside Macro definition. */
+
+	/*	Process macro only on first assembly pass.
+	 *	*/	
+	if (asm_pass != 0)				return (LIST_ONLY);
+
+	/*	Close macro file, if necessary.
+	 *	------------------------------- */	
+	if (fp_macro != NULL)
+	{
+		fclose(fp_macro);
+		fp_macro	= NULL;
+	}
+	else
+	{
+		msg_error("Internal error!", EC_IE);
+	}
+
+	fn_macro_len	= strlen(fn_macro);
+
+	/*	Allocate memory for macro name.
+	 *	*/
+	macro_name	= (char *) malloc(fn_macro_len + 1);
+
+	/*	Allocate memory for the line buffer.
+	 *	*/
+	p_text	= (char *) malloc(SRC_LINE_WIDTH_MAX);	
+
+	/*	If able to allocate memory for the line buffer, go further more...
+	 *	------------------------------------------------------------------ */
+	if ((p_text != NULL) && (macro_name != NULL))
+	{
+		/*	Copy the macro file name in the macro name.
+		 *	*/
+		strcpy(macro_name, fn_macro);
+
+		/*	Flush the macro filename extension in the macro name.
+		 *	----------------------------------------------------- */
+		for (i = 0; i < fn_macro_len; i++)
+		{
+			if (macro_name[i] == '.')
+			{
+				macro_name[i]	= '\0';
+				break;
+			}
+		}
+
+		fp_macro	= fopen(fn_macro, "r");		/*	Open the macro file for reading. */
+
+		/*	If able to open macro file for reading, go further more...
+		 *	---------------------------------------------------------- */
+		if (fp_macro != NULL)
+		{
+			fp_tm	= fopen(fn_tm, "w");
+
+			/*	- If able to open the temporary macro file for writing, go
+			 *	  further more...
+			 *	---------------------------------------------------------- */
+			if (fp_tm != NULL)
+			{
+				fprintf(fp_tm, ";/------------- %s start\n", macro_name);
+
+				/*	- Copy all macro file lines to the temporary macro file, except
+				 *	  for the last line that contain "ENDM" keyword.
+				 *	--------------------------------------------------------------- */	  
+				while (fgets(p_text, SRC_LINE_WIDTH_MAX, fp_macro) != NULL)
+				{
+					if (is_endm_present(p_text) == 0)
+						fputs(p_text, fp_tm);
+				}
+
+				fprintf(fp_tm, ";\\------------- %s end\n", macro_name);
+
+				fclose(fp_tm);		/*	Close temporary macro file. */
+			}
+			else
+				msg_error_s("Can't open macro file for writing!", EC_IE, fn_tm);
+
+			/*	Close macro file.
+			 *	----------------- */
+			fclose(fp_macro);
+			fp_macro	= NULL;
+
+			/*	- If able to create the temporary macro file, remove the macro
+			 *	  file, and rename the temporary macro file as the macro file.
+			 *	--------------------------------------------------------------- */	  
+			if (fp_tm != NULL)
+			{
+				remove(fn_macro);
+				rename(fn_tm, fn_macro);
+			}
+		}
+		else
+			msg_error_s("Can't open macro file for reading!", EC_IE, fn_macro);
+	}
+	else
+		msg_error("Can't allocate memory!", EC_CAM);
+
+	free(macro_name);
+	free(p_text);
+
+	/*	Free memory allocated for macro file name.
+	 *	------------------------------------------ */	
+	free(fn_macro);
+	fn_macro	= NULL;
+
+	return (LIST_ONLY);
+}
+
+
+/*	*************************************************************************
+ *	Function name:	asm_dir_cleanup
+ *	Description:	"asm_dir" module Cleanup.
+ *	Author(s):		Claude Sylvain
+ *	Created:			28 December 2011
+ *	Last modified:
+ *	Parameters:		void
+ *	Returns:			void
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+void asm_dir_cleanup(void)
+{
+	/*	Close macro file, if necessary.
+	 *	------------------------------- */	
+	if (fp_macro != NULL)
+	{
+		fclose(fp_macro);
+		fp_macro	= NULL;
+	}
+
+	/*	Free memory allocated for macro file name.
+	 *	------------------------------------------ */	
+	free(fn_macro);
+	fn_macro	= NULL;
+}
 
 
 

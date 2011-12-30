@@ -1,10 +1,17 @@
 /*	*************************************************************************
  *	Module Name:	exp_parser.c
- *	Description:	Expression Parser module.
+ *
+ *	Description:	- Expression Parser module.
+ *
+ *						- Support most of standard 8080 assembler operators.
+ *
+ *						- Support some "C" like operators, when language
+ *						  extension is enable.
+ *
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	27 December 2011
+ *	Last modified:	28 December 2011
  *
  *	Notes:			- This module implement an expression parser using
  *						  DAL (Direct Algebraic Logic) format.
@@ -12,6 +19,26 @@
  *						  since January 2011.
  *
  * Ref.:				http://en.wikipedia.org/wiki/Reverse_Polish_notation
+ *
+ *	- Expressions can be as simple as 1, or complex like
+ *	  "xyzzy"+23/7(45*3)+16<<test3
+ * 
+ *	- Parseing forms that this parser will handle:
+ *			(expression) -- (stack) = (expression) [op] (expression)
+ * 
+ *	- Expression can have operators, strings, numbers and labels.
+ * 
+ *	- Strings can be single quote, or double quote.
+ *	  i.e.  'AB' or "AB".
+ *	- Numbers can be base 10, base 16, base 8 or base 2.
+ *	  i.e.  124 (124d), 3Eh, 12q or 01001001b.
+ * 
+ *	- At the end of the process, return (stack).
+ * 
+ *	- A typical expression that is seen in assembly is:
+ *			LXI	H,<exp>
+ *	  where <exp> is:
+ *			("EV"+STARTOFTABLE)/4
  *	************************************************************************* */
 
 /*
@@ -108,10 +135,35 @@ struct ep_stack_t
  *	************************************************************************* */
 
 /*	Expression Parser Stack Operators.
- *	---------------------------------- */	
+ *	Ref.: "8080-8085_assembly_language_programming_1977_intel.pdf", page 2.16
+ *	------------------------------------------------------------------------- */	
 enum Operators
 {
-	ADD, SUB, MUL, DIV, AND, OR, LSHIFT, RSHIFT
+	/*	Operators using a single character.
+	 *	----------------------------------- */
+	OP_ADD,
+  	OP_SUB,
+  	OP_MUL,
+	OP_DIV,
+
+	/*	Operators using a string.
+	 *	------------------------- */
+//	OP_NUL,			/*	Test for null (missing) macro parameters. */
+	OP_HIGH,
+	OP_LOW,
+	OP_MOD,
+	OP_SHL,
+	OP_SHR,
+	OP_EQ,
+	OP_LT,
+	OP_LE,
+	OP_GT,
+	OP_GE,
+	OP_NE,
+	OP_NOT,
+	OP_AND,
+	OP_OR,
+	OP_XOR
 };
 
 
@@ -123,15 +175,26 @@ enum Operators
  *	**************** */
 
 /*	Operators.
- *	---------- */	
+ *	Ref.: "8080-8085_assembly_language_programming_1977_intel.pdf", page 2.16
+ *	------------------------------------------------------------------------- */	
 static const struct operator_t	operator[]	=
 {
-	{"AND",	AND},
-	{"OR",	OR},
-	{"NOT",	0},
-	{"LOW",	0},
-	{"HIGH",	0},
-	{"EQ",	0},
+//	{"NUL",	OP_NUL},		/*	Test for null (missing) macro parameters. */
+	{"HIGH",	OP_HIGH},
+	{"LOW",	OP_LOW},
+	{"MOD",	OP_MOD},
+	{"SHL",	OP_SHL},
+	{"SHR",	OP_SHR},
+	{"EQ",	OP_EQ},
+	{"LT",	OP_LT},
+	{"LE",	OP_LE},
+	{"GT",	OP_GT},
+	{"GE",	OP_GE},
+	{"NE",	OP_NE},
+	{"NOT",	OP_NOT},
+	{"AND",	OP_AND},
+	{"OR",	OP_OR},
+	{"XOR",	OP_XOR},
   	{NULL,	0}
 };
 
@@ -144,7 +207,6 @@ static const struct operator_t	operator[]	=
  *	****************** */
 
 static int search_operator(char *text, int *text_bp);
-//static void dpe_util_get_number_base_inc(void);
 static int pop(void);
 static void push(int);
 static int add_stack(void);
@@ -264,35 +326,6 @@ static int search_operator(char *text, int *text_bp)
 }
 
 
-#if 0
-/*	*************************************************************************
- *	Function name:	dpe_util_get_number_base_inc
- *
- *	Description:	- Display/Print Error, associated with
- *						  "util_get_number_base_inc()".
- *
- *	Author(s):		Claude Sylvain
- *	Created:			23 December 2010
- *	Last modified:	1 January 2011
- *	Parameters:		void
- *	Returns:			void
- *	Globals:
- *	Notes:
- *	************************************************************************* */
-
-static void dpe_util_get_number_base_inc(void)
-{
-	if (asm_pass == 1)
-	{
-		if (list != NULL)
-			fprintf(list, "*** Error %d in \"%s\": Bad data encoding!\n", EC_BDE, in_fn[file_level]);
-
-		fprintf(stderr, "*** Error %d in \"%s\" @%d: Bad data encoding!\n", EC_BDE, in_fn[file_level], codeline[file_level]);
-	}
-}
-#endif
-
-
 /*	*************************************************************************
  *	Function name:	extract_byte
  *	Description:	Extract Byte.
@@ -340,7 +373,6 @@ int extract_byte(char *text)
 
 					if (inc == -1)
 					{
-//						dpe_util_get_number_base_inc();
 						msg_error("Bad data encoding!", EC_BDE);
 						return (accum);
 					}
@@ -357,7 +389,6 @@ int extract_byte(char *text)
 
 					if (inc == -1)
 					{
-//						dpe_util_get_number_base_inc();
 						msg_error("Bad data encoding!", EC_BDE);
 						return (accum);
 					}
@@ -388,7 +419,6 @@ int extract_byte(char *text)
 
 					if (inc == -1)
 					{
-//						dpe_util_get_number_base_inc();
 						msg_error("Bad data encoding!", EC_BDE);
 						return (accum);
 					}
@@ -491,7 +521,6 @@ int extract_byte(char *text)
 	}
 	else
 	{
-//		dpe_util_get_number_base_inc();
 		msg_error("Bad data encoding!", EC_BDE);
 	}
 
@@ -501,68 +530,139 @@ int extract_byte(char *text)
 
 /*	*************************************************************************
  *	Function name:	eval
- *	Description:
+ *	Description:	Evaluate an expression.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	10 December 2011
- *	Parameters:
- *	Returns:
+ *	Last modified:	28 December 2011
+ *	Parameters:		void
+ *	Returns:			void
  *	Globals:
  *	Notes:
  *	************************************************************************* */
 
 static void eval(void)
 {
-	int	a;
-	int	b;
-	int	op;
+	/*	Binary operations.
+	 *	------------------ */
+	if (p_ep_stack->level == 3)
+	{
+		int	b	= pop();
+		int	op	= pop();
+		int	a	= pop();
+
+		switch (op)
+		{
+			case OP_ADD:
+				push(a + b);
+				break;
+
+			case OP_SUB:
+				push(a - b);
+				break;
+
+			case OP_MUL:
+				push(a * b);
+				break;
+
+			case OP_DIV:
+				push(a / b);
+				break;
+
+			case OP_SHL:
+				push(a << b);
+				break;
+
+			case OP_SHR:
+				push(a >> b);
+				break;
+
+			case OP_MOD:
+				push(a % b);
+				break;
+
+			case OP_EQ:
+				push(a == b);
+				break;
+
+			/*	Lower Than.
+			 *	----------- */
+			case OP_LT:
+				push(a < b);
+				break;
+
+			/*	Lower of Equal.
+			 *	--------------- */
+			case OP_LE:
+				push(a <= b);
+				break;
+
+			/*	Greater Than.
+			 *	------------- */
+			case OP_GT:
+				push(a > b);
+				break;
+
+			/*	Greater or Equal.
+			 *	----------------- */
+			case OP_GE:
+				push(a >= b);
+				break;
+
+			/*	Not Equal.
+			 *	---------- */
+			case OP_NE:
+				push(a != b);
+				break;
+
+			case OP_AND:
+				push(a & b);
+				break;
+
+			case OP_OR:
+				push(a | b);
+				break;
+
+			case OP_XOR:
+				push(a ^ b);
+				break;
+
+			default:
+				break;
+		}
+	}
+	/*	Unary operations.
+	 *	----------------- */
+	else if (p_ep_stack->level == 2)
+	{
+		int	a	= pop();
+		int	op	= pop();
 
 
-	/*	- Evaluation can be done only if there was at least 2 operand
-	 *	  and 1  operator.
- 	 * */
-	if (p_ep_stack->level < 3)	return;
+		switch (op)
+		{
+			case OP_HIGH:
+				push((a >> 8) & 0xFF);
+				break;
 
-	b	= pop();
-	op	= pop();
-	a	= pop();
+			case OP_LOW:
+				push(a & 0xFF);
+				break;
 
-	switch (op)
-  	{
-		case ADD:
-			push(a + b);
-			break;
+			case OP_ADD:
+				push(a);
+				break;
 
-		case SUB:
-			push(a - b);
-			break;
+			case OP_SUB:
+				push(-a);
+				break;
 
-		case MUL:
-			push(a * b);
-			break;
+			case OP_NOT:
+				push(~a);
+				break;
 
-		case DIV:
-			push(a / b);
-			break;
-
-		case AND:
-			push(a & b);
-			break;
-
-		case OR:
-			push(a | b);
-			break;
-
-		case LSHIFT:
-			push(a << b);
-			break;
-
-		case RSHIFT:
-			push(a >> b);
-			break;
-
-		default:
-			break;
+			default:
+				break;
+		}
 	}
 }
 
@@ -665,7 +765,7 @@ static int remove_stack(void)
  *	Description:	DAL (Direct Algebraic Logic) Expression Parser.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	27 December 2011
+ *	Last modified:	29 December 2011
  *
  *	Parameters:		char *text:
  *							- Point to a string that hold expression to parse
@@ -676,24 +776,66 @@ static int remove_stack(void)
  *
  *	Globals:
  *	Notes:
- *	Warning:  Recursive parseing.
+ *	Warning:			Recursive parseing.
  *	************************************************************************* */
 
 static int dalep(char *text)
 {
 	int	msg_displayed	= 0;
 
+	/*	Parse all expression.
+	 *	--------------------- */
 	while (1)
 	{
 		switch (*text)
 		{
+			/*	Single character.
+			 *	----------------- */
 			case '\'':
 			{
 				text++;
-				push(*text++);
-				text++;
+				push(*(text++));
+
+				/*	Check for matching quote.
+				 *	------------------------- */
+				if (*text == '\'')
+					text++;		/*	Bypass quote. */
+				else
+					msg_warning("Missing quote!", WC_MQ);
+
 				break;
 			}
+
+#if LANG_EXTENSION
+			/*	- If string is found, alert user that string can not be
+			 *	  evaluated here, and bypass that string.
+		 	 *	------------------------------------------------------- */	 
+			case '\"':
+				msg_error_s("String can not be evaluated here!", EC_SCNBE, text);
+
+				text++;		/*	Bypass quote. */
+
+				/*	Bypass string.
+				 *	-------------- */	
+				while (1)
+				{
+					if (*text == '"')
+					{
+						text++;		/*	Bypass quote. */
+						break;
+					}
+
+					if (*text == '\0')
+					{
+						msg_error("Missing quote!", EC_MQ);
+						return (0);
+					}
+
+					text++;
+				}
+
+				break;
+#endif
 
 			/*	Handle '('.
 			 *	----------- */	
@@ -752,64 +894,186 @@ static int dalep(char *text)
 				eval();									/*	Evaluate partial expression. */
 				return (p_ep_stack->word[0]);
 
+			/*	- "!" character tell us that the next character is a delimitor
+			 *	  and must be considered as an ordinary character.
+			 *	  So, just gobble the '!' character, then goto keyword
+			 *	  parser section.
+			 *	-------------------------------------------------------------- */
+			case '!':
+				text++;
+				goto	dalep_01;
+
+#if LANG_EXTENSION == 0
+			/*	- '&' is a concatenation operator.
+			 *	- TODO: To implement.  For the moment, just bypass
+			 *	  this character.
+			 *	-------------------------------------------------- */
 			case '&':
-				push(AND);
+				text++;
+				goto	dalep_01;
+#endif
+
+#if LANG_EXTENSION
+			/*	"C" like "~" operators.
+			 *	----------------------- */
+			case '~':
+				push(OP_NOT);
 				text++;
 				break;
 
+			/*	"C" like "|" and "||" operators.
+			 *	-------------------------------- */
 			case '|':
-				push(OR);
+				push(OP_OR);
+				text++;
+
+				if (*text == '|')
+					text++;
+
+				break;
+
+			/*	"C" like '^' operator.
+			 *	---------------------- */
+			case '^':
+				push(OP_XOR);
 				text++;
 				break;
+
+			/*	"C" like "==" operator and Pascal like '=' operator.
+			 *	---------------------------------------------------- */
+			case '=':
+			{
+				char	nc	= *(text + 1);		/*	Next Character. */
+
+				push(OP_EQ);
+
+				/*	If it is a "C" like "==" operator...
+				 *	------------------------------------ */
+				if (nc == '=')
+					text	+= 2;
+				/*	It is a Pascal like '=' operator...
+				 *	----------------------------------- */
+				else
+					text++;
+
+				break;
+			}
+
+			/*	"C" like "<<", "<=" and "<" operators.
+			 *	-------------------------------------- */
+			case '<':
+			{
+				char	nc	= *(text + 1);		/*	Next Character. */
+
+				/*	If it is a left shift...
+				 *	------------------------ */
+				if (nc == '<')
+				{
+					push(OP_SHL);
+					text	+= 2;
+				}
+				/*	If it is a Lower or Equal relationnal operator.
+				 *	----------------------------------------------- */
+				else if (nc == '=')
+				{
+					push(OP_LE);
+					text	+= 2;
+				}
+				/*	If it is a Lower Than relationnal operator.
+				 *	------------------------------------------- */
+				else
+				{
+					push(OP_LT);
+					text++;
+				}
+
+				break;
+			}
+
+			/*	"C" like ">>", ">=" and ">" operators.
+			 *	-------------------------------------- */
+			case '>':
+			{
+				char	nc	= *(text + 1);		/*	Next Character. */
+
+				/*	If it is a right shift...
+				 *	------------------------- */
+				if (nc == '>')
+				{
+					push(OP_SHR);
+					text	+= 2;
+				}
+				/*	If it is a Greater or Equal relationnal operator.
+				 *	------------------------------------------------- */
+				else if (nc == '=')
+				{
+					push(OP_GE);
+					text	+= 2;
+				}
+				/*	If it is a Greater Than relationnal operator.
+				 *	--------------------------------------------- */
+				else
+				{
+					push(OP_GT);
+					text++;
+				}
+
+				break;
+			}
+
+			/*	- This can be an 8080 assembler concatenation operator
+			 *	  or one of the "C" like "&" or "&&" operators.
+			 *	- Notes: There is a trick to be able to distinguish both kind
+			 *	  of operators, and avoid conflics.  Usualy, when '&' or
+			 *	  "&&" "C" like operators are used, they are surrounded
+			 *	  by spaces; and this is not the case for the '&' 8080
+			 *	  assembler operator, since this is a concatenation
+			 *	  operator.
+			 *	------------------------------------------------------------- */
+			case '&':
+				/*	- If '&' or "&&" is followed by a Space character, this
+				 *	  is probably not a concatenation operator, but
+				 *	  a "C" like operator.
+				 *	------------------------------------------------------- */	  
+				if (	(*(text + 1) == 0x20) ||
+					  	((*(text + 1) == '&') && (*(text + 2) == 0x20)))
+				{
+					push(OP_AND);
+					text++;
+
+					if (*text == '&')
+						text++;
+				}
+				/*	- '&' is a concatenation operator.
+				 *	- TODO: To implement.  For the moment, just bypass
+				 *	  this character.
+				 *	-------------------------------------------------- */
+				else
+				{
+					text++;
+					goto	dalep_01;
+				}
+
+				break;
+#endif		/*	LANG_EXTENSION */	
 
 			case '+':
-				/*	- If something pushed before, just push "+".
-				 *	- Otherwise, we have an unary (+), and we have
-			 	 *	  nothing to do.	 
-				 *	---------------------------------------------- */	
-				if (p_ep_stack->level > 0)
-					push(ADD);
-
+				push(OP_ADD);
 				text++;
-
 				break;
 
 			case '-':
-				/*	- If something pushed before, just push "-".
-				 *	- Otherwise, we have an unary (-), and we have
-			 	 *	  to push "0-" on the stack.	 
-				 *	---------------------------------------------- */	
-				if (p_ep_stack->level > 0)
-					push(SUB);
-				else
-				{
-					push(0);
-					push(SUB);
-				}
-
-				text++;
-
-				break;
-
-			case '<':
-				push(LSHIFT);
-				text++;
-				text++;
-				break;
-
-			case '>':
-				push(RSHIFT);
-				text++;
+				push(OP_SUB);
 				text++;
 				break;
 
 			case '*':
-				push(MUL);
+				push(OP_MUL);
 				text++;
 				break;
 
 			case '/':
-				push(DIV);
+				push(OP_DIV);
 				text++;
 				break;
 
@@ -830,12 +1094,13 @@ static int dalep(char *text)
 				eval();
 				return (p_ep_stack->word[0]);
 
-			/*	Must be a label or a number.
-			 *	---------------------------- */
+			/*	Must be an operator, a label or a number.
+			 *	----------------------------------------- */
 			default:
+dalep_01:				
 			{
-				int		text_bp;
-				int		op;
+				int	text_bp;
+				int	op;
 
 				/*	Search for an operator.
 				 *	----------------------- */	
@@ -947,7 +1212,7 @@ static int dalep(char *text)
  *	Description:	Expression Parser main entry point.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	2 January 2011
+ *	Last modified:	28 December 2011
  *
  *	Parameters:		char *text:
  *							- Point to a string that hold expression to parse
@@ -958,42 +1223,6 @@ static int dalep(char *text)
  *
  *	Globals:
  *	Notes:
- *
- *	- Expressions can be as simple as [1], or complex like
- *	  "xyzzy"+23/7(45*3)+16<<test3
- * 
- *	- Parseing forms that this parser will handle:
- *			(expression) -- (stack) = (expression) [op] (expression)
- * 
- * - [op] can be:
- *			+	: Add
- *			-	: Subtract
- *			*	: Multiply
- *			/	: Divide
- *			<<	: Shift left
- *			>>	: Shift right
- *			|	: Or
- *			&	: And
- *			$	: Current address counter
- * 
- *	- Expression can have strings, numbers or labels.
- * 
- *	- Strings can be single quote, or double quote.
- *	  i.e.  'AB' or "AB".
- *	- Numbers can be base 10, base 16, base 8 or base 2.
- *	  i.e.  124 (124d), 3Eh, 12q or 01001001b.
- * 
- *	- At the end of the process, return (stack).
- * 
- *	- A typical expression that is seen in assembly is:
- *			LXI	H,<exp>
- *	  where <exp> is:
- *			("EV"+STARTOFTABLE)/4
- *
- *	  This breaks down to:
- *		(stack) = (/ operator) (stack) = 4
- *		(stack) = (+ operator) (stack) = STARTOFTABLE 	(the value of )
- *		(stack push) = "EV" (as a value)
  *	************************************************************************* */
 
 int exp_parser(char *text)
