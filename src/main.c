@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	29 December 2011
+ *	Last modified:	30 December 2011
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -110,7 +110,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 1;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 2;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 3;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -280,7 +280,7 @@ static void check_new_pc(int count)
  *	Description:	Update Program Counter.
  *	Author(s):		Claude Sylvain
  *	Created:			4 December 2011
- *	Last modified:	24 December 2011
+ *	Last modified:	30 December 2011
  *
  *	Parameters:		int count:
  *							Count to add to the program counter.
@@ -300,32 +300,39 @@ static int update_pc(int count)
 {
 	int	rv	= 0;				/*	Return Value. */
 
-	/*	Keep track of the lowest PC value.
-	 *	---------------------------------- */
-	if (target.pc < target.pc_lowest)
+	/*	- Keep track of the lowest PC value, only if not processing
+	 *	  "DS" assembler directive.
+	 *	  Notes: This is necessary, since "DS" modify the PC, but
+	 *	  do not generate code.
+	 *	----------------------------------------------------------- */
+	if ((type != LIST_DS) && (target.pc < target.pc_lowest))
 		target.pc_lowest	= target.pc;
 
 	target.addr	+= count;						/*	Update Address. */
 	target.pc	= target.addr & 0xFFFF;		/*	Update Program Counter. */
 
-	/*	Keep track of the highest PC value.
-	 *	----------------------------------- */
-	if (target.addr <= 0x10000)
+	/*	- Keep track of the highest PC value, only if not processing
+	 *	  "DS" assembler directive.
+	 *	  Notes: This is necessary, since "DS" modify the PC, but
+	 *	  do not generate code.
+	 *	------------------------------------------------------------ */
+	if (type != LIST_DS)
 	{
-		/*	- Update Target PC Highest value only if current PC
-		 *	  is higher.  This is necessary to handle properly
-		 *	  program using multiple "ORG" directives, that are
-		 *	  not necessarily in ascendant order.
-		 *	--------------------------------------------------- */	  
-		if (target.addr > target.pc_highest)
-			target.pc_highest	= target.addr;
-	}
-	/*	- PC is not valid, and will be reseted to 0.  So, do the
-	 *	  same with Target PC Highest value.
-	 *	-------------------------------------------------------- */
-	else
-	{
-		target.pc_highest	= 0x10000;
+		if (target.addr <= 0x10000)
+		{
+			/*	- Update Target PC Highest value only if current PC
+			 *	  is higher.  This is necessary to handle properly
+			 *	  program using multiple "ORG" directives, that are
+			 *	  not necessarily in ascendant order.
+			 *	--------------------------------------------------- */	  
+			if (target.addr > target.pc_highest)
+				target.pc_highest	= target.addr;
+		}
+		/*	- PC is not valid, and will be reseted to 0.  So, do the
+		 *	  same with Target PC Highest value.
+		 *	-------------------------------------------------------- */
+		else
+			target.pc_highest	= 0x10000;
 	}
 
 	/*	Check if program counter is out of range.
@@ -937,7 +944,6 @@ static int src_line_parser(char *text)
 		 	 *	  done by external function.  We must do label
 			 *	  processing here.
 			 *	---------------------------------------------------------- */
-//			if (util_is_cs_enable() != 0)
 			if ((util_is_cs_enable() != 0) && (inside_macro == 0))
 				process_label(label);
 
@@ -958,7 +964,6 @@ static int src_line_parser(char *text)
 		i					= 0;
 		msg_displayed	= 0;
 
-//		while (isalnum((int) *text))
 		while ((isalnum((int) *text)) || (*text == '_'))
 		{
 			if (i < (sizeof (keyword) - 1))
@@ -1131,7 +1136,6 @@ static int src_line_parser(char *text)
 				{
 					--file_level;				/*	Restore. */
 					file_openned	= 0;
-//					msg_error_s("Can't open include file!", EC_COIF, p_name);
 				}
 
 				/*	Open include file, and check for error.

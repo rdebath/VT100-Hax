@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	29 December 2011
+Last modified:	30 December 2011
 Notes:
 *******************************************************************************
 
@@ -578,6 +578,21 @@ Notes:		- Implemented "MACRO", "ENDM" assembly directive.
 		  However, macro parameters are not supported, neither
 		  "LOCAL" assembler directive.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		30 December 2011
+By:		Claude Sylvain
+Version:	1.0.3
+
+Notes:		- In "main.c", in "update_pc()", keep track on the lowest
+		  and highest PC value only if not processing "DS"
+		  assembly directive.  This is necessary since "DS"
+		  modify PC value, and do not generate code.  This avoid
+		  binary object file to include "DS" code section.
+
+		- Updated user manual.
+-------------------------------------------------------------------------------
+
 
 
 

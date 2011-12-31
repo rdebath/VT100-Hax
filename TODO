@@ -4,7 +4,7 @@ Description:	asm8080 To Do list.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	29 December 2011
+Last modified:	30 December 2011
 Notes:
 *******************************************************************************
 
@@ -34,31 +34,10 @@ DEALINGS IN THE SOFTWARE.
 
 
 -------------------------------------------------------------------------------
-8 January 2011 (Claude Sylvain)
-- When a source line is [Tab]['\n'], sometime assembler
-  complain:
-	... Line too long!".
--------------------------------------------------------------------------------
-
--------------------------------------------------------------------------------
-8 January 2011 (Claude Sylvain)
-- Line number seems to be out of phase, sometimes.
--------------------------------------------------------------------------------
-
--------------------------------------------------------------------------------
-8 January 2011 (Claude Sylvain)
-- Assembler directives that is not (still) implemented:
-	- EXITM
-	- IRP
-	- IRPC
+30 December 2011 (Claude Sylvain)
+- Assembler directives that can be usefull:
 	- LOCAL
 	- REPT
-	- NAME
-	- EOT
-	- PAGE
-	- TITLE
-	- LINK
-	- SYM
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
