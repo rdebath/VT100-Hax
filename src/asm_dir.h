@@ -4,12 +4,12 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	26 November 2011
+ *	Last modified:	1 January 2012
  *	Notes:
  *	************************************************************************* */
 
 /*
- * Copyright (c) <2007-2011> <jay.cotton@oracle.com>
+ * Copyright (c) <2007-2012> <jay.cotton@oracle.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to

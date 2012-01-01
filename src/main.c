@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	30 December 2011
+ *	Last modified:	1 January 2012
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -13,7 +13,7 @@
  *	************************************************************************* */
 
 /*
- * Copyright (c) <2007-2011> <jay.cotton@oracle.com>
+ * Copyright (c) <2007-2012> <jay.cotton@oracle.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -110,7 +110,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 1;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 3;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 4;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -2758,7 +2758,7 @@ static int process_input_file(char *text)
  *	Description:	Command Line Parser.
  *	Author(s):		Claude Sylvain
  *	Created:			31 December 2010
- *	Last modified:	26 March 2011
+ *	Last modified:	1 January 2012
  *
  *	Parameters:		int argv:
  *							...
@@ -2850,11 +2850,11 @@ static int cmd_line_parser(int argc, char *argv[])
 		}	
 	}
 	/*	Just 1 argument.  Need at least 2 arguments.
-	 *	Display help.	
+	 *	Alert user.
 	 *	-------------------------------------------- */	
 	else
 	{
-		display_help();
+		printf("%s: No input file! Use -h option for help.\n", name_pgm);
 	}
 
 	return (rv);

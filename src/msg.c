@@ -3,12 +3,12 @@
  *	Description:	Manage Messages.
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
- *	Created:			27 December 2011
+ *	Created:			1 January 2012
  *	Last modified:
  *	************************************************************************* */
 
 /*
- * Copyright (c) <2007-2011> <jay.cotton@oracle.com>
+ * Copyright (c) <2007-2012> <jay.cotton@oracle.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to

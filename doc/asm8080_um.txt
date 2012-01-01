@@ -2,17 +2,17 @@
 			      asm8080 User Manual
 
 
-Cover:		asm8080 V0.9.2 to V1.0.3
+Cover:		asm8080 V0.9.2 to V1.0.4
 Copyright(c):	See below.
 Author(s):	Claude Sylvain
 Created:	17 March 2011
-Last modified:	30 December 2011
-Revision:	0.9.6
+Last modified:	1 January 2012
+Revision:	0.9.7
 -------------------------------------------------------------------------------
 
 
 -------------------------------------------------------------------------------
-Copyright (c) <2007-2011> <jay.cotton@oracle.com>
+Copyright (c) <2007-2012> <jay.cotton@oracle.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to

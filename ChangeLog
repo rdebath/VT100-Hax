@@ -4,14 +4,14 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	30 December 2011
+Last modified:	1 January 2012
 Notes:
 *******************************************************************************
 
 
 -------------------------------------------------------------------------------
 
-Copyright (c) <2007-2011> <jay.cotton@oracle.com>
+Copyright (c) <2007-2012> <jay.cotton@oracle.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
@@ -592,6 +592,19 @@ Notes:		- In "main.c", in "update_pc()", keep track on the lowest
 
 		- Updated user manual.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		1 January 2012
+By:		Claude Sylvain
+Version:	1.0.4
+
+Notes:		- This is the New Year Day, and I updated all the dates on
+		  the Copyright notices.
+
+		- Changed the way asm8080 behave when it is called without
+	      	  any arguments.
+-------------------------------------------------------------------------------
+
 
 
 
