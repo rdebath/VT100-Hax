@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	1 January 2012
+ *	Last modified:	3 January 2012
  *	Notes:
  *	************************************************************************* */
 
@@ -31,11 +31,19 @@
  */
 
 
-/*	*************************************************************************
- *	************************************************************************* */
-
 #ifndef _PROJECT_H
 #define _PROJECT_H
+
+
+/*	*************************************************************************
+ *												INCLUDE
+ *	************************************************************************* */
+
+#if	defined (_TGT_OS_CYGWIN32) || defined (_TGT_OS_CYGWIN64) ||			\
+		defined (_TGT_OS_LINUX32) || defined (_TGT_OS_LINUX64) ||			\
+		defined (_TGT_OS_SOLARIS32) || defined (_TGT_OS_SOLARIS64)
+#include <stdint.h>
+#endif
 
 
 /*	*************************************************************************
@@ -50,10 +58,9 @@
 #define SYMBOL_SIZE_MAX				64
 
 /*	Label Maximum Size.
- *	Notes: This value is (only) 6 in 8080 legacy assembler.	
+ *	Notes: This value is (only) 6 in some 8080 legacy assemblers.
  *	*/	
 #define LABEL_SIZE_MAX				SYMBOL_SIZE_MAX
-
 
 /*	When "1", accept '_' character in label/name.
  *	*/	
@@ -79,9 +86,9 @@
 
 /*	Define Path Separator accordingly to the operating system.
  *	---------------------------------------------------------- */
-#if defined (_TGT_OS_CYGWIN32) || defined (_TGT_OS_CYGWIN64) ||		\
-				(_TGT_OS_LINUX32) || defined (_TGT_OS_LINUX64) ||			\
-				(_TGT_OS_SOLARIS32) || defined (_TGT_OS_SOLARIS64)
+#if	defined (_TGT_OS_CYGWIN32) || defined (_TGT_OS_CYGWIN64) ||			\
+		defined (_TGT_OS_LINUX32) || defined (_TGT_OS_LINUX64) ||			\
+		defined (_TGT_OS_SOLARIS32) || defined (_TGT_OS_SOLARIS64)
 #define PATH_SEPARATOR_CHAR	'/'
 #define PATH_SEPARATOR_STR		"/"
 #elif defined (_TGT_OS_WIN32) || defined (_TGT_OS_WIN64)
@@ -95,6 +102,15 @@
 /*	*************************************************************************
  *	                                 TYPEDEF
  *	************************************************************************* */
+
+/*	- In Windows, "stdint.h" do not exist and some types found in
+ *	  "stdint.h" must be added.
+ *	------------------------------------------------------------- */
+#if defined (_TGT_OS_WIN32) || defined (_TGT_OS_WIN64)
+typedef unsigned char	uint8_t;
+typedef unsigned short	uint16_t;
+typedef unsigned int		uint32_t;
+#endif
 
 /*	Types of Symbols.
  *	----------------- */	
@@ -110,7 +126,6 @@ enum symbol_type_t
  *	--------------------- */
 typedef struct Symbol
 {
-//	char	Symbol_Name[SYMBOL_SIZE_MAX];
 	char	*Symbol_Name;
 	int	Symbol_Value;
 	enum	symbol_type_t	Symbol_Type;
