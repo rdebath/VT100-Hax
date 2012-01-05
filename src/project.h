@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	3 January 2012
+ *	Last modified:	4 January 2012
  *	Notes:
  *	************************************************************************* */
 
@@ -43,6 +43,21 @@
 		defined (_TGT_OS_LINUX32) || defined (_TGT_OS_LINUX64) ||			\
 		defined (_TGT_OS_SOLARIS32) || defined (_TGT_OS_SOLARIS64)
 #include <stdint.h>
+#endif
+
+#if	defined (_TGT_OS_CYGWIN32) || defined (_TGT_OS_CYGWIN64) ||			\
+		defined (_TGT_OS_LINUX32) || defined (_TGT_OS_LINUX64) ||			\
+		defined (_TGT_OS_WIN32) || defined (_TGT_OS_WIN64)
+#include <string.h>
+#elif defined (_TGT_OS_SOLARIS32) || defined (_TGT_OS_SOLARIS64)
+#include <strings.h>
+#else
+#error !!! Unsupported operating system!
+#endif
+
+#if	defined (_TGT_OS_CYGWIN32) || defined (_TGT_OS_CYGWIN64) ||			\
+		defined (_TGT_OS_LINUX32) || defined (_TGT_OS_LINUX64)
+#include <unistd.h>
 #endif
 
 

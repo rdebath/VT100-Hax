@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	3 January 2012
+Last modified:	4 January 2012
 Notes:
 *******************************************************************************
 
@@ -614,6 +614,18 @@ Notes:		- Fixed a built problem that happen on GNU/Linux.
 		  "stdint.h" must be included in "project.h", when
 		  building on GNU/Linux computers.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		4 January 2012
+By:		Claude Sylvain
+Version:	1.0.4
+
+Notes:		- Moved some "include" that use conditionnal compilation
+		  in "project.h", to simplify application maintenance.
+-------------------------------------------------------------------------------
+
+
+
 
 
 

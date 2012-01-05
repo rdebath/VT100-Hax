@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	1 January 2012
+ *	Last modified:	4 January 2012
  *	Notes:
  *	************************************************************************* */
 
@@ -41,8 +41,6 @@
 /*	*************************************************************************
  *	                              INCLUDE FILES
  *	************************************************************************* */
-
-#include <stdio.h>
 
 #include "project.h"
 
