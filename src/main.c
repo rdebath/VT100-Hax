@@ -1371,17 +1371,12 @@ static void PrintList(char *text)
 				 *	-------------------------- */
 				else
 				{
-#if 0
-					if (list != NULL)
-						fprintf(list, "%04X ", LStack->word & 0xFFFF);
-#endif
 					/*	- If listing file exist, list word using Little Endian
 					 *	  format.
 					 *	------------------------------------------------------ */	
 					if (list != NULL)
 					{
 						fprintf(list, "%02X", LStack->word & 0xFF);
-//						fprintf(list, "%02X ", (LStack->word & 0xFF00) >> 8);
 						fprintf(list, "%02X ", LStack->word >> 8);
 					}
 
@@ -1649,12 +1644,6 @@ static void DumpBin(void)
 				 *	---------------------------------------------- */
 				else
 				{
-#if 0
-					Image[target.pc]	= (char) (LStack->word >> 8);
-					update_pc(1);
-					Image[target.pc]	= (char) (LStack->word & 0xFF);
-					update_pc(1);
-#endif
 					Image[target.pc]	= (char) (LStack->word & 0xFF);
 					update_pc(1);
 					Image[target.pc]	= (char) (LStack->word >> 8);
