@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	4 January 2012
+Last modified:	6 January 2012
 Notes:
 *******************************************************************************
 
@@ -622,6 +622,19 @@ Version:	1.0.4
 
 Notes:		- Moved some "include" that use conditionnal compilation
 		  in "project.h", to simplify application maintenance.
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		6 January 2012
+By:		Claude Sylvain
+Version:	1.0.5
+
+Notes:		- "DW" assembler directive was not working as expected.
+		  On single character ('c'), the single character ASCII
+		  code was appearing in MSB of the word instead of the
+		  LSB.
+		  On expression, the value of expression was stored
+		  in Big Endian format instead of Little Endian format.
 -------------------------------------------------------------------------------
 
 

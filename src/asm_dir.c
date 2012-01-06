@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	4 January 2012
+ *	Last modified:	6 January 2012
  * Notes:
  *	************************************************************************* */
 
@@ -344,7 +344,7 @@ static int proc_db(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	29 December 2011
+ *	Last modified:	6 January 2012
  *
  *	Parameters:		char *label:
  *							...
@@ -400,6 +400,13 @@ static int proc_dw(char *label, char *equation)
 #endif
 					{
 						in_quote	= 0;
+
+						/*	- If only one character was extracted, move it
+						 *	  to the LSB part.
+						 *	---------------------------------------------- */	  
+						if ((pos & 1) != 0)
+							LStack->word	>>= 8;
+
 						break;
 					}
 

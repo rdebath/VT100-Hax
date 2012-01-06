@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	4 January 2012
+ *	Last modified:	6 January 2012
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -94,7 +94,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 1;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 4;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 5;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -1204,7 +1204,7 @@ static int src_line_parser(char *text)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 December 2011
+ *	Last modified:	6 January 2012
  *
  *	Parameters:		char *text:
  *							...
@@ -1371,8 +1371,19 @@ static void PrintList(char *text)
 				 *	-------------------------- */
 				else
 				{
+#if 0
 					if (list != NULL)
 						fprintf(list, "%04X ", LStack->word & 0xFFFF);
+#endif
+					/*	- If listing file exist, list word using Little Endian
+					 *	  format.
+					 *	------------------------------------------------------ */	
+					if (list != NULL)
+					{
+						fprintf(list, "%02X", LStack->word & 0xFF);
+//						fprintf(list, "%02X ", (LStack->word & 0xFF00) >> 8);
+						fprintf(list, "%02X ", LStack->word >> 8);
+					}
 
 					space				+= 5;
 				}
@@ -1545,7 +1556,7 @@ void ProcessDumpHex(char end_of_asm)
  *	Description:	Dump Binary.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	6 January 2012
  *	Parameters:		void
  *	Returns:			void
  *
@@ -1634,12 +1645,19 @@ static void DumpBin(void)
 					update_pc(1);
 				}
 				/*	Assuming "LIST_WORDS".
-				 *	---------------------- */
+				 *	Store it in memory using Little Endian format.	
+				 *	---------------------------------------------- */
 				else
 				{
+#if 0
 					Image[target.pc]	= (char) (LStack->word >> 8);
 					update_pc(1);
 					Image[target.pc]	= (char) (LStack->word & 0xFF);
+					update_pc(1);
+#endif
+					Image[target.pc]	= (char) (LStack->word & 0xFF);
+					update_pc(1);
+					Image[target.pc]	= (char) (LStack->word >> 8);
 					update_pc(1);
 				}
 
