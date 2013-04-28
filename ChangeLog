@@ -4,14 +4,14 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	6 January 2012
+Last modified:	27 April 2013
 Notes:
 *******************************************************************************
 
 
 -------------------------------------------------------------------------------
 
-Copyright (c) <2007-2012> <jay.cotton@oracle.com>
+Copyright (c) <2007-2013> <jay.cotton@oracle.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
@@ -636,6 +636,22 @@ Notes:		- "DW" assembler directive was not working as expected.
 		  On expression, the value of expression was stored
 		  in Big Endian format instead of Little Endian format.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		26, 27 April 2013
+By:		Claude Sylvain
+Version:	1.0.6
+
+Notes:		- "NOT" logical operator was not working correctly.
+		  Fixed bug by replacing "push(~a);" by
+		  "push((int) (a == 0));" in "exp_parser.c", in
+		  "eval()", in "OP_NOT" case.
+
+		- '~' operator was not implemented correctly.  Removed it,
+		  because there is no standard operator equivalent; and
+		  thus difficult to implement.
+-------------------------------------------------------------------------------
+
 
 
 

@@ -4,12 +4,12 @@
 # Copyright(c):	See below.
 # Author(s):		Jay Cotton, Claude Sylvain
 # Created:			26 Mars 2011
-# Last modified:	27 December 2011
+# Last modified:	28 April 2013
 # Notes:
 # *****************************************************************************
 
 # *****************************************************************************
-# Copyright (c) <2007-2011> <jay.cotton@oracle.com>
+# Copyright (c) <2007-2013> <jay.cotton@oracle.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -53,6 +53,8 @@
 # 			_TGT_OS_WIN64			Windows 64-bit
 #
 #AM_CFLAGS = -O0 -g -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
+#AM_CFLAGS = -g -O0 -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
+#AM_CFLAGS = -O2 -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 AM_CFLAGS = -D_TGT_M_X86 -D_TGT_OS_CYGWIN32
 
 bin_PROGRAMS = asm8080

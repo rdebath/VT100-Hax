@@ -2,17 +2,16 @@
 			      asm8080 User Manual
 
 
-Cover:		asm8080 V0.9.2 to V1.0.4
+Cover:		asm8080 V1.0.6
 Copyright(c):	See below.
 Author(s):	Claude Sylvain
 Created:	17 March 2011
-Last modified:	1 January 2012
-Revision:	0.9.7
+Last modified:	28 April 2013
+Revision:	0.9.8
 -------------------------------------------------------------------------------
 
-
 -------------------------------------------------------------------------------
-Copyright (c) <2007-2012> <jay.cotton@oracle.com>
+Copyright (c) <2007-2013> <jay.cotton@oracle.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to
@@ -43,7 +42,8 @@ DEALINGS IN THE SOFTWARE.
 2.2	Assembler directives
 2.3	Operators
 2.3.1	Standard operators
-2.3.2	"C" and "Pascal" like operators
+2.3.2	Extended operators
+2.4	Delimiters
 3	Assembler particularities
 3.1	Expression parser
 -------------------------------------------------------------------------------
@@ -129,6 +129,10 @@ Supported standard operators are:
 	*
 	/
 
+	<
+	>
+	=
+
 	LOW
 	HIGH
 
@@ -144,14 +148,14 @@ Supported standard operators are:
 	GT
 	GE
 
-	NOT
+	NOT	Logical one's complement (=1 if 0.  =0 if >=1).
 	AND
 	OR
 	XOR
 
-2.3.2	"C" and "Pascal" like operators
+2.3.2	Extended operators
 
-Supported "C" and "Pascal" like operators are:
+Extended operators are:
 
 	&
 	&&
@@ -161,19 +165,24 @@ Supported "C" and "Pascal" like operators are:
 
 	^	(XOR)
 
-	~	(one's complement)
+	==
+
+	>=
+
+	<=
 
 	<<
 	>>
 
-	=	(Pascal equality)
-	==
+2.4	Delimiters
 
-	>
-	>=
+	&	Delimit macro prototype text or formal parameters for
+		concatenation.
+		(Not supported).
 
-	<
-	<=
+	!	An escape character used to pass the following character as
+		part of a macro parameter when the character might otherwise
+		be interpreted as a delimiter.
 
 3	Assembler particularities
 

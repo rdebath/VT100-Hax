@@ -11,7 +11,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	4 January 2012
+ *	Last modified:	27 April 2013
  *
  *	Notes:			- This module implement an expression parser using
  *						  DAL (Direct Algebraic Logic) format.
@@ -42,7 +42,7 @@
  *	************************************************************************* */
 
 /*
- * Copyright (c) <2007-2012> <jay.cotton@oracle.com>
+ * Copyright (c) <2007-2013> <jay.cotton@oracle.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -517,7 +517,7 @@ int extract_byte(char *text)
  *	Description:	Evaluate an expression.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	28 December 2011
+ *	Last modified:	26 April 2013
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -641,7 +641,7 @@ static void eval(void)
 				break;
 
 			case OP_NOT:
-				push(~a);
+				push((int) (a == 0));
 				break;
 
 			default:
@@ -749,7 +749,7 @@ static int remove_stack(void)
  *	Description:	DAL (Direct Algebraic Logic) Expression Parser.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	29 December 2011
+ *	Last modified:	27 April 2013
  *
  *	Parameters:		char *text:
  *							- Point to a string that hold expression to parse
@@ -773,6 +773,8 @@ static int dalep(char *text)
 	{
 		switch (*text)
 		{
+
+#if LANG_EXTENSION
 			/*	Single character.
 			 *	----------------- */
 			case '\'':
@@ -789,8 +791,9 @@ static int dalep(char *text)
 
 				break;
 			}
+#endif
 
-#if LANG_EXTENSION
+#if 0 && LANG_EXTENSION
 			/*	- If string is found, alert user that string can not be
 			 *	  evaluated here, and bypass that string.
 		 	 *	------------------------------------------------------- */	 
@@ -803,7 +806,7 @@ static int dalep(char *text)
 				 *	-------------- */	
 				while (1)
 				{
-					if (*text == '"')
+					if (*text == '\"')
 					{
 						text++;		/*	Bypass quote. */
 						break;
@@ -878,32 +881,27 @@ static int dalep(char *text)
 				eval();									/*	Evaluate partial expression. */
 				return (p_ep_stack->word[0]);
 
-			/*	- "!" character tell us that the next character is a delimitor
-			 *	  and must be considered as an ordinary character.
-			 *	  So, just gobble the '!' character, then goto keyword
+			/*	- "!" character tell that the next character must be
+			 *	  considered as normal character.
+			 *	  This enable to use label begining with a special
+			 *	  character.
+			 *	  So, just gobble the '!' character, then goto label
 			 *	  parser section.
-			 *	-------------------------------------------------------------- */
+			 *	---------------------------------------------------- */
 			case '!':
 				text++;
 				goto	dalep_01;
 
-#if LANG_EXTENSION == 0
-			/*	- '&' is a concatenation operator.
-			 *	- TODO: To implement.  For the moment, just bypass
-			 *	  this character.
-			 *	-------------------------------------------------- */
-			case '&':
-				text++;
-				goto	dalep_01;
-#endif
 
 #if LANG_EXTENSION
+#if 0					
 			/*	"C" like "~" operators.
 			 *	----------------------- */
 			case '~':
 				push(OP_NOT);
 				text++;
 				break;
+#endif
 
 			/*	"C" like "|" and "||" operators.
 			 *	-------------------------------- */
@@ -922,9 +920,11 @@ static int dalep(char *text)
 				push(OP_XOR);
 				text++;
 				break;
+#endif
 
-			/*	"C" like "==" operator and Pascal like '=' operator.
-			 *	---------------------------------------------------- */
+#if LANG_EXTENSION
+			/*	'=' operator and "C" like "==" operator.
+			 *	---------------------------------------- */
 			case '=':
 			{
 				char	nc	= *(text + 1);		/*	Next Character. */
@@ -942,9 +942,20 @@ static int dalep(char *text)
 
 				break;
 			}
+#else
+			/*	'=' operator.
+			 *	------------- */
+			case '=':
+			{
+				push(OP_EQ);
+				text++;
+				break;
+			}
+#endif			
 
-			/*	"C" like "<<", "<=" and "<" operators.
-			 *	-------------------------------------- */
+#if LANG_EXTENSION
+			/*	'<' operator and "C" like "<=", "<<" operators.
+			 *	----------------------------------------------- */
 			case '<':
 			{
 				char	nc	= *(text + 1);		/*	Next Character. */
@@ -973,9 +984,20 @@ static int dalep(char *text)
 
 				break;
 			}
+#else
+			/*	'<' operator.
+			 *	------------- */
+			case '<':
+			{
+				push(OP_LT);
+				text++;
+				break;
+			}
+#endif			
 
-			/*	"C" like ">>", ">=" and ">" operators.
-			 *	-------------------------------------- */
+#if LANG_EXTENSION
+			/*	'>' operator and "C" like ">=", ">>" operators.
+			 *	----------------------------------------------- */
 			case '>':
 			{
 				char	nc	= *(text + 1);		/*	Next Character. */
@@ -1004,7 +1026,18 @@ static int dalep(char *text)
 
 				break;
 			}
+#else
+			/*	'>' operator.
+			 *	------------- */
+			case '>':
+			{
+				push(OP_GT);
+				text++;
+				break;
+			}
+#endif			
 
+#if LANG_EXTENSION
 			/*	- This can be an 8080 assembler concatenation operator
 			 *	  or one of the "C" like "&" or "&&" operators.
 			 *	- Notes: There is a trick to be able to distinguish both kind
@@ -1039,7 +1072,15 @@ static int dalep(char *text)
 				}
 
 				break;
-#endif		/*	LANG_EXTENSION */	
+#else
+			/*	- '&' is a concatenation operator.
+			 *	- TODO: To implement.  For the moment, just bypass
+			 *	  this character.
+			 *	-------------------------------------------------- */
+			case '&':
+				text++;
+				goto	dalep_01;
+#endif
 
 			case '+':
 				push(OP_ADD);

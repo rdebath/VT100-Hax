@@ -4,12 +4,12 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	6 January 2012
+ *	Last modified:	27 April 2013
  * Notes:
  *	************************************************************************* */
 
 /*
- * Copyright (c) <2007-2012> <jay.cotton@oracle.com>
+ * Copyright (c) <2007-2013> <jay.cotton@oracle.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -226,7 +226,7 @@ static int proc_endif(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	29 December 2011
+ *	Last modified:	27 April 2013
  *
  *	Parameters:		char *label:
  *							...
@@ -267,7 +267,7 @@ static int proc_db(char *label, char *equation)
 		{
 			case '\'':
 #if LANG_EXTENSION
-			case '"':
+			case '\"':
 #endif
 			{	
 				unsigned char	in_quote		= 1;		/*	Not in Quote. */
@@ -279,7 +279,7 @@ static int proc_db(char *label, char *equation)
 					/*	Check for empty string.
 					 *	----------------------- */	
 #if LANG_EXTENSION
-					if ((*equation == '\'') || (*equation == '"'))
+					if ((*equation == '\'') || (*equation == '\"'))
 #else
 					if (*equation == '\'')
 #endif
@@ -344,7 +344,7 @@ static int proc_db(char *label, char *equation)
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	6 January 2012
+ *	Last modified:	27 April 2013
  *
  *	Parameters:		char *label:
  *							...
@@ -381,7 +381,7 @@ static int proc_dw(char *label, char *equation)
 		{
 			case '\'':
 #if LANG_EXTENSION
-			case '"':
+			case '\"':
 #endif
 			{
 				int				pos			= 0;	/*	Position in word (MSB/LSB). */
@@ -394,7 +394,7 @@ static int proc_dw(char *label, char *equation)
 					/*	Check for empty string.
 					 *	----------------------- */	
 #if LANG_EXTENSION
-					if ((*equation == '\'') || (*equation == '"'))
+					if ((*equation == '\'') || (*equation == '\"'))
 #else
 					if (*equation == '\'')
 #endif

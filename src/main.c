@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	6 January 2012
+ *	Last modified:	26 April 2013
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -13,7 +13,7 @@
  *	************************************************************************* */
 
 /*
- * Copyright (c) <2007-2012> <jay.cotton@oracle.com>
+ * Copyright (c) <2007-2013> <jay.cotton@oracle.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
@@ -94,7 +94,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 1;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 5;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 6;	/*	Revision Number. */
 
 
 /*	*************************************************************************
