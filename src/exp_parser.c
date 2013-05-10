@@ -11,7 +11,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	27 April 2013
+ *	Last modified:	9 May 2013
  *
  *	Notes:			- This module implement an expression parser using
  *						  DAL (Direct Algebraic Logic) format.
@@ -129,6 +129,10 @@ enum Operators
   	OP_SUB,
   	OP_MUL,
 	OP_DIV,
+	OP_AND_BIN,
+	OP_OR_BIN,
+	OP_XOR_BIN,
+	OP_NOT_BIN,
 
 	/*	Operators using a string.
 	 *	------------------------- */
@@ -517,7 +521,7 @@ int extract_byte(char *text)
  *	Description:	Evaluate an expression.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 April 2013
+ *	Last modified:	9 May 2013
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -550,6 +554,24 @@ static void eval(void)
 
 			case OP_DIV:
 				push(a / b);
+				break;
+
+			/*	Binary AND.
+			 *	----------- */	
+			case OP_AND_BIN:
+				push(a & b);
+				break;
+
+			/*	Binary OR.
+			 *	---------- */	
+			case OP_OR_BIN:
+				push(a | b);
+				break;
+
+			/*	Binary XOR.
+			 *	----------- */	
+			case OP_XOR_BIN:
+				push(a ^ b);
 				break;
 
 			case OP_SHL:
@@ -598,16 +620,43 @@ static void eval(void)
 				push(a != b);
 				break;
 
+			/*	- Notes: Logical operators act only upon the least significant
+			 *	  bit of values involved in the operation.
+			 *	-------------------------------------------------------------- */
 			case OP_AND:
-				push(a & b);
+				/*	Display warning message if symbol value is not Boolean.
+				 *	------------------------------------------------------- */
+				if (((a < 0) || (a > 1)) || ((b < 0) || (b > 1)))
+					msg_warning("Symbol is not Boolean!", WC_SINB);
+
+//				push((a != 0) && (b != 0));		/*	C like behaviour. */
+				push((a & 1) & (b & 1));
 				break;
 
+			/*	- Notes: Logical operators act only upon the least significant
+			 *	  bit of values involved in the operation.
+			 *	-------------------------------------------------------------- */
 			case OP_OR:
-				push(a | b);
+				/*	Display warning message if symbol value is not Boolean.
+				 *	------------------------------------------------------- */
+				if (((a < 0) || (a > 1)) || ((b < 0) || (b > 1)))
+					msg_warning("Symbol is not Boolean!", WC_SINB);
+
+//				push((a != 0) || (b != 0));		/*	C like behaviour. */
+				push((a & 1) | (b & 1));
 				break;
 
+			/*	- Notes: Logical operators act only upon the least significant
+			 *	  bit of values involved in the operation.
+			 *	-------------------------------------------------------------- */
 			case OP_XOR:
-				push(a ^ b);
+				/*	Display warning message if symbol value is not Boolean.
+				 *	------------------------------------------------------- */
+				if (((a < 0) || (a > 1)) || ((b < 0) || (b > 1)))
+					msg_warning("Symbol is not Boolean!", WC_SINB);
+
+//				push((a != 0) ^ (b != 0));			/*	C like behaviour. */
+				push((a & 1) ^ (b & 1));
 				break;
 
 			default:
@@ -640,8 +689,24 @@ static void eval(void)
 				push(-a);
 				break;
 
+			/*	- Logical NOT.
+			 *	- Notes: Logical operators act only upon the least significant
+			 *	  bit of values involved in the operation.
+			 *	-------------------------------------------------------------- */
 			case OP_NOT:
-				push((int) (a == 0));
+				/*	Display warning message if symbol value is not Boolean.
+				 *	------------------------------------------------------- */
+				if ((a < 0) || (a > 1))
+					msg_warning("Symbol is not Boolean!", WC_SINB);
+
+//				push(a == 0);				/*	C like behaviour. */
+				push((a & 1) ^ 1);
+				break;
+
+			/*	Binary NOT.
+			 *	----------- */	
+			case OP_NOT_BIN:
+				push(~a);
 				break;
 
 			default:
@@ -749,7 +814,7 @@ static int remove_stack(void)
  *	Description:	DAL (Direct Algebraic Logic) Expression Parser.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	27 April 2013
+ *	Last modified:	9 May 2013
  *
  *	Parameters:		char *text:
  *							- Point to a string that hold expression to parse
@@ -894,30 +959,37 @@ static int dalep(char *text)
 
 
 #if LANG_EXTENSION
-#if 0					
-			/*	"C" like "~" operators.
-			 *	----------------------- */
+			/*	"C" like "~" operators (binary NOT).
+			 *	------------------------------------ */
 			case '~':
-				push(OP_NOT);
+				push(OP_NOT_BIN);
 				text++;
 				break;
-#endif
 
 			/*	"C" like "|" and "||" operators.
 			 *	-------------------------------- */
 			case '|':
-				push(OP_OR);
-				text++;
-
-				if (*text == '|')
+				/*	if "||" (logical OR)...
+				 *	----------------------- */
+				if (*(text + 1) == '|')
+				{
+					push(OP_OR);
+					text	+= 2;
+				}
+				/*	This is "|" (binary OR)...
+				 *	-------------------------- */
+				else
+				{
+					push(OP_OR_BIN);
 					text++;
+				}
 
 				break;
 
-			/*	"C" like '^' operator.
-			 *	---------------------- */
+			/*	"C" like '^' operator (binary XOR).
+			 *	----------------------------------- */
 			case '^':
-				push(OP_XOR);
+				push(OP_XOR_BIN);
 				text++;
 				break;
 #endif
@@ -1055,11 +1127,20 @@ static int dalep(char *text)
 				if (	(*(text + 1) == 0x20) ||
 					  	((*(text + 1) == '&') && (*(text + 2) == 0x20)))
 				{
-					push(OP_AND);
-					text++;
-
-					if (*text == '&')
+					/*	if "&&" (logical AND)...
+					 *	------------------------ */
+					if (*(text + 1) == '&')
+					{
+						push(OP_AND);
+						text	+=	2;
+					}
+					/*	This is "&" (binary AND)...
+					 *	--------------------------- */
+					else
+					{
+						push(OP_AND_BIN);
 						text++;
+					}
 				}
 				/*	- '&' is a concatenation operator.
 				 *	- TODO: To implement.  For the moment, just bypass

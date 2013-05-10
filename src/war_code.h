@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			23 December 2010
- *	Last modified:	1 January 2012
+ *	Last modified:	8 May 2013
  *	Notes:
  *	************************************************************************* */
 
@@ -56,6 +56,7 @@
 #define WC_IFNHNE			11		/*	Input File Name Have No Extension. */
 #define WC_SAUAL			12		/*	Symbol Already Used As Label. */
 #define WC_MPNS			13		/*	Macro Parameters Not Supported. */
+#define WC_SINB			14		/*	Symbol Is Not Boolean. */
 
 
 

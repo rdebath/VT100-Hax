@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	27 April 2013
+Last modified:	9 May 2013
 Notes:
 *******************************************************************************
 
@@ -651,6 +651,34 @@ Notes:		- "NOT" logical operator was not working correctly.
 		  because there is no standard operator equivalent; and
 		  thus difficult to implement.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		8, 9 May 2013
+By:		Claude Sylvain
+Version:	1.0.7
+
+Notes:		- Only the least significant bit of operand(s) must be
+		  considered on the following logical operators:
+			NOT, AND, OR, XOR.
+	 	  This was not the case in previous version.
+		  Ref.: "Intel 8080/8085 Assembly Language Programming",
+		  section 2-13.
+
+		- Additionnaly, logical operators AND, OR, XOR was implemented
+		  as binary operators (not logical operators).
+
+		- In "exp_parser.c", added binary operation OP_AND_BIN,
+		  OP_OR_BIN, OP_XOR_BIN; to be able to keep "C" like
+		  operators "&", "|", "^" implemented.
+		  Also, added binary operator OP_NOT_BIN, to re-activate
+		  "C" like operator "~".
+
+		- When a symbol is used with logical operator (NOT, AND,
+		  OR, XOR, "&&", "||"), and that symbol have a value that is
+		  not Boolean (not 0 and not 1), the assembler display a
+		  warning message.
+-------------------------------------------------------------------------------
+
 
 
 

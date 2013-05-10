@@ -1,13 +1,12 @@
 -------------------------------------------------------------------------------
 			      asm8080 User Manual
 
-
-Cover:		asm8080 V1.0.6
+Cover:		asm8080 V1.0.7
 Copyright(c):	See below.
 Author(s):	Claude Sylvain
 Created:	17 March 2011
-Last modified:	28 April 2013
-Revision:	0.9.8
+Last modified:	9 May 2013
+Revision:	0.9.9
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
@@ -40,10 +39,12 @@ DEALINGS IN THE SOFTWARE.
 2	Assembler description
 2.1	Assembler options
 2.2	Assembler directives
-2.3	Operators
-2.3.1	Standard operators
-2.3.2	Extended operators
-2.4	Delimiters
+2.3	Symbols
+2.4	Operators
+2.4.1	Standard operators
+2.4.1.1	Standard logical operators
+2.4.2	Extended operators
+2.5	Delimiters
 3	Assembler particularities
 3.1	Expression parser
 -------------------------------------------------------------------------------
@@ -118,9 +119,16 @@ Supported assembler directives are:
 	EQU
 	SET
 
-2.3	Operators
+2.3	Symbols
 
-2.3.1	Standard operators
+A symbol can contain 1 to 64 alphabetic or numeric characters.
+Notes: Legacy assembler have a range of 1 to 6 characters.
+
+The first character must be alphabetic.
+
+2.4	Operators
+
+2.4.1	Standard operators
 
 Supported standard operators are:
 
@@ -148,14 +156,31 @@ Supported standard operators are:
 	GT
 	GE
 
-	NOT	Logical one's complement (=1 if 0.  =0 if >=1).
-	AND
-	OR
-	XOR
+2.4.1.1	Standard logical operators
 
-2.3.2	Extended operators
+The logical operators are as follows:
+
+	Operator	Meaning
+	--------	-------
+	NOT		Logical one's complement
+			(=1 if bit[0]=0.  =0 if bit[0]=1)
+
+	AND		Logical AND (=1 if both bits[0] are 1)
+	OR		Logical OR (=1 if either bit[0] is 1)
+	XOR		Logical XOR (=1 if bits[0] are different)
+
+The logical operators act only upon the least significant bit (bit[0]) of
+(symbol) values involved in the operation.
+If (symbol) value is not Boolean (Not 0 and Not 1), the assembler display a
+warning message.
+These operators are commonly used in conditional IF directives.
+
+
+2.4.2	Extended operators
 
 Extended operators are:
+
+	~	(binary NOT)
 
 	&
 	&&
@@ -163,7 +188,7 @@ Extended operators are:
 	|
 	||
 
-	^	(XOR)
+	^	(binary XOR)
 
 	==
 
@@ -174,7 +199,7 @@ Extended operators are:
 	<<
 	>>
 
-2.4	Delimiters
+2.5	Delimiters
 
 	&	Delimit macro prototype text or formal parameters for
 		concatenation.
