@@ -11,7 +11,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	9 May 2013
+ *	Last modified:	17 May 2013
  *
  *	Notes:			- This module implement an expression parser using
  *						  DAL (Direct Algebraic Logic) format.
@@ -123,19 +123,14 @@ struct ep_stack_t
  *	------------------------------------------------------------------------- */	
 enum Operators
 {
-	/*	Operators using a single character.
-	 *	----------------------------------- */
 	OP_ADD,
   	OP_SUB,
   	OP_MUL,
 	OP_DIV,
-	OP_AND_BIN,
-	OP_OR_BIN,
-	OP_XOR_BIN,
-	OP_NOT_BIN,
-
-	/*	Operators using a string.
-	 *	------------------------- */
+	OP_NOT,			/*	Binary NOT. */
+	OP_AND,			/*	Binary AND. */
+	OP_OR,			/*	Binary OR. */
+	OP_XOR,			/*	Binary XOR. */
 //	OP_NUL,			/*	Test for null (missing) macro parameters. */
 	OP_HIGH,
 	OP_LOW,
@@ -147,11 +142,14 @@ enum Operators
 	OP_LE,
 	OP_GT,
 	OP_GE,
+#if LANG_EXTENSION
 	OP_NE,
-	OP_NOT,
-	OP_AND,
-	OP_OR,
-	OP_XOR
+//	OP_NOT_LOG,		/*	Logical NOT. */
+	OP_AND_LOG,		/*	Logical AND. */
+	OP_OR_LOG		/*	Logical OR. */
+#else
+	OP_NE
+#endif
 };
 
 
@@ -521,7 +519,7 @@ int extract_byte(char *text)
  *	Description:	Evaluate an expression.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	9 May 2013
+ *	Last modified:	17 May 2013
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -556,21 +554,21 @@ static void eval(void)
 				push(a / b);
 				break;
 
-			/*	Binary AND.
-			 *	----------- */	
-			case OP_AND_BIN:
+			/*	Binary "AND".
+			 *	------------- */	
+			case OP_AND:
 				push(a & b);
 				break;
 
-			/*	Binary OR.
-			 *	---------- */	
-			case OP_OR_BIN:
+			/*	Binary "OR".
+			 *	------------ */	
+			case OP_OR:
 				push(a | b);
 				break;
 
-			/*	Binary XOR.
-			 *	----------- */	
-			case OP_XOR_BIN:
+			/*	Binary "XOR".
+			 *	------------- */	
+			case OP_XOR:
 				push(a ^ b);
 				break;
 
@@ -620,44 +618,19 @@ static void eval(void)
 				push(a != b);
 				break;
 
-			/*	- Notes: Logical operators act only upon the least significant
-			 *	  bit of values involved in the operation.
-			 *	-------------------------------------------------------------- */
-			case OP_AND:
-				/*	Display warning message if symbol value is not Boolean.
-				 *	------------------------------------------------------- */
-				if (((a < 0) || (a > 1)) || ((b < 0) || (b > 1)))
-					msg_warning("Symbol is not Boolean!", WC_SINB);
-
-//				push((a != 0) && (b != 0));		/*	C like behaviour. */
-				push((a & 1) & (b & 1));
+#if LANG_EXTENSION
+			/*	Logical "AND".
+			 *	-------------- */	
+			case OP_AND_LOG:
+				push((a != 0) && (b != 0));		/*	C like behaviour. */
 				break;
 
-			/*	- Notes: Logical operators act only upon the least significant
-			 *	  bit of values involved in the operation.
-			 *	-------------------------------------------------------------- */
-			case OP_OR:
-				/*	Display warning message if symbol value is not Boolean.
-				 *	------------------------------------------------------- */
-				if (((a < 0) || (a > 1)) || ((b < 0) || (b > 1)))
-					msg_warning("Symbol is not Boolean!", WC_SINB);
-
-//				push((a != 0) || (b != 0));		/*	C like behaviour. */
-				push((a & 1) | (b & 1));
+			/*	Logical "OR".
+			 *	------------- */
+			case OP_OR_LOG:
+				push((a != 0) || (b != 0));		/*	C like behaviour. */
 				break;
-
-			/*	- Notes: Logical operators act only upon the least significant
-			 *	  bit of values involved in the operation.
-			 *	-------------------------------------------------------------- */
-			case OP_XOR:
-				/*	Display warning message if symbol value is not Boolean.
-				 *	------------------------------------------------------- */
-				if (((a < 0) || (a > 1)) || ((b < 0) || (b > 1)))
-					msg_warning("Symbol is not Boolean!", WC_SINB);
-
-//				push((a != 0) ^ (b != 0));			/*	C like behaviour. */
-				push((a & 1) ^ (b & 1));
-				break;
+#endif
 
 			default:
 				break;
@@ -689,25 +662,21 @@ static void eval(void)
 				push(-a);
 				break;
 
-			/*	- Logical NOT.
-			 *	- Notes: Logical operators act only upon the least significant
-			 *	  bit of values involved in the operation.
-			 *	-------------------------------------------------------------- */
+			/*	Binary "NOT".
+			 *	------------- */	
 			case OP_NOT:
-				/*	Display warning message if symbol value is not Boolean.
-				 *	------------------------------------------------------- */
-				if ((a < 0) || (a > 1))
-					msg_warning("Symbol is not Boolean!", WC_SINB);
-
-//				push(a == 0);				/*	C like behaviour. */
-				push((a & 1) ^ 1);
-				break;
-
-			/*	Binary NOT.
-			 *	----------- */	
-			case OP_NOT_BIN:
 				push(~a);
 				break;
+
+#if LANG_EXTENSION
+#if 0
+			/*	Logical "NOT".
+			 *	-------------- */
+			case OP_NOT_LOG:
+				push(a == 0);				/*	C like behaviour. */
+				break;
+#endif
+#endif
 
 			default:
 				break;
@@ -814,7 +783,7 @@ static int remove_stack(void)
  *	Description:	DAL (Direct Algebraic Logic) Expression Parser.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	9 May 2013
+ *	Last modified:	17 May 2013
  *
  *	Parameters:		char *text:
  *							- Point to a string that hold expression to parse
@@ -962,7 +931,7 @@ static int dalep(char *text)
 			/*	"C" like "~" operators (binary NOT).
 			 *	------------------------------------ */
 			case '~':
-				push(OP_NOT_BIN);
+				push(OP_NOT);
 				text++;
 				break;
 
@@ -973,14 +942,14 @@ static int dalep(char *text)
 				 *	----------------------- */
 				if (*(text + 1) == '|')
 				{
-					push(OP_OR);
+					push(OP_OR_LOG);
 					text	+= 2;
 				}
 				/*	This is "|" (binary OR)...
 				 *	-------------------------- */
 				else
 				{
-					push(OP_OR_BIN);
+					push(OP_OR);
 					text++;
 				}
 
@@ -989,7 +958,7 @@ static int dalep(char *text)
 			/*	"C" like '^' operator (binary XOR).
 			 *	----------------------------------- */
 			case '^':
-				push(OP_XOR_BIN);
+				push(OP_XOR);
 				text++;
 				break;
 #endif
@@ -1131,14 +1100,14 @@ static int dalep(char *text)
 					 *	------------------------ */
 					if (*(text + 1) == '&')
 					{
-						push(OP_AND);
+						push(OP_AND_LOG);
 						text	+=	2;
 					}
 					/*	This is "&" (binary AND)...
 					 *	--------------------------- */
 					else
 					{
-						push(OP_AND_BIN);
+						push(OP_AND);
 						text++;
 					}
 				}

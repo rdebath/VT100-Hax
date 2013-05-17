@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	9 May 2013
+Last modified:	17 May 2013
 Notes:
 *******************************************************************************
 
@@ -678,6 +678,33 @@ Notes:		- Only the least significant bit of operand(s) must be
 		  not Boolean (not 0 and not 1), the assembler display a
 		  warning message.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		17 May 2013
+By:		Claude Sylvain
+Version:	1.0.8
+
+Notes:
+		- After doing further research, I discovered that
+		  "NOT", "AND", "OR" and "XOR" are Binary Operators
+		  (not Logical Operators).
+		  So, modified the assembler accordingly.
+		  Surprinsingly, I found a bug in asm8080 V1.0.7,
+		  that make these operators not being logical but
+		  binary.
+
+		- C like "&&" and "||" operators are still supported, but
+		  evaluate expression in the normal way (not just by checking
+		  the least significant bit).
+
+		- The "IF" directive now, behave like described in
+		  "Intel 8080/8085 Assembly Language Programming",
+		  section 2-13.
+		  A warning message is displayed if expression following
+		  the "IF" directive have a result that is not Boolean.
+-------------------------------------------------------------------------------
+
+
 
 
 

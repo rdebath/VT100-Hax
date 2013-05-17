@@ -1,12 +1,12 @@
 -------------------------------------------------------------------------------
 			      asm8080 User Manual
 
-Cover:		asm8080 V1.0.7
+Cover:		asm8080 V1.0.8
 Copyright(c):	See below.
 Author(s):	Claude Sylvain
 Created:	17 March 2011
-Last modified:	9 May 2013
-Revision:	0.9.9
+Last modified:	17 May 2013
+Revision:	1.0.0
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
@@ -42,7 +42,6 @@ DEALINGS IN THE SOFTWARE.
 2.3	Symbols
 2.4	Operators
 2.4.1	Standard operators
-2.4.1.1	Standard logical operators
 2.4.2	Extended operators
 2.5	Delimiters
 3	Assembler particularities
@@ -156,31 +155,16 @@ Supported standard operators are:
 	GT
 	GE
 
-2.4.1.1	Standard logical operators
-
-The logical operators are as follows:
-
-	Operator	Meaning
-	--------	-------
-	NOT		Logical one's complement
-			(=1 if bit[0]=0.  =0 if bit[0]=1)
-
-	AND		Logical AND (=1 if both bits[0] are 1)
-	OR		Logical OR (=1 if either bit[0] is 1)
-	XOR		Logical XOR (=1 if bits[0] are different)
-
-The logical operators act only upon the least significant bit (bit[0]) of
-(symbol) values involved in the operation.
-If (symbol) value is not Boolean (Not 0 and Not 1), the assembler display a
-warning message.
-These operators are commonly used in conditional IF directives.
-
+	NOT		Bitwise NOT (one's complement)
+	AND		Bitwise AND
+	OR		Bitwise OR
+	XOR		Bitwise XOR
 
 2.4.2	Extended operators
 
-Extended operators are:
+Supported extended operators are:
 
-	~	(binary NOT)
+	~		Bitwise NOT
 
 	&
 	&&
@@ -188,7 +172,7 @@ Extended operators are:
 	|
 	||
 
-	^	(binary XOR)
+	^		Bitwise XOR
 
 	==
 

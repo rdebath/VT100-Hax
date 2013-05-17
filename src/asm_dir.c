@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	27 April 2013
+ *	Last modified:	17 May 2013
  * Notes:
  *	************************************************************************* */
 
@@ -122,7 +122,7 @@ static char	*fn_macro	= NULL;		/*	Macro File Name. */
  *	Description:
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	27 December 2011
+ *	Last modified:	17 May 2013
  *
  *	Parameters:		char *label:
  *							...
@@ -139,10 +139,23 @@ static char	*fn_macro	= NULL;		/*	Macro File Name. */
 
 static int proc_if(char *label, char *equation)
 {
+	int	res	= exp_parser(equation);
 
 	if (++if_nest < (sizeof (if_true) / sizeof (int)))
 	{
-		if_true[if_nest] = exp_parser(equation);
+#if 0
+		if_true[if_nest] = res != 0;		/*	C like behaviour. */
+#endif
+		/*	Display warning message if expression value is not Boolean.
+		 *	----------------------------------------------------------- */
+		if ((res < 0) || (res > 1))
+			msg_warning("\"IF\" directive expression result is not Boolean!", WC_IDERINB);
+
+		/*	- Notes: Only the least significant bit must be considered.
+		 *	- Ref.:	"9800301-04_8080_8085_Assembly_Language_Programming_Manual",
+		 *	  section 2-13.
+		 *	*/
+		if_true[if_nest] = res & 1;
 	}
 	else
 	{
@@ -159,7 +172,7 @@ static int proc_if(char *label, char *equation)
  *	Description:	"ELSE" assembler directive processing.
  *	Author(s):		Claude Sylvain
  *	Created:			24 December	2010
- *	Last modified:	27 December 2011
+ *	Last modified:	17 May 2013
  *
  *	Parameters:		char *label:
  *							...
@@ -177,7 +190,6 @@ static int proc_if(char *label, char *equation)
 static int proc_else(char *label, char *equation)
 {
 	/*	Just toggle current "if_true[]" state.
-	 *	So simple :-)
 	 * */	 
 	if_true[if_nest] = (if_true[if_nest] != 0) ? 0 : 1;
 
