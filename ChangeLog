@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	17 May 2013
+Last modified:	20 May 2013
 Notes:
 *******************************************************************************
 
@@ -702,6 +702,30 @@ Notes:
 		  section 2-13.
 		  A warning message is displayed if expression following
 		  the "IF" directive have a result that is not Boolean.
+-------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		20 May 2013
+By:		Claude Sylvain
+Version:	1.0.9
+
+Notes:
+		- In the expression parser, fixed a bug that make symbols
+		  using operator name as prefix, like "gt_xxx", "lt_xxx",
+		  etc.;  not handled correctly.
+		  The assembler was not able to recognized this kind of
+		  symbols.
+
+		- In the expression parser, make possible to use
+		  operator name as label.
+		  This kind of label can be used in some programs.  This is
+		  the case for "als8.asm".
+
+		- Fixed a bug that make the expression parser not able
+		  to evaluate expression having unary operator followed by
+		  parentheses.
+		  Example of such expression is : -(a+1)
+		  That bug make "als8.asm" not assembled correctly.
 -------------------------------------------------------------------------------
 
 

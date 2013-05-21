@@ -11,7 +11,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			27 December 2010
- *	Last modified:	17 May 2013
+ *	Last modified:	20 May 2013
  *
  *	Notes:			- This module implement an expression parser using
  *						  DAL (Direct Algebraic Logic) format.
@@ -192,6 +192,7 @@ static const struct operator_t	operator[]	=
 /*	Private functions.
  *	****************** */
 
+static int is_there_something(char *text);
 static int search_operator(char *text, int *text_bp);
 static int pop(void);
 static void push(int);
@@ -223,11 +224,50 @@ static struct ep_stack_t	*p_ep_stack	= &ep_stack;
 
 
 /*	*************************************************************************
+ *	Function name:	is_there_something
+ *	Description:	Tell if There Is Something in a string.
+ *	Author(s):		Claude Sylvain
+ *	Created:			20 May 2013
+ *	Last modified:
+ *
+ *	Parameters:		char *text:
+ *							Point to text that possibly hold something.
+ *
+ *	Returns:			int:
+ *							0:	There is nothing.	
+ *							1: Something was found.
+ *
+ *	Globals:
+ *	Notes:
+ *	************************************************************************* */
+
+static int is_there_something(char *text)
+{
+	int	rv	= 0;
+
+	/*	Loop until something is found, or end of the string.
+	 *	---------------------------------------------------- */	
+	while (*text != '\0')
+	{
+		if (isspace((int) *text) != 0)
+		{
+			rv	= 1;		/*	Something found. */
+			break;
+		}
+
+		text++;
+	}
+
+	return (rv);
+}
+
+
+/*	*************************************************************************
  *	Function name:	search_operator
  *	Description:	Search for an Operator.
  *	Author(s):		Claude Sylvain
  *	Created:			28 December 2010
- *	Last modified:	26 November 2011
+ *	Last modified:	20 May 2013
  *
  *	Parameters:		char *text:
  *							Point to text that possibly hold an operator.
@@ -279,7 +319,9 @@ static int search_operator(char *text, int *text_bp)
 		
 	while (*text != '\0')
 	{
-		if (isalnum((int) *text) == 0)
+//		if (isalnum((int) *text) == 0)
+//		if ((isalnum((int) *text) == 0) && (*text != '_'))
+		if (islabelchar((int) *text) == 0)
 			break;
 
 			(*text_bp)++;
@@ -783,7 +825,7 @@ static int remove_stack(void)
  *	Description:	DAL (Direct Algebraic Logic) Expression Parser.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	17 May 2013
+ *	Last modified:	20 May 2013
  *
  *	Parameters:		char *text:
  *							- Point to a string that hold expression to parse
@@ -874,6 +916,7 @@ static int dalep(char *text)
 
 				remove_stack();
 				push(val);			/*	Push result into the stack	. */
+				eval();
 
 				/*	Bypass expression(s) in parenthise(s).
 				 *	-------------------------------------- */
@@ -1181,9 +1224,14 @@ dalep_01:
 				 *	----------------------- */	
 				op	= search_operator(text, &text_bp);
 
-				/*	If an operator was found, process it.
-				 *	------------------------------------- */	
-				if (op != -1)
+				/*	- If this is an operator and there is something
+				 *	  following the operator, this probably mean that
+			 	 *	  this is really and operator (not a label).
+				 *	- Remarks: YES, that his.  Some program, like
+				 *	  the famous "als8" use operator name ("LT" and "GT")
+				 *	  as label!!!
+				 *	----------------------------------------------------- */
+				if ((op != -1) && (is_there_something((text + text_bp))))
 				{
 					push(op);				/*	Push Operator. */
 					text	+=	text_bp;		/*	Bypass operator. */
