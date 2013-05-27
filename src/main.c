@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	20 May 2013
+ *	Last modified:	26 May 2013
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -94,7 +94,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 1;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 9;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 10;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -1200,11 +1200,12 @@ static int src_line_parser(char *text)
  *	Function name:	PrintList
  *
  *	Description:	- Output list format.
- *						  [addr] [bn] [bn] [bn] [b4] lab^topcode^taddr^tcomment
+ *						  <Src line> <#cycles/#cycles> <Addr> <code, code, ...>
+ *						  <Label> <Opcode> <Operand> <Comment>
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	6 January 2012
+ *	Last modified:	26 May 2013
  *
  *	Parameters:		char *text:
  *							...
@@ -1231,7 +1232,7 @@ static void PrintList(char *text)
 	{
 		case COMMENT:
 			if (list != NULL)
-				fprintf(list, "\t\t\t%s\n", text);
+				fprintf(list, "%6d\t\t\t\t%s\n", codeline[file_level], text);
 
 			break;
 
@@ -1243,8 +1244,25 @@ static void PrintList(char *text)
 
 					if (list != NULL)
 					{
-						fprintf(	list, "%6d %04X %02X\t\t%s\n", codeline[file_level],
-							  		target.pc, b1, text);
+						uint8_t	inst_cyc[2];
+
+						opcode_get_inst_cyc(inst_cyc);
+
+						/*	If instruction have single #cycles.
+						 *	----------------------------------- */
+						if (inst_cyc[0] == inst_cyc[1])
+						{
+							fprintf(	list, "%6d %2d    %04X %02X\t\t%s\n",
+								  		codeline[file_level], inst_cyc[0], target.pc,
+									  	b1, text);
+
+						}
+						else
+						{
+							fprintf(	list, "%6d %2d/%2d %04X %02X\t\t%s\n",
+								  		codeline[file_level], inst_cyc[0], inst_cyc[1],
+								  		target.pc, b1, text);
+						}
 					}
 
 					break;
@@ -1254,8 +1272,25 @@ static void PrintList(char *text)
 
 					if (list != NULL)
 					{
-						fprintf(	list, "%6d %04X %02X %02X\t%s\n",
-									codeline[file_level], target.pc, b1, b2, text);
+						uint8_t	inst_cyc[2];
+
+						opcode_get_inst_cyc(inst_cyc);
+
+						/*	If instruction have single #cycles.
+						 *	----------------------------------- */
+						if (inst_cyc[0] == inst_cyc[1])
+						{
+							fprintf(	list, "%6d %2d    %04X %02X %02X\t\t%s\n",
+								  		codeline[file_level], inst_cyc[0], target.pc,
+									  	b1, b2, text);
+
+						}
+						else
+						{
+							fprintf(	list, "%6d %2d/%2d %04X %02X %02X\t\t%s\n",
+								  		codeline[file_level], inst_cyc[0], inst_cyc[1],
+								  		target.pc, b1, b2, text);
+						}
 					}
 
 					break;
@@ -1265,18 +1300,36 @@ static void PrintList(char *text)
 
 					if (list != NULL)
 					{
-						fprintf(	list, "%6d %04X %02X %02X %02X\t%s\n",
-									codeline[file_level], target.pc, b1, b2, b3, text);
+						uint8_t	inst_cyc[2];
+
+						opcode_get_inst_cyc(inst_cyc);
+
+						/*	If instruction have single #cycles.
+						 *	----------------------------------- */
+						if (inst_cyc[0] == inst_cyc[1])
+						{
+							fprintf(	list, "%6d %2d    %04X %02X %02X %02X\t%s\n",
+								  		codeline[file_level], inst_cyc[0], target.pc,
+									  	b1, b2, b3, text);
+
+						}
+						else
+						{
+							fprintf(	list, "%6d %2d/%2d %04X %02X %02X %02X\t%s\n",
+								  		codeline[file_level], inst_cyc[0], inst_cyc[1],
+								  		target.pc, b1, b2, b3, text);
+						}
 					}
 
 					break;
 
+#if 0
 				case 4:
 					check_new_pc(data_size);		/*	Check the new PC value. */
 
 					if (list != NULL)
 					{
-						fprintf(	list, "%6d %04X %02X %02X %02X %02X\t%s\n",
+						fprintf(	list, "%6d       %04X %02X %02X %02X %02X\t%s\n",
 									codeline[file_level], target.pc, b1, b2, b3, b4,
 								  	text);
 					}
@@ -1290,13 +1343,26 @@ static void PrintList(char *text)
 						fprintf(list, "            %02X %02X\t%s\n", b2, b1, text);
 
 					break;
+#endif
+				/*	- Notes: We assume source line hold "EQU" or "ORG",
+				 *	  and bytes must be displayed using Big Endian.
+				 *	--------------------------------------------------- */
+				default:
+					if (list != NULL)
+						fprintf(	list, "%6d            %02X %02X\t\t%s\n",
+							  		codeline[file_level], b2, b1, text);
+
+					break;
 			}
 			break;
 
+		/*	Notes: We assume source line is empty.
+		 *	-------------------------------------- */
 		case LIST_ONLY:
 		case PROCESSED_END:
 			if (list != NULL)
-				fprintf(list, "\t\t\t%s\n", text);
+//				fprintf(list, "\t\t\t%s\n", text);
+				fprintf(list, "%6d\n", codeline[file_level]);
 
 			break;
 
@@ -1316,7 +1382,7 @@ static void PrintList(char *text)
 
 			if (list != NULL)
 			{
-				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
+				fprintf(	list, "%6d       %04X\t\t%s\n", codeline[file_level],
 					  		target.pc, text);
 			}
 
@@ -1350,10 +1416,10 @@ static void PrintList(char *text)
 
 			if (list != NULL)
 			{
-				fprintf(	list, "%6d %04X\t\t%s\n", codeline[file_level],
+				fprintf(	list, "%6d       %04X\t\t%s\n", codeline[file_level],
 					  		target.pc, text);
 
-				fprintf(list, "            ");
+				fprintf(list, "                  ");
 			}
 
 			/*	Process all elements in the linked list.
@@ -1380,7 +1446,7 @@ static void PrintList(char *text)
 						fprintf(list, "%02X ", LStack->word >> 8);
 					}
 
-					space				+= 5;
+					space		+= 5;
 				}
 
 				LStack = (STACK *) LStack->next;
@@ -1390,7 +1456,7 @@ static void PrintList(char *text)
 				if (space >= (4 * 3))
 				{
 					if (list != NULL)
-						fprintf(list, "\n            ");
+						fprintf(list, "\n                  ");
 
 					space = 0;
 				}

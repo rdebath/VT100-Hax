@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	1 January 2012
+ *	Last modified:	26 May 2013
  *	Notes:
  *	************************************************************************* */
 
@@ -52,7 +52,11 @@
 extern const keyword_t	OpCodes[];
 
 
+/*	*************************************************************************
+ *	                          FUNCTIONS DECLARATION
+ *	************************************************************************* */
 
+void opcode_get_inst_cyc(uint8_t inst_cyc_p[]);
 
 
 #endif

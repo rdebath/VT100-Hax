@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	20 May 2013
+Last modified:	26 May 2013
 Notes:
 *******************************************************************************
 
@@ -727,6 +727,21 @@ Notes:
 		  Example of such expression is : -(a+1)
 		  That bug make "als8.asm" not assembled correctly.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		26 May 2013
+By:		Claude Sylvain
+Version:	1.0.10
+
+Notes:
+		- Now, instruction number of cycles is displayed in
+		  listing.
+
+		- Invalid code "MOV M,M" is detected, and assembler
+		  display an error.
+		  Remark: Generated (bad) code is "HLT" (0x76).
+-------------------------------------------------------------------------------
+
 
 
 
