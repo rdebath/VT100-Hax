@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 May 2013
+ *	Last modified:	30 May 2013
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -94,7 +94,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 1;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 10;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 11;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -191,6 +191,12 @@ static char	*hex_file	= NULL;		/*	Intel Hexadecimal File name. */
 /*	Single linked list that old all "-I" options.
  *	*/	
 static struct	option_i_t	option_i	= {NULL, NULL};
+
+/*	Control if Instruction Number of Cycles have to be print.
+ *		0 = Do not print instruction number of cycles.
+ *		1 = Print instruction number of cycles.
+ *	*/
+static char	print_inc	= 0;
 
 
 /*	*************************************************************************
@@ -1205,7 +1211,7 @@ static int src_line_parser(char *text)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	26 May 2013
+ *	Last modified:	30 May 2013
  *
  *	Parameters:		char *text:
  *							...
@@ -1232,7 +1238,20 @@ static void PrintList(char *text)
 	{
 		case COMMENT:
 			if (list != NULL)
-				fprintf(list, "%6d\t\t\t\t%s\n", codeline[file_level], text);
+			{
+				char	str_gap[8];
+
+				/*	- Check if we have to print Instruction Number of
+				 *	  Cycles, and prepare to print accordingly.
+				 *	------------------------------------------------- */
+				if (print_inc != 0)
+					strcpy(str_gap, "      ");
+				else
+					*str_gap = '\0';
+
+				fprintf(	list, "%6d %s\t\t\t%s\n", codeline[file_level],
+					  		str_gap, text);
+			}
 
 			break;
 
@@ -1244,25 +1263,30 @@ static void PrintList(char *text)
 
 					if (list != NULL)
 					{
-						uint8_t	inst_cyc[2];
+						char		str_inc[16];
 
-						opcode_get_inst_cyc(inst_cyc);
-
-						/*	If instruction have single #cycles.
-						 *	----------------------------------- */
-						if (inst_cyc[0] == inst_cyc[1])
+						/*	- Check if we have to print Instruction Number of
+						 *	  Cycles, and prepare to print accordingly.
+						 *	------------------------------------------------- */
+						if (print_inc != 0)
 						{
-							fprintf(	list, "%6d %2d    %04X %02X\t\t%s\n",
-								  		codeline[file_level], inst_cyc[0], target.pc,
-									  	b1, text);
+							uint8_t	inst_cyc[2];
 
+							/*	Get current Instruction Number of Cycles.
+							 *	*/
+							opcode_get_inst_cyc(inst_cyc);
+
+							if (inst_cyc[0] == inst_cyc[1])
+								sprintf(str_inc, "%2d    ", inst_cyc[0]);
+							else
+								sprintf(str_inc, "%2d/%2d ", inst_cyc[0], inst_cyc[1]);
 						}
 						else
-						{
-							fprintf(	list, "%6d %2d/%2d %04X %02X\t\t%s\n",
-								  		codeline[file_level], inst_cyc[0], inst_cyc[1],
-								  		target.pc, b1, text);
-						}
+							*str_inc	= '\0';
+
+						fprintf(	list, "%6d %s%04X %02X\t\t%s\n",
+							  		codeline[file_level], str_inc, target.pc,
+								  	b1, text);
 					}
 
 					break;
@@ -1272,25 +1296,30 @@ static void PrintList(char *text)
 
 					if (list != NULL)
 					{
-						uint8_t	inst_cyc[2];
+						char		str_inc[16];
 
-						opcode_get_inst_cyc(inst_cyc);
-
-						/*	If instruction have single #cycles.
-						 *	----------------------------------- */
-						if (inst_cyc[0] == inst_cyc[1])
+						/*	- Check if we have to print Instruction Number of
+						 *	  Cycles, and prepare to print accordingly.
+						 *	------------------------------------------------- */
+						if (print_inc != 0)
 						{
-							fprintf(	list, "%6d %2d    %04X %02X %02X\t\t%s\n",
-								  		codeline[file_level], inst_cyc[0], target.pc,
-									  	b1, b2, text);
+							uint8_t	inst_cyc[2];
 
+							/*	Get current Instruction Number of Cycles.
+							 *	*/
+							opcode_get_inst_cyc(inst_cyc);
+
+							if (inst_cyc[0] == inst_cyc[1])
+								sprintf(str_inc, "%2d    ", inst_cyc[0]);
+							else
+								sprintf(str_inc, "%2d/%2d ", inst_cyc[0], inst_cyc[1]);
 						}
 						else
-						{
-							fprintf(	list, "%6d %2d/%2d %04X %02X %02X\t\t%s\n",
-								  		codeline[file_level], inst_cyc[0], inst_cyc[1],
-								  		target.pc, b1, b2, text);
-						}
+							*str_inc	= '\0';
+
+						fprintf(	list, "%6d %s%04X %02X %02X\t\t%s\n",
+							  		codeline[file_level], str_inc, target.pc,
+								  	b1, b2, text);
 					}
 
 					break;
@@ -1300,25 +1329,30 @@ static void PrintList(char *text)
 
 					if (list != NULL)
 					{
-						uint8_t	inst_cyc[2];
+						char		str_inc[16];
 
-						opcode_get_inst_cyc(inst_cyc);
-
-						/*	If instruction have single #cycles.
-						 *	----------------------------------- */
-						if (inst_cyc[0] == inst_cyc[1])
+						/*	- Check if we have to print Instruction Number of
+						 *	  Cycles, and prepare to print accordingly.
+						 *	------------------------------------------------- */
+						if (print_inc != 0)
 						{
-							fprintf(	list, "%6d %2d    %04X %02X %02X %02X\t%s\n",
-								  		codeline[file_level], inst_cyc[0], target.pc,
-									  	b1, b2, b3, text);
+							uint8_t	inst_cyc[2];
 
+							/*	Get current Instruction Number of Cycles.
+							 *	*/
+							opcode_get_inst_cyc(inst_cyc);
+
+							if (inst_cyc[0] == inst_cyc[1])
+								sprintf(str_inc, "%2d    ", inst_cyc[0]);
+							else
+								sprintf(str_inc, "%2d/%2d ", inst_cyc[0], inst_cyc[1]);
 						}
 						else
-						{
-							fprintf(	list, "%6d %2d/%2d %04X %02X %02X %02X\t%s\n",
-								  		codeline[file_level], inst_cyc[0], inst_cyc[1],
-								  		target.pc, b1, b2, b3, text);
-						}
+							*str_inc	= '\0';
+
+						fprintf(	list, "%6d %s%04X %02X %02X %02X\t%s\n",
+							  		codeline[file_level], str_inc, target.pc,
+								  	b1, b2, b3, text);
 					}
 
 					break;
@@ -1349,8 +1383,20 @@ static void PrintList(char *text)
 				 *	--------------------------------------------------- */
 				default:
 					if (list != NULL)
-						fprintf(	list, "%6d            %02X %02X\t\t%s\n",
-							  		codeline[file_level], b2, b1, text);
+					{
+						char	str_gap[8];
+
+						/*	- Check if we have to print Instruction Number of
+						 *	  Cycles, and prepare to print accordingly.
+						 *	------------------------------------------------- */
+						if (print_inc != 0)
+							strcpy(str_gap, "      ");
+						else
+							*str_gap = '\0';
+
+						fprintf(	list, "%6d %s     %02X %02X\t\t%s\n",
+							  		codeline[file_level], str_gap, b2, b1, text);
+					}
 
 					break;
 			}
@@ -1382,8 +1428,18 @@ static void PrintList(char *text)
 
 			if (list != NULL)
 			{
-				fprintf(	list, "%6d       %04X\t\t%s\n", codeline[file_level],
-					  		target.pc, text);
+				char	str_gap[8];
+
+				/*	- Check if we have to print Instruction Number of
+				 *	  Cycles, and prepare to print accordingly.
+				 *	------------------------------------------------- */
+				if (print_inc != 0)
+					strcpy(str_gap, "      ");
+				else
+					*str_gap = '\0';
+
+				fprintf(	list, "%6d %s%04X\t\t%s\n", codeline[file_level],
+					  		str_gap, target.pc, text);
 			}
 
 			break;
@@ -1399,7 +1455,9 @@ static void PrintList(char *text)
 			while (LStack->next)
 			{
 				if ((type == LIST_BYTES) || (type == LIST_STRINGS))
+				{
 					data_size++;
+				}
 				/*	Assuming this is a "WORD".
 				 *	-------------------------- */
 				else
@@ -1416,10 +1474,20 @@ static void PrintList(char *text)
 
 			if (list != NULL)
 			{
-				fprintf(	list, "%6d       %04X\t\t%s\n", codeline[file_level],
-					  		target.pc, text);
+				char	str_gap[8];
 
-				fprintf(list, "                  ");
+				/*	- Check if we have to print Instruction Number of
+				 *	  Cycles, and prepare to print accordingly.
+				 *	------------------------------------------------- */
+				if (print_inc != 0)
+					strcpy(str_gap, "      ");
+				else
+					*str_gap = '\0';
+
+				fprintf(	list, "%6d %s%04X\t\t%s\n", codeline[file_level],
+					  		str_gap, target.pc, text);
+
+				fprintf(list, "       %s     ", str_gap);
 			}
 
 			/*	Process all elements in the linked list.
@@ -1456,7 +1524,15 @@ static void PrintList(char *text)
 				if (space >= (4 * 3))
 				{
 					if (list != NULL)
-						fprintf(list, "\n                  ");
+					{
+						/*	- Check if we have to print Instruction Number of
+						 *	  Cycles, and print accordingly.
+						 *	------------------------------------------------- */
+						if (print_inc != 0)
+							fprintf(list, "\n                  ");
+						else
+							fprintf(list, "\n            ");
+					}
 
 					space = 0;
 				}
@@ -1960,7 +2036,7 @@ static void do_asm(void)
  *	Description:		Display Help.
  *	Author(s):			Jay Cotton, Claude Sylvain
  *	Created:				2007
- *	Last modified:		17 December 2011
+ *	Last modified:		30 May 2013
  *	Parameters:			void
  *	Returns:				void
  *	Globals:
@@ -1975,6 +2051,7 @@ static void display_help(void)
 	printf("  -I<dir>      : Add directory to the include file search path.\n");
 	printf("  -l<filename> : Generate listing file.\n");
 	printf("  -o<filename> : Define output files (optionnal).\n");
+	printf("  -P           : Print instruction #cycles in listing file.\n");
 	printf("  -v           : Display version.\n");
 }
 
@@ -2872,6 +2949,13 @@ static int cmd_line_parser(int argc, char *argv[])
 							process_option_o(*argv);
 							break;
 
+						/*	"-P" option.
+						 *	Print Instruction Number of Cycles.
+						 *	----------------------------------- */
+						case 'P':
+							print_inc	= 1;
+							break;
+
 						/*	- On "-h" option of unknown option, display
 						 *	  help and exit.
 						 *	------------------------------------------- */	 
@@ -2890,7 +2974,6 @@ static int cmd_line_parser(int argc, char *argv[])
 							rv				= 0;		/*	Just display.  Do not assemble. */
 							pgm_par_cnt	= 0;		/*	Force Exit. */
 							break;
-
 					}
 
 					break;

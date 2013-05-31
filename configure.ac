@@ -4,7 +4,7 @@
 # Copyright(c):	See below.
 # Author(s):		Jay Cotton, Claude Sylvain
 # Created:			26 Mars 2011
-# Last modified:	26 May 2013
+# Last modified:	30 May 2013
 #
 # Notes:				- Process this file with autoconf to produce a configure
 #						  script.
@@ -38,7 +38,7 @@
 #AC_INIT(asm8080, 2.0 , lbmgmusic@gmail.com)
 #AC_INIT(asm8080)
 #AC_INIT(src)
-AC_INIT([asm8080], [1.0.10])
+AC_INIT([asm8080], [1.0.11])
 
 #AC_CONFIG_SRCDIR([asm_dir.c], [exp_parser.c], [main.c], [opcode.c], [util.c])
 #AC_CONFIG_HEADER([_dummy.h asm_dir.h err_code.h exp_parser.h main.h opcode.h project.h util.h war_code.h])

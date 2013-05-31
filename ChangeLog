@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	26 May 2013
+Last modified:	30 May 2013
 Notes:
 *******************************************************************************
 
@@ -741,6 +741,17 @@ Notes:
 		  display an error.
 		  Remark: Generated (bad) code is "HLT" (0x76).
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		30 May 2013
+By:		Claude Sylvain
+Version:	1.0.10
+
+Notes:
+		- Instruction number of cycles is printed in the listing
+		  file only if option "-P" is used.
+-------------------------------------------------------------------------------
+
 
 
 

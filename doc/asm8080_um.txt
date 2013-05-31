@@ -1,12 +1,12 @@
 -------------------------------------------------------------------------------
 			      asm8080 User Manual
 
-Cover:		asm8080 V1.0.8 and higher.
+Cover:		asm8080 V1.0.11 and higher.
 Copyright(c):	See below.
 Author(s):	Claude Sylvain
 Created:	17 March 2011
-Last modified:	20 May 2013
-Revision:	1.0.1
+Last modified:	30 May 2013
+Revision:	1.0.2
 -------------------------------------------------------------------------------
 
 -------------------------------------------------------------------------------
@@ -91,6 +91,11 @@ Assembler options are listed and described below.
 	.bin and .hex appended.  If the <filename> assigned via this
 	option have a file name extension, this filename extension
 	will be ignored.
+
+-P
+	Print instruction number of cycles in listing file.
+	Instruction number of cycles is printed following the source
+	line number.
 
 -v
 	Display assembler version.
