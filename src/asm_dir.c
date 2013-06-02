@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			24 December 2010
- *	Last modified:	17 May 2013
+ *	Last modified:	1 June 2013
  * Notes:
  *	************************************************************************* */
 
@@ -48,6 +48,13 @@
 #include "main.h"
 #include "msg.h"
 #include "asm_dir.h"
+
+
+/*	*************************************************************************
+ *											  CONSTANTS
+ *	************************************************************************* */
+
+#define PROC_INCLUDE_TEXT_SIZE_MAX	256
 
 
 /*	*************************************************************************
@@ -552,7 +559,7 @@ static int proc_ds(char *label, char *equation)
  *	Description:	"INCLUDE" assembler directive processing.
  *	Author(s):		Claude Sylvain
  *	Created:			27 December	2010
- *	Last modified:	28 December 2011
+ *	Last modified:	1 June 2013
  *
  *	Parameters:		char *label:
  *							...
@@ -571,9 +578,6 @@ static int proc_ds(char *label, char *equation)
 
 static int proc_include(char *label, char *equation)
 {
-#define OpenIncludeFile_TEXT_SIZE_MAX	256
-
-
 	char	*p_name;
 	char	*p_name_path;
 	int	i					= 0;
@@ -587,8 +591,8 @@ static int proc_include(char *label, char *equation)
 
 	/*	Allocate memory.
 	 *	---------------- */	
-	p_name 		= (char *) malloc(OpenIncludeFile_TEXT_SIZE_MAX);
-	p_name_path = (char *) malloc(OpenIncludeFile_TEXT_SIZE_MAX);
+	p_name 		= (char *) malloc(PROC_INCLUDE_TEXT_SIZE_MAX);
+	p_name_path = (char *) malloc(PROC_INCLUDE_TEXT_SIZE_MAX);
 
 	/*	Go further more only if able to allocate memory.
 	 *	------------------------------------------------ */
@@ -604,7 +608,7 @@ static int proc_include(char *label, char *equation)
 		return (LIST_ONLY);
 	}
 
-	memset(p_name, 0, OpenIncludeFile_TEXT_SIZE_MAX);
+	memset(p_name, 0, PROC_INCLUDE_TEXT_SIZE_MAX);
 
 	/*	Search for a quote until end of string or begining of a comment.
 	 *	---------------------------------------------------------------- */	
@@ -660,7 +664,7 @@ static int proc_include(char *label, char *equation)
 
 			/*	Update buffer index, and check for overflow.
 			 *	-------------------------------------------- */	
-			if (++i >= OpenIncludeFile_TEXT_SIZE_MAX)
+			if (++i >= PROC_INCLUDE_TEXT_SIZE_MAX)
 			{
 				msg_error("Buffer overflow!", EC_BOF);
 
@@ -700,7 +704,7 @@ static int proc_include(char *label, char *equation)
 
 			/*	Update buffer index, and check for overflow.
 			 *	-------------------------------------------- */	
-			if (++i >= OpenIncludeFile_TEXT_SIZE_MAX)
+			if (++i >= PROC_INCLUDE_TEXT_SIZE_MAX)
 			{
 				msg_error("Buffer overflow!", EC_BOF);
 
@@ -730,7 +734,7 @@ static int proc_include(char *label, char *equation)
 
 		while ((in_fp[file_level] = fopen(p_name_path,"r")) == NULL)
   		{
-			if (get_file_from_path(p_name, p_name_path, OpenIncludeFile_TEXT_SIZE_MAX) == -1)
+			if (get_file_from_path(p_name, p_name_path, PROC_INCLUDE_TEXT_SIZE_MAX) == -1)
 			{
 				--file_level;				/*	Restore. */
 				file_openned	= 0;
@@ -750,7 +754,10 @@ static int proc_include(char *label, char *equation)
 			/*	Check for memory allocation error.
 			 *	--------------------------------- */	
 			if (in_fn[file_level] != NULL)
+			{
 				strcpy(in_fn[file_level], p_name_path);	/*	Save input file name. */
+				codeline[file_level]	= 0;
+			}
 			else
 			{
 				fclose(in_fp[file_level]);		/*	Close file. */
@@ -758,7 +765,6 @@ static int proc_include(char *label, char *equation)
 				msg_error("Memory allocation error!", EC_MAE);
 			}
 		}
-
 	}
 	else
 	{

@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	30 May 2013
+ *	Last modified:	1 June 2013
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -94,7 +94,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 1;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 11;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 12;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -119,7 +119,7 @@ static void DumpBin(void);
 static void do_asm(void);
 static int print_symbols_type(	enum symbol_type_t symbol_type,
 	  										int symbol_field_size, int tab_length);
-static void PrintList(char *text);
+static void print_list(char *text);
 static void display_help(void);
 static int src_line_parser(char *text);
 static void asm_pass1(void);
@@ -755,7 +755,7 @@ static void CloseFiles(void)
  *	Description:	Break down a source line.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	29 December 2011
+ *	Last modified:	1 June 2013
  *
  *	Parameters:		char *text:
  *							...
@@ -1141,7 +1141,7 @@ static int src_line_parser(char *text)
 					if (in_fn[file_level] != NULL)
 					{
 						strcpy(in_fn[file_level], fn_macro);	/*	Save input file name. */
-
+						codeline[file_level]	= 0;
 #if 0
 						/*	- Check if macro have paramaters.
 						 *	- If macro have parameters, warn user that macro
@@ -1203,7 +1203,7 @@ static int src_line_parser(char *text)
 
 
 /*	*************************************************************************
- *	Function name:	PrintList
+ *	Function name:	print_list
  *
  *	Description:	- Output list format.
  *						  <Src line> <#cycles/#cycles> <Addr> <code, code, ...>
@@ -1211,7 +1211,7 @@ static int src_line_parser(char *text)
  *
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	30 May 2013
+ *	Last modified:	1 June 2013
  *
  *	Parameters:		char *text:
  *							...
@@ -1224,7 +1224,7 @@ static int src_line_parser(char *text)
  *	Notes:
  *	************************************************************************* */
 
-static void PrintList(char *text)
+static void print_list(char *text)
 {
 	STACK	*LStack	= ByteWordStack;
 	int	space		= 0;
@@ -1357,27 +1357,6 @@ static void PrintList(char *text)
 
 					break;
 
-#if 0
-				case 4:
-					check_new_pc(data_size);		/*	Check the new PC value. */
-
-					if (list != NULL)
-					{
-						fprintf(	list, "%6d       %04X %02X %02X %02X %02X\t%s\n",
-									codeline[file_level], target.pc, b1, b2, b3, b4,
-								  	text);
-					}
-
-					break;
-
-				/* 0
-				 * - */
-				default:
-					if (list != NULL)
-						fprintf(list, "            %02X %02X\t%s\n", b2, b1, text);
-
-					break;
-#endif
 				/*	- Notes: We assume source line hold "EQU" or "ORG",
 				 *	  and bytes must be displayed using Big Endian.
 				 *	--------------------------------------------------- */
@@ -1402,13 +1381,43 @@ static void PrintList(char *text)
 			}
 			break;
 
-		/*	Notes: We assume source line is empty.
-		 *	-------------------------------------- */
 		case LIST_ONLY:
 		case PROCESSED_END:
 			if (list != NULL)
-//				fprintf(list, "\t\t\t%s\n", text);
-				fprintf(list, "%6d\n", codeline[file_level]);
+			{
+				char	str_gap[8];
+				int	src_line;
+
+				/*	- Set the source line to display.
+				 *	- If we are inside in an "include" file, and
+				 *	  "codeline[file_level]" is 0, this mean that "INCLUDE"
+				 *	  directive have just been processed, and source line
+				 *	  number to display is in "codeline[file_level - 1]"
+				 *	  instead of "codeline[file_level]".
+				 *	------------------------------------------------------ */	  
+				if (file_level > 0)
+				{
+					src_line	=	(codeline[file_level] > 0) ?
+					  				codeline[file_level] : codeline[file_level - 1];
+				}
+				else
+					src_line	=	codeline[file_level];
+				
+				/*	- Check if we have to print Instruction Number of
+				 *	  Cycles, and prepare to print accordingly.
+				 *	------------------------------------------------- */
+				if (print_inc != 0)
+					strcpy(str_gap, "      ");
+				else
+					*str_gap = '\0';
+
+				/*	Check if "text" contain something, and print accordingly.
+				 *	--------------------------------------------------------- */
+				if (strlen(text) > 0)
+					fprintf(list, "%6d %s    \t\t%s\n", src_line, str_gap, text);
+				else
+					fprintf(list, "%6d\n", src_line);
+			}
 
 			break;
 
@@ -1825,7 +1834,7 @@ static void DumpBin(void)
  *	Description:	Assemble source file.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	28 December 2011
+ *	Last modified:	1 June 2013
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -1966,7 +1975,7 @@ static void do_asm(void)
 		 *	  immediatly.  This will be done later...
 	 	 *	------------------------------------------------------ */	 
 		if (EmitBin != PROCESSED_END)
-			PrintList(p_text);
+			print_list(p_text);
 
 		if (util_is_cs_enable() == 1)
 			DumpBin();
@@ -1983,7 +1992,7 @@ static void do_asm(void)
 					  				WC_EDFIIF);
 			}
 
-			PrintList(p_text);
+			print_list(p_text);
 			ProcessDumpBin();
 			ProcessDumpHex(1);
 
@@ -2080,7 +2089,7 @@ static void display_version(void)
  *	Description:	Assembler Pass #1.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	1 June 2013
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -2091,8 +2100,11 @@ static void asm_pass1(void)
 {
 	int	i;
 
-	for (i = 0; i < FILES_LEVEL_MAX; i++)
-		codeline[i]	= 0;
+	/*	- Notes: Only "codeline" level 0 need to be clear, since
+	 *	  all other "codeline" level are cleared at time file "INCLUDE"
+	 *	  directive is processed.
+	 *	*/
+	codeline[0]	= 0;
 
 	target.addr			= 0;
 	target.pc			= 0x0000;
@@ -2112,7 +2124,7 @@ static void asm_pass1(void)
  *	Description:	Assembler Pass #2.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	24 December 2011
+ *	Last modified:	1 June 2013
  *	Parameters:		void
  *	Returns:			void
  *	Globals:
@@ -2123,8 +2135,11 @@ static void asm_pass2(void)
 {
 	int	i;
 
-	for (i = 0; i < FILES_LEVEL_MAX; i++)
-		codeline[i]	= 0;
+	/*	- Notes: Only "codeline" level 0 need to be clear, since
+	 *	  all other "codeline" level are cleared at time file "INCLUDE"
+	 *	  directive is processed.
+	 *	*/
+	codeline[0]	= 0;
 
 	target.addr			= 0;
 	target.pc			= 0x0000;

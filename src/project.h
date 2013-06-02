@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
  *	Created:			11 December 2010
- *	Last modified:	4 January 2012
+ *	Last modified:	1 June 2013
  *	Notes:
  *	************************************************************************* */
 
@@ -30,6 +30,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+
+/*	*************************************************************************
+ *	************************************************************************* */
 
 #ifndef _PROJECT_H
 #define _PROJECT_H
@@ -66,7 +69,7 @@
  *	************************************************************************* */
 
 #define SRC_LINE_WIDTH_MAX			256		/*	Source Line Maximum Width. */
-#define 	FILES_LEVEL_MAX			16			/*	Maximum Files Level. */
+#define FILES_LEVEL_MAX				16			/*	Maximum Files Level. */
 
 /*	Symbol Maximum Size.
  *	*/	
@@ -175,9 +178,9 @@ typedef struct targ
 } TARG;
 
 
-
-
 #endif
+
+
 
 
 
