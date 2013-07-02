@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	1 June 2013
+Last modified:	2 July 2013
 Notes:
 *******************************************************************************
 
@@ -760,10 +760,18 @@ Version:	1.0.11
 Notes:
 		- Fixed a bug that make source lines numbering not good in
 		  listing file, inside included file section ("INCLUDE").
+-------------------------------------------------------------------------------
 
+-------------------------------------------------------------------------------
+Date:		1 June 2013
+By:		Claude Sylvain
+Version:	1.0.12
+
+Notes:
 		- Fixed a bug that make some source lines that do not
 		  contain code, not displayed in listing.
 -------------------------------------------------------------------------------
+
 
 
 
