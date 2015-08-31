@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 June 2013
+ *	Last modified:	2015-08-30
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -94,7 +94,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 1;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 12;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 13;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -755,7 +755,7 @@ static void CloseFiles(void)
  *	Description:	Break down a source line.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	1 June 2013
+ *	Last modified:	2015-08-30
  *
  *	Parameters:		char *text:
  *							...
@@ -772,12 +772,27 @@ static void CloseFiles(void)
 static int src_line_parser(char *text)
 {
 	char	keyword[16];
-	char	keyword_uc[sizeof (keyword)];	/*	OpCode in Upper Case. */
+	char	keyword_uc[sizeof (keyword)];		/*	OpCode in Upper Case. */
+
 	int	i					= 0;
 	int	msg_displayed	= 0;
-	char	equation[80];
+	int	status			= LIST_ONLY;
+
+	char	*equation;
 	char	label[LABEL_SIZE_MAX];
-	int	status	= LIST_ONLY;
+
+
+	/*	Allocate space for "equation".
+	 *	*/
+	equation	= (char *) malloc(EQUATION_SIZE_MAX * sizeof (char));
+
+	/*	If unable to allocate space for "equation", abort operation.
+	 *	------------------------------------------------------------ */
+	if (equation == NULL)
+	{
+		msg_error("Memory allocation error!", EC_MAE);
+		return (status);
+	}
 
 	/*	If this is a comment, don't do anything.
 	 *	---------------------------------------- */	
@@ -814,7 +829,7 @@ static int src_line_parser(char *text)
 		memset(label, 0, sizeof (label));
 		memset(keyword, 0, sizeof (keyword));
 		memset(keyword_uc, 0, sizeof (keyword_uc));
-		memset(equation, 0, sizeof (equation));
+		memset(equation, 0, EQUATION_SIZE_MAX * sizeof (char));
 
 
 		/*	Grab the label/name, if any.
@@ -944,6 +959,7 @@ static int src_line_parser(char *text)
 			 * */
 			type		= COMMENT;
 
+			free(equation);
 			return (LIST_ONLY);
 		}
 
@@ -994,7 +1010,7 @@ static int src_line_parser(char *text)
 
 			while ((iscntrl((int) *text) == 0) && (*text != ';'))
 			{
-				if (i < (sizeof (equation) - 1))
+				if (i < ((EQUATION_SIZE_MAX * sizeof (char)) - 1))
 				{
 					equation[i]	= *(text++);
 					i++;
@@ -1010,7 +1026,7 @@ static int src_line_parser(char *text)
 					{
 						msg_displayed	= 1;	/*	No more message. */
 
-						msg_error_s("equation too long!", EC_ETL, equation);
+						msg_error_s("Equation too long!", EC_ETL, equation);
 					}
 				}
 			}
@@ -1034,7 +1050,10 @@ static int src_line_parser(char *text)
 					type		= status;
 
 					if (status == PROCESSED_END)
+					{
+						free(equation);
 						return (status);
+					}
 				}
 				else if (strcmp(keyword_uc, "ENDM") == 0)
 				{
@@ -1055,7 +1074,10 @@ static int src_line_parser(char *text)
 		/*	If assembler directive was found and processed, exit.
 		 *	----------------------------------------------------- */	
 		if (p_keyword->Name != NULL)
+		{
+			free(equation);
 			return (status);
+		}
 
 		/*	- If code section is not active or inside macro definition
 		 *	  processing, do no search for opcodes and macros.
@@ -1065,6 +1087,7 @@ static int src_line_parser(char *text)
 		{
 			type		= LIST_ONLY;
 			status	= LIST_ONLY;
+			free(equation);
 			return (status);
 		}
 
@@ -1094,7 +1117,10 @@ static int src_line_parser(char *text)
 		/*	If opcode was found and processed, exit.
 		 *	---------------------------------------- */	
 		if (p_keyword->Name != NULL)
+		{
+			free(equation);
 			return (status);
+		}
 
 
 		/*	Try with a macro.
@@ -1198,6 +1224,7 @@ static int src_line_parser(char *text)
 		}
 	}
 
+	free(equation);
 	return (status);
 }
 

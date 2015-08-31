@@ -3,8 +3,8 @@
  *	Description:	Project header file.
  *	Copyright(c):	See below...
  *	Author(s):		Claude Sylvain
- *	Created:			11 December 2010
- *	Last modified:	1 June 2013
+ *	Created:			2010-12-11
+ *	Last modified:	2015-08-30
  *	Notes:
  *	************************************************************************* */
 
@@ -71,9 +71,8 @@
 #define SRC_LINE_WIDTH_MAX			256		/*	Source Line Maximum Width. */
 #define FILES_LEVEL_MAX				16			/*	Maximum Files Level. */
 
-/*	Symbol Maximum Size.
- *	*/	
-#define SYMBOL_SIZE_MAX				64
+#define EQUATION_SIZE_MAX			160		/*	Equation maximum size. */
+#define SYMBOL_SIZE_MAX				64			/*	Symbol Maximum Size. */
 
 /*	Label Maximum Size.
  *	Notes: This value is (only) 6 in some 8080 legacy assemblers.

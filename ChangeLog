@@ -4,7 +4,7 @@ Description:	asm8080 change log.
 Copyright(c):	See below.
 Author(s):	Jay Cotton, Claude Sylvain
 Created:	2007
-Last modified:	2 July 2013
+Last modified:	2015-08-30
 Notes:
 *******************************************************************************
 
@@ -771,6 +771,20 @@ Notes:
 		- Fixed a bug that make some source lines that do not
 		  contain code, not displayed in listing.
 -------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------
+Date:		2015-08-30
+By:		Claude Sylvain
+Version:	1.0.13
+
+Notes:
+		- In "main.c", in "src_line_parser()", changed the
+		  maximum size of "equation" that can be handled.
+		  Also, now "equation" is a pointer to an array
+		  of char, created dynamically.  This is to minimize
+		  stack usage.
+-------------------------------------------------------------------------------
+
 
 
 
