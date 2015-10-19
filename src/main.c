@@ -4,7 +4,7 @@
  *	Copyright(c):	See below...
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	2015-08-30
+ *	Last modified:	2015-10-18
  *
  * Notes:
  *						- The assembler assumes that the left column is a label,
@@ -94,7 +94,7 @@ const char	*name_pgm	= "asm8080";		/*	Program Name. */
  *	---------------- */
 static const unsigned char	pgm_version_v	= 1;	/*	Version. */
 static const unsigned char	pgm_version_sv	= 0;	/*	Sub-Version. */
-static const unsigned char	pgm_version_rn	= 13;	/*	Revision Number. */
+static const unsigned char	pgm_version_rn	= 14;	/*	Revision Number. */
 
 
 /*	*************************************************************************
@@ -755,7 +755,7 @@ static void CloseFiles(void)
  *	Description:	Break down a source line.
  *	Author(s):		Jay Cotton, Claude Sylvain
  *	Created:			2007
- *	Last modified:	2015-08-30
+ *	Last modified:	2015-10-18
  *
  *	Parameters:		char *text:
  *							...
@@ -771,26 +771,49 @@ static void CloseFiles(void)
 
 static int src_line_parser(char *text)
 {
-	char	keyword[16];
-	char	keyword_uc[sizeof (keyword)];		/*	OpCode in Upper Case. */
+/*	"p_string" and "p_string_uc" size (the allocated memory).
+ *	*/
+#define SCR_LINE_PARSER_P_STRING_SIZE		SYMBOL_SIZE_MAX
+
+
+	char	*p_string;
+	char	*p_string_uc;							/*	String in Upper Case. */
+	char	*p_equation;
+	char	*p_label;
 
 	int	i					= 0;
 	int	msg_displayed	= 0;
 	int	status			= LIST_ONLY;
 
-	char	*equation;
-	char	label[LABEL_SIZE_MAX];
 
-
-	/*	Allocate space for "equation".
+	/*	Allocate space for "Key Word".
 	 *	*/
-	equation	= (char *) malloc(EQUATION_SIZE_MAX * sizeof (char));
+	p_string = (char *) malloc(SCR_LINE_PARSER_P_STRING_SIZE * sizeof (char));
 
-	/*	If unable to allocate space for "equation", abort operation.
-	 *	------------------------------------------------------------ */
-	if (equation == NULL)
+	/*	Allocate space for "Key Word, Upper Case".
+	 *	*/
+	p_string_uc = (char *) malloc(SCR_LINE_PARSER_P_STRING_SIZE * sizeof (char));
+
+	/*	Allocate space for "Equation".
+	 *	*/
+	p_equation = (char *) malloc(EQUATION_SIZE_MAX * sizeof (char));
+
+	/*	Allocate space for "Label".
+	 *	*/
+	p_label = (char *) malloc(LABEL_SIZE_MAX * sizeof (char));
+
+	/*	If unable to allocate space for some objects, abort operation.
+	 *	-------------------------------------------------------------- */
+	if (	(p_string == NULL) || (p_string_uc == NULL) || (p_equation == NULL) ||
+			(p_label == NULL))
 	{
 		msg_error("Memory allocation error!", EC_MAE);
+
+		free(p_string);
+		free(p_string_uc);
+		free(p_equation);
+		free(p_label);
+
 		return (status);
 	}
 
@@ -826,10 +849,10 @@ static int src_line_parser(char *text)
   	{
 		keyword_t   *p_keyword;
 
-		memset(label, 0, sizeof (label));
-		memset(keyword, 0, sizeof (keyword));
-		memset(keyword_uc, 0, sizeof (keyword_uc));
-		memset(equation, 0, EQUATION_SIZE_MAX * sizeof (char));
+		memset(p_label, 0, LABEL_SIZE_MAX);
+		memset(p_string, 0, SCR_LINE_PARSER_P_STRING_SIZE);
+		memset(p_string_uc, 0, SCR_LINE_PARSER_P_STRING_SIZE);
+		memset(p_equation, 0, EQUATION_SIZE_MAX * sizeof (char));
 
 
 		/*	Grab the label/name, if any.
@@ -865,14 +888,14 @@ static int src_line_parser(char *text)
 
 			/*	TODO: Is this standard Intel assembler code?
 			 *	-------------------------------------------- */	
-			if (*text == '&')	label[i++] = *(text++);
-			if (*text == '%')	label[i++] = *(text++);
+			if (*text == '&')	p_label[i++] = *(text++);
+			if (*text == '%')	p_label[i++] = *(text++);
 
 			/*	- First label/name character can be '?' or '@'
 			 *	  special character.
 			 *	---------------------------------------------- */
 			if ((*text == '?') || (*text == '@'))
-				label[i++] = *(text++);
+				p_label[i++] = *(text++);
 
 			/*	Grab remaining of label/name characters.
 			 *	---------------------------------------- */	
@@ -880,9 +903,9 @@ static int src_line_parser(char *text)
 			{
 				if (islabelchar((int) *text) != 0)
 				{
-					if (i < (sizeof (label) - 3))
+					if (i < (LABEL_SIZE_MAX - 3))
 					{
-						label[i]	= *(text++);
+						p_label[i]	= *(text++);
 						i++;
 					}
 					else
@@ -896,7 +919,7 @@ static int src_line_parser(char *text)
 						{
 							msg_displayed	= 1;	/*	No more message. */
 
-							msg_warning_s("Label too long!", WC_LTL, label);
+							msg_warning_s("Label too long!", WC_LTL, p_label);
 						}
 					}
 				}
@@ -950,7 +973,7 @@ static int src_line_parser(char *text)
 			 *	  processing here.
 			 *	---------------------------------------------------------- */
 			if ((util_is_cs_enable() != 0) && (inside_macro == 0))
-				process_label(label);
+				process_label(p_label);
 
 			/*	TODO: Why "type" and "status" are not the same ???
 			 *	*/
@@ -959,7 +982,11 @@ static int src_line_parser(char *text)
 			 * */
 			type		= COMMENT;
 
-			free(equation);
+			free(p_string);
+			free(p_string_uc);
+			free(p_equation);
+			free(p_label);
+
 			return (LIST_ONLY);
 		}
 
@@ -972,10 +999,11 @@ static int src_line_parser(char *text)
 
 		while ((isalnum((int) *text)) || (*text == '_'))
 		{
-			if (i < (sizeof (keyword) - 1))
+			if (i < (SCR_LINE_PARSER_P_STRING_SIZE - 1))
 			{
-				keyword[i]		= *text;
-				keyword_uc[i]	= toupper((int) *text);
+				p_string[i]		= *text;
+				p_string_uc[i]	= toupper((int) *text);
+
 				text++;
 				i++;
 			}
@@ -990,7 +1018,7 @@ static int src_line_parser(char *text)
 				{
 					msg_displayed	= 1;	/*	No more message. */
 
-					msg_error_s("Keyword too long!", EC_KTL, keyword);
+					msg_error_s("Keyword too long!", EC_KTL, p_string);
 				}
 			}
 		}
@@ -1012,7 +1040,7 @@ static int src_line_parser(char *text)
 			{
 				if (i < ((EQUATION_SIZE_MAX * sizeof (char)) - 1))
 				{
-					equation[i]	= *(text++);
+					p_equation[i]	= *(text++);
 					i++;
 				}
 				else
@@ -1026,7 +1054,7 @@ static int src_line_parser(char *text)
 					{
 						msg_displayed	= 1;	/*	No more message. */
 
-						msg_error_s("Equation too long!", EC_ETL, equation);
+						msg_error_s("Equation too long!", EC_ETL, p_equation);
 					}
 				}
 			}
@@ -1042,22 +1070,26 @@ static int src_line_parser(char *text)
 		{
 			/*	If keyword is found, call the associated function.
 			 *	-------------------------------------------------- */	
-			if (strcmp(p_keyword->Name, keyword_uc) == 0)
+			if (strcmp(p_keyword->Name, p_string_uc) == 0)
 		  	{
 				if (inside_macro == 0)
 				{
-					status	= p_keyword->fnc(label, equation);
+					status	= p_keyword->fnc(p_label, p_equation);
 					type		= status;
 
 					if (status == PROCESSED_END)
 					{
-						free(equation);
+						free(p_string);
+						free(p_string_uc);
+						free(p_equation);
+						free(p_label);
+
 						return (status);
 					}
 				}
-				else if (strcmp(keyword_uc, "ENDM") == 0)
+				else if (strcmp(p_string_uc, "ENDM") == 0)
 				{
-					status	= p_keyword->fnc(label, equation);
+					status	= p_keyword->fnc(p_label, p_equation);
 					type		= status;
 				}
 				else
@@ -1066,16 +1098,18 @@ static int src_line_parser(char *text)
 				break;
 			}
 		  	else
-			{
 				p_keyword++;
-			}
 		}
 
 		/*	If assembler directive was found and processed, exit.
 		 *	----------------------------------------------------- */	
 		if (p_keyword->Name != NULL)
 		{
-			free(equation);
+			free(p_string);
+			free(p_string_uc);
+			free(p_equation);
+			free(p_label);
+
 			return (status);
 		}
 
@@ -1087,7 +1121,12 @@ static int src_line_parser(char *text)
 		{
 			type		= LIST_ONLY;
 			status	= LIST_ONLY;
-			free(equation);
+
+			free(p_string);
+			free(p_string_uc);
+			free(p_equation);
+			free(p_label);
+
 			return (status);
 		}
 
@@ -1102,23 +1141,25 @@ static int src_line_parser(char *text)
 		{
 			/*	If keyword is found, call the associated function.
 			 *	-------------------------------------------------- */	
-			if (!strcmp(p_keyword->Name, keyword_uc))
+			if (!strcmp(p_keyword->Name, p_string_uc))
 			{
-				status	= p_keyword->fnc(label, equation);
+				status	= p_keyword->fnc(p_label, p_equation);
 				type		= status;
 				break;
 			}
 			else
-			{
 				p_keyword++;
-			}
 		}
 
 		/*	If opcode was found and processed, exit.
 		 *	---------------------------------------- */	
 		if (p_keyword->Name != NULL)
 		{
-			free(equation);
+			free(p_string);
+			free(p_string_uc);
+			free(p_equation);
+			free(p_label);
+
 			return (status);
 		}
 
@@ -1141,11 +1182,12 @@ static int src_line_parser(char *text)
 			/*	Open include file.
 			 *	****************** */	
 
-			fn_macro	= (char *) malloc(strlen(keyword_uc) + 3);
+			fn_macro	= (char *) malloc(strlen(p_string_uc) + 3);
 
 			if (fn_macro != NULL)
 			{
-				strcpy(fn_macro, keyword_uc);
+				strcpy(fn_macro, p_string_uc);
+
 				strcat(fn_macro, ".m");
 
 				if ((in_fp[file_level] = fopen(fn_macro, "r")) == NULL)
@@ -1211,7 +1253,7 @@ static int src_line_parser(char *text)
 		 *	  label processing.
 		 *	------------------------------------------------------ */
 		if (util_is_cs_enable() != 0)
-			process_label(label);
+			process_label(p_label);
 
 		/*	If trying as a macro fails...
 		 *	----------------------------- */
@@ -1220,11 +1262,15 @@ static int src_line_parser(char *text)
 			type		= COMMENT;
 			status	= COMMENT;
 
-			msg_error_s("Can't find keyword", EC_CNFK, keyword);
+			msg_error_s("Can't find keyword", EC_CNFK, p_string);
 		}
 	}
 
-	free(equation);
+	free(p_string);
+	free(p_string_uc);
+	free(p_equation);
+	free(p_label);
+
 	return (status);
 }
 

@@ -3,15 +3,15 @@
 # Description:
 # Copyright(c):	See below.
 # Author(s):		Jay Cotton, Claude Sylvain
-# Created:			26 Mars 2011
-# Last modified:	30 May 2013
+# Created:			2011-03-26
+# Last modified:	2015-10-18
 #
 # Notes:				- Process this file with autoconf to produce a configure
 #						  script.
 # *****************************************************************************
 
 # *****************************************************************************
-# Copyright (c) <2007-2013> <jay.cotton@oracle.com>
+# Copyright (c) <2007-2015> <jay.cotton@oracle.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to
@@ -38,7 +38,8 @@
 #AC_INIT(asm8080, 2.0 , lbmgmusic@gmail.com)
 #AC_INIT(asm8080)
 #AC_INIT(src)
-AC_INIT([asm8080], [1.0.12])
+#AC_INIT([asm8080], [1.0.12])
+AC_INIT([asm8080], [1.0.14])
 
 #AC_CONFIG_SRCDIR([asm_dir.c], [exp_parser.c], [main.c], [opcode.c], [util.c])
 #AC_CONFIG_HEADER([_dummy.h asm_dir.h err_code.h exp_parser.h main.h opcode.h project.h util.h war_code.h])
@@ -85,15 +86,14 @@ AM_PROG_LIBTOOL
 AC_OUTPUT(Makefile src/Makefile)
 
 
-#CPPFLAGS="-g -O0 -Wall"
 #CPPFLAGS="-O2"
+CPPFLAGS="-g -O0 -Wall"
 
-#CPPFLAGS="-o2"
-#CFLAGS="-O2"
-#CFLAGS="-g -O0"
 #CFLAGS=""
+#CFLAGS="-O2"
+CFLAGS="-g -O0"
 
-#LDFLAGS="-g"
+LDFLAGS="-g"
 
 
 AC_MSG_RESULT([
