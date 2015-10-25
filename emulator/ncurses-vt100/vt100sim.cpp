@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <map>
 #include <ctype.h>
+#include "default_rom.h"
 
 extern "C" {
 extern void int_on(void), int_off(void);
@@ -151,18 +152,31 @@ void Vt100Sim::init() {
         F = 2;		/* the 8080, so start with bit 1 set */
     memset((char *)	ram, m_flag, 65536);
     memset((char *)	touched, m_flag, 65536);
-    // load binary
-    wprintw(msgWin,"Loading rom %s...\n",romPath);
-    wrefresh(msgWin);
-    FILE* romFile = fopen(romPath,"rb");
-    if (!romFile) {
-      wprintw(msgWin,"Failed to read rom file\n");
-      wrefresh(msgWin);
-        return;
+    if (romPath)
+    {
+	// load binary
+	wprintw(msgWin,"Loading rom %s...\n",romPath);
+	wrefresh(msgWin);
+	FILE* romFile = fopen(romPath,"rb");
+	if (!romFile) {
+	  wprintw(msgWin,"Failed to read rom file\n");
+	  wrefresh(msgWin);
+	    return;
+	}
+	uint32_t count = fread((char*)ram,1,2048*4,romFile);
+	//printf("Read ROM file; %u bytes\n",count);
+	fclose(romFile);
     }
-    uint32_t count = fread((char*)ram,1,2048*4,romFile);
-    //printf("Read ROM file; %u bytes\n",count);
-    fclose(romFile);
+#ifdef DEFAULT_ROM
+    else
+	memcpy((char*)ram,default_rom, sizeof(default_rom));
+#else
+    else {
+	wprintw(msgWin,"No default ROM included (CPU STOPPED)\n");
+	running = false;
+	controlMode = true;
+    }
+#endif
     int_on();
     // add local io hooks
     

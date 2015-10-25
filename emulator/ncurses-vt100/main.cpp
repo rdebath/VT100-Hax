@@ -44,10 +44,10 @@ int main(int argc, char *argv[])
     return 0;
   }
   bool running = options[RUN];  
-  if (parse.nonOptionsCount() < 1) {
-    std::cout << "No ROM specified"; return 1;
-  }
-  sim = new Vt100Sim(parse.nonOptions()[0],running,!options[NOAVO]);
+  if (parse.nonOptionsCount() < 1)
+      sim = new Vt100Sim(0,running,!options[NOAVO]);
+  else
+      sim = new Vt100Sim(parse.nonOptions()[0],running,!options[NOAVO]);
   sim->init();
   for (option::Option* bpo = options[BREAKPOINT]; bpo != NULL; bpo = bpo->next()) {
     unsigned int bp = strtoul(bpo->arg,NULL,16);
