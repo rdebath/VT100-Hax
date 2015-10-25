@@ -41,6 +41,9 @@ private:
   int screen_rev;
   int base_attr;
   int blink_ff;
+  int cols132;
+  int refresh50;
+  int interlaced;
 public:
   void getString(const char* prompt, char* buffer, uint8_t sz);
   void step();

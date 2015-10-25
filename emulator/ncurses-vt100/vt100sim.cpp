@@ -43,12 +43,15 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   base_attr = 0;
   screen_rev = 0;
   blink_ff = 0;
+  cols132 = 0;
+  refresh50 = 0;
+  interlaced = -1;
 
   //breakpoints.insert(8);
   //breakpoints.insert(0xb);
   initscr();
-  int my,mx;
-  getmaxyx(stdscr,my,mx);
+  int std_y,std_x;
+  getmaxyx(stdscr,std_y,std_x);
   start_color();
   raw();
   nonl();
@@ -58,31 +61,30 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   curs_set(0);
 
   // Status bar: bottom line of the screen
-  statusBar = subwin(stdscr,1,mx,--my,0);
-  const int vht = std::min(27,my-12); // video area height (max 27 rows)
+  statusBar = subwin(stdscr,1,std_x,--std_y,0);
+  const int vht = std::min(27,std_y-12); // video area height (max 27 rows)
   int memw = 7 + 32*3 - 1 + 2; // memory area width: big enough for 32B across
   const int regw = 12;
   const int regh = 8;
 
-  if (memw > mx -regw - 20) memw = 7 + 16*3 - 1 + 2; // Okay, make that 16
-  const int msgw = mx - (regw+memw); // message area: mx - memory area - register area (12)
+  if (memw > std_x -regw - 20) memw = 7 + 16*3 - 1 + 2; // Okay, make that 16
+  const int msgw = std_x - (regw+memw); // message area: std_x - memory area - register area (12)
 
-  if (mx > 134)
-    vidWin = subwin(stdscr,vht,134,my-vht,0);
+  if (std_x > 134)
+    vidWin = subwin(stdscr,vht,134,std_y-vht,0);
   else
-    vidWin = subwin(stdscr,vht,mx,my-vht,0);
+    vidWin = subwin(stdscr,vht,std_x,std_y-vht,0);
   regWin = subwin(stdscr,regh,regw,0,0);
-  bpWin = subwin(stdscr,my-(vht+regh),regw,regh,0);
-  memWin = subwin(stdscr,my-vht,memw,0,regw);
-  msgWin = subwin(stdscr,my-vht,msgw,0,regw+memw);
+  bpWin = subwin(stdscr,std_y-(vht+regh),regw,regh,0);
+  memWin = subwin(stdscr,std_y-vht,memw,0,regw);
+  msgWin = subwin(stdscr,std_y-vht,msgw,0,regw+memw);
 
   scrollok(msgWin,1);
   box(regWin,0,0);
   mvwprintw(regWin,0,1,"Registers");
   box(memWin,0,0);
   mvwprintw(memWin,0,1,"Mem");
-  box(vidWin,0,0);
-  mvwprintw(vidWin,0,1,"Video");
+  mvwprintw(vidWin,0,1,"Video (disabled)");
   box(bpWin,0,0);
   mvwprintw(bpWin,0,1,"Brkpts");
   init_pair(1,COLOR_RED,COLOR_BLACK);
@@ -288,8 +290,13 @@ void Vt100Sim::ioOut(BYTE addr, BYTE data) {
       break;
 
     case 0xc2:
-      //wprintw(msgWin,"DC11 %02x\n",data);
-      //wrefresh(msgWin);
+      if (data & 0x20) {
+         interlaced = 0;
+	 refresh50 = ((data & 0x10) != 0);
+      } else {
+         interlaced = 1;
+	 cols132 = ((data & 0x10) != 0);
+      }
       break;
 
     default:
@@ -690,8 +697,31 @@ void Vt100Sim::dispVideo() {
   int my,mx;
   int lattr = 3;
   int inscroll = 0;
+  int have_border;
   getmaxyx(vidWin,my,mx);
   werase(vidWin);
+  have_border = (mx == 82 || mx == 134);
+  if (interlaced < 0) return;
+
+  if ((mx>82) != cols132) {
+	int std_y,std_x;
+	int want_x = (cols132?132:80);
+	delwin(vidWin);
+
+	getmaxyx(stdscr,std_y,std_x);
+	werase(statusBar);
+	wrefresh(statusBar);
+	mvwin(statusBar,--std_y,0);
+
+	const int vht = std::min(27,std_y-12); // video area height (max 27 rows)
+
+	if (std_x > want_x+2) {want_x +=2; have_border = 1; }
+
+        if (std_x > want_x)
+	    vidWin = subwin(stdscr,vht,want_x,std_y-vht,0);
+	else
+	    vidWin = subwin(stdscr,vht,std_x,std_y-vht,0);
+  }
   wattron(vidWin,COLOR_PAIR(4));
   uint8_t y = -2;
   for (uint8_t i = 1; i < 27; i++) {
@@ -699,7 +729,7 @@ void Vt100Sim::dispVideo() {
         char* maxp = p + 133;
 	//if (*p != 0x7f) y++;
 	y++;
-	wmove(vidWin,y,(mx>=134));
+	wmove(vidWin,y,have_border);
 	if (scroll_latch) {
 	    if (inscroll)
 		wattron(vidWin,COLOR_PAIR(1));
@@ -774,7 +804,7 @@ static int xterm_chars[] = {
         start = next;
     }
   wattroff(vidWin,COLOR_PAIR(4));
-  if (mx>=134) box(vidWin,0,0);
+  if (have_border) box(vidWin,0,0);
   mvwprintw(vidWin,0,1,"Video [bright %x]",bright);
   if (scroll_latch) wprintw(vidWin,"[Scroll %d]",scroll_latch);
   // if (blink_ff) wprintw(vidWin,"[BLINK]");
