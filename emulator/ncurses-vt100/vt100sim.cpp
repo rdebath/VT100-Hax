@@ -45,7 +45,7 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   blink_ff = 0;
   cols132 = 0;
   refresh50 = 0;
-  interlaced = -1;
+  interlaced = 0;
 
   //breakpoints.insert(8);
   //breakpoints.insert(0xb);
@@ -84,7 +84,7 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   mvwprintw(regWin,0,1,"Registers");
   box(memWin,0,0);
   mvwprintw(memWin,0,1,"Mem");
-  mvwprintw(vidWin,0,1,"Video (disabled)");
+  mvwprintw(vidWin,0,1,"Video (init)");
   box(bpWin,0,0);
   mvwprintw(bpWin,0,1,"Brkpts");
   init_pair(1,COLOR_RED,COLOR_BLACK);
@@ -657,9 +657,9 @@ void Vt100Sim::update() {
   needsUpdate = false;
   dispRegisters();
   dispMemory();
-  dispVideo();
   dispStatus();
   dispBPs();
+  dispVideo();
 }
 
 void Vt100Sim::keypress(uint8_t keycode)
@@ -697,34 +697,37 @@ void Vt100Sim::dispVideo() {
   int my,mx;
   int lattr = 3;
   int inscroll = 0;
-  int have_border;
+
+  int have_border = 0;
+  int std_y,std_x;
+  int want_x = (cols132?132:80);
+  int want_y = (scroll_latch?27:26);
+
   getmaxyx(vidWin,my,mx);
   werase(vidWin);
-  have_border = (mx == 82 || mx == 134);
-  if (interlaced < 0) return;
 
-  if ((mx>82) != cols132) {
-	int std_y,std_x;
-	int want_x = (cols132?132:80);
+  if (bright == 0xF0) {
+      mvwprintw(vidWin,0,1,"Video [disabled]");
+      wrefresh(vidWin);
+      return;
+  }
+
+  getmaxyx(stdscr,std_y,std_x);
+  --std_y;
+
+  want_y = std::min(want_y,std_y-12);
+  const int vpos = std::min(27,std_y-12);
+
+  if (std_x > want_x+2) {want_x +=2; have_border = 1; }
+  if (want_x > std_x) want_x = std_x;
+
+  if (want_x != mx || want_y != my) {
 	delwin(vidWin);
-
-	getmaxyx(stdscr,std_y,std_x);
-	werase(statusBar);
-	wrefresh(statusBar);
-	mvwin(statusBar,--std_y,0);
-
-	const int vht = std::min(27,std_y-12); // video area height (max 27 rows)
-
-	if (std_x > want_x+2) {want_x +=2; have_border = 1; }
-
-        if (std_x > want_x)
-	    vidWin = subwin(stdscr,vht,want_x,std_y-vht,0);
-	else
-	    vidWin = subwin(stdscr,vht,std_x,std_y-vht,0);
+	vidWin = subwin(stdscr,want_y,want_x,std_y-vpos,0);
   }
   wattron(vidWin,COLOR_PAIR(4));
   uint8_t y = -2;
-  for (uint8_t i = 1; i < 27; i++) {
+  for (uint8_t i = 1; i < 27 + (scroll_latch!=0); i++) {
         char* p = (char*)ram + start;
         char* maxp = p + 133;
 	//if (*p != 0x7f) y++;
