@@ -50,4 +50,4 @@ elif len(data) == 8192:
 else:
     print "Incorrect ROM size (must be exactly 2K or 8K)"
 
-sys.exit(rv)
+sys.exit(not rv)
