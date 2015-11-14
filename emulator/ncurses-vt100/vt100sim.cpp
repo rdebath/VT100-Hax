@@ -533,7 +533,6 @@ void Vt100Sim::run() {
 	else if (ch == 'b') {
 	  char bpbuf[10];
 	  getString("Addr. of breakpoint: ",bpbuf,4);
-	  werase(statusBar);
 	  dispStatus();
 	  uint16_t bp;
 	  if (hexParse(bpbuf,4,bp)) {
@@ -549,7 +548,6 @@ void Vt100Sim::run() {
 	else if (ch == 'd') {
 	  char bpbuf[10];
 	  getString("Addr. of bp to remove: ",bpbuf,4);
-	  werase(statusBar);
 	  dispStatus();
 	  uint16_t bp;
 	  if (hexParse(bpbuf,4,bp)) {
@@ -616,7 +614,6 @@ void Vt100Sim::getString(const char* prompt, char* buf, uint8_t sz) {
   wgetnstr(statusBar,buf,sz);
   noecho();
   curs_set(0);
-  werase(statusBar);
   dispStatus();
 }
 
@@ -859,6 +856,7 @@ void Vt100Sim::dispStatus() {
     "ONLINE", "LOCAL", "KBD LOCK", "L1", "L2", "L3", "L4" };
   const int lwidth = 8 + 7 + 10 + 4 + 4 + 4 + 4;
   int mx, my;
+  werase(statusBar);
   getmaxyx(statusBar,my,mx);
   wmove(statusBar,0,mx-lwidth);
   uint8_t flags = kbd.get_status();
