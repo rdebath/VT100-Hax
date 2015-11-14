@@ -14,6 +14,7 @@ private:
   uint8_t data;
   bool has_rx_rdy;
   bool xoff;
+  int child_pid;
 public:
   PUSART();
   // High if ready to transmit a byte
@@ -26,6 +27,7 @@ public:
   uint8_t read_command();
   char* pty_name();
   void start_shell();
+  int shell_pid();
 };
 
 #endif // PUSART_H

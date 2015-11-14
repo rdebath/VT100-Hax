@@ -5,6 +5,8 @@
 #include <iostream>
 #include <termios.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 PUSART::PUSART() : 
   mode_select_mode(true),
@@ -12,7 +14,8 @@ PUSART::PUSART() :
   mode(0),
   command(0),
   pty_fd(-1),
-  has_rx_rdy(false)
+  has_rx_rdy(false),
+  child_pid(0)
 {
 }
 
@@ -44,9 +47,9 @@ void PUSART::start_shell() {
   config.c_cc[VTIME] = 0;
   if(tcsetattr(pty_fd, TCSAFLUSH, &config) < 0) {}
 
-  int pid = fork();
+  child_pid = fork();
 
-  if (pid == 0) {
+  if (child_pid == 0) {
     // Child process.
     close(pty_fd);  // Close master
 
@@ -133,12 +136,21 @@ uint8_t PUSART::read_command() {
 
 bool PUSART::clock() {
   char c;
-  if (has_rx_rdy || xoff) return false;
+  if (has_rx_rdy || xoff || pty_fd == -1) return false;
   int i = read(pty_fd,&c,1);
   if (i != -1) {
     data = c;
     has_rx_rdy = true;
     return true;
+  }
+  int stat, r = waitpid(child_pid, &stat, WNOHANG);
+  if (r != 0) {
+    if (r<0 || r == child_pid) {
+	close(pty_fd);
+	child_pid = pty_fd = -1;
+	data = 0;
+	return true;
+    }
   }
   return false;
 }
@@ -152,4 +164,9 @@ char* PUSART::pty_name() {
   if (pty_fd == -1)
     return (char*)"<NONE>";
   return ptsname(pty_fd);
+}
+
+int PUSART::shell_pid() {
+    if (child_pid<0) { child_pid=0; return -1; }
+    return child_pid;
 }

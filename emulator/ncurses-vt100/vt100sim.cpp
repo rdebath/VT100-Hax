@@ -631,6 +631,11 @@ void Vt100Sim::step()
       int_data |= 0xd7;
       int_int = 1;
       //wprintw(msgWin,"UART interrupt\n");wrefresh(msgWin);
+      if (uart.shell_pid() < 0)
+      {
+	controlMode = true;
+	dispStatus();
+      }
     }
   }
   if (dc12 && lba4.add_ticks(t)) {
