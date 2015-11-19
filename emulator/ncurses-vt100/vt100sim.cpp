@@ -61,8 +61,12 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   nodelay(stdscr,1);
   curs_set(0);
 
+  /* Stdscr starts as dirty spaces, make sure they're cleaned. */
+  clearok(curscr, 1);
+  wrefresh(stdscr);
+
   // Status bar: bottom line of the screen
-  statusBar = subwin(stdscr,1,std_x,--std_y,0);
+  statusBar = newwin(1,std_x,--std_y,0);
   const int vht = std::min(27,std_y-12); // video area height (max 27 rows)
   int memw = 7 + 32*3 - 1 + 2; // memory area width: big enough for 32B across
   const int regw = 12;
@@ -72,13 +76,13 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   const int msgw = std_x - (regw+memw); // message area: std_x - memory area - register area (12)
 
   if (std_x > 134)
-    vidWin = subwin(stdscr,vht,134,std_y-vht,0);
+    vidWin = newwin(vht,134,std_y-vht,0);
   else
-    vidWin = subwin(stdscr,vht,std_x,std_y-vht,0);
-  regWin = subwin(stdscr,regh,regw,0,0);
-  bpWin = subwin(stdscr,std_y-(vht+regh),regw,regh,0);
-  memWin = subwin(stdscr,std_y-vht,memw,0,regw);
-  msgWin = subwin(stdscr,std_y-vht,msgw,0,regw+memw);
+    vidWin = newwin(vht,std_x,std_y-vht,0);
+  regWin = newwin(regh,regw,0,0);
+  bpWin = newwin(std_y-(vht+regh),regw,regh,0);
+  memWin = newwin(std_y-vht,memw,0,regw);
+  msgWin = newwin(std_y-vht,msgw,0,regw+memw);
 
   scrollok(msgWin,1);
   box(regWin,0,0);
@@ -94,7 +98,6 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   init_pair(4,COLOR_GREEN,COLOR_BLACK);
   wattron(regWin,COLOR_PAIR(1));
   wattron(memWin,COLOR_PAIR(2));
-  refresh();
 }
 
 Vt100Sim::~Vt100Sim() {
@@ -658,7 +661,26 @@ void Vt100Sim::step()
 }
 
 void Vt100Sim::update() {
+  int std_x, std_y;
+  int stat_x0, stat_y0, stat_x, stat_y;
+  getmaxyx(stdscr,std_y,std_x);
+  getmaxyx(statusBar,stat_y,stat_x);
+  getbegyx(statusBar,stat_y0,stat_x0);
+
   needsUpdate = false;
+  if (stat_y0 != std_y-1){
+    mvwin(statusBar, std_y-1, 0);
+    touchwin(regWin);
+    touchwin(memWin);
+    touchwin(vidWin);
+    touchwin(msgWin);
+    touchwin(statusBar);
+    touchwin(bpWin);
+    wclear(newscr);
+    clearok(curscr,1);
+    wrefresh(msgWin);
+  }
+
   dispRegisters();
   dispMemory();
   dispStatus();
@@ -726,8 +748,9 @@ void Vt100Sim::dispVideo() {
   if (want_x > std_x) want_x = std_x;
 
   if (want_x != mx || want_y != my) {
+	wnoutrefresh(vidWin);	/* Wipe area of newscr */
 	delwin(vidWin);
-	vidWin = subwin(stdscr,want_y,want_x,std_y-vpos,0);
+	vidWin = newwin(want_y,want_x,std_y-vpos,0);
   }
   wattron(vidWin,COLOR_PAIR(4));
   uint8_t y = -2;
