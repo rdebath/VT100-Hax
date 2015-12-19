@@ -870,6 +870,7 @@ void Vt100Sim::dispVideo() {
         while (*p != 0x7f && p != maxp) {
             unsigned char c = *p;
 	    int attrs = enable_avo?p[0x1000]:0xF;
+	    bool lattr_done = false;
 	    p++;
 	    if (y > 0 && x<mx && !(scroll_fix && inscroll)) {
 	      bool inverse = !!(c & 128);
@@ -894,18 +895,12 @@ void Vt100Sim::dispVideo() {
 	      } else  {
 #ifdef _XOPEN_CURSES
 extern int utf8_term;
-static int xterm_chars[] = {
-	0x2666, 0x2592, 0x2409, 0x240c, 0x240d, 0x240a, 0x00b0, 0x00b1,
-	0x2424, 0x240b, 0x2518, 0x2510, 0x250c, 0x2514, 0x253c, 0x23ba,
-	0x23bb, 0x2500, 0x23bc, 0x23bd, 0x251c, 0x2524, 0x2534, 0x252c,
-	0x2502, 0x2264, 0x2265, 0x03c0, 0x2260, 0x00a3, 0x00b7, 0x0020
+static int vt100_chars[] = {
+	0x0020, 0x2666, 0x2592, 0x2409, 0x240c, 0x240d, 0x240a, 0x00b0,
+	0x00b1, 0x2424, 0x240b, 0x2518, 0x2510, 0x250c, 0x2514, 0x253c,
+	0x23ba, 0x23bb, 0x2500, 0x23bc, 0x23bd, 0x251c, 0x2524, 0x2534,
+	0x252c, 0x2502, 0x2264, 0x2265, 0x03c0, 0x2260, 0x00a3, 0x00b7
 	};
-
-		if ((c>=3 && c<=6) || (c<32 && utf8_term)) {
-		    wchar_t ubuf[2] = { xterm_chars[c-1], '\0' };
-		    waddwstr(vidWin,ubuf);
-		} else if (c < 32) { waddch(vidWin,NCURSES_ACS(0x5F+c));
-		} else if (altchar) {
 
 static int dec_mcs[] = {
 	0x0080, 0x0081, 0x0082, 0x0083, 0x0084, 0x0085, 0x0086, 0x0087,
@@ -925,6 +920,19 @@ static int dec_mcs[] = {
 	0x2426, 0x00f1, 0x00f2, 0x00f3, 0x00f4, 0x00f5, 0x00f6, 0x0153,
 	0x00f8, 0x00f9, 0x00fa, 0x00fb, 0x00fc, 0x00ff, 0x2426, 0xFFFD
 	};
+
+		if (lattr!=3 && utf8_term && (c == 30 || (c>=' ' && c<='~'))) {
+		    wchar_t ubuf[2] = { c - ' ' + 0xFF00, '\0' };
+		    if (c == 30) ubuf[0] = 0xFFE1;
+		    waddwstr(vidWin,ubuf);
+		    lattr_done = true;
+		} else
+		if ((c>=3 && c<=6) || (c<32 && utf8_term)) {
+		    wchar_t ubuf[2] = { vt100_chars[c&0x1F], '\0' };
+		    waddwstr(vidWin,ubuf);
+		} else if (c < 32) { waddch(vidWin,NCURSES_ACS(0x5F+c));
+		} else if (altchar) {
+
 		    wchar_t ubuf[2] = { dec_mcs[c], '\0' };
 		    waddwstr(vidWin,ubuf);
 		}
@@ -934,7 +942,7 @@ static int dec_mcs[] = {
 		else { waddch(vidWin,c); }
 	      }
 
-	      if (lattr!=3) waddch(vidWin,' ');
+	      if (lattr!=3 && !lattr_done) waddch(vidWin,' ');
 	      if (inverse) wattroff(vidWin,A_REVERSE);
 	      if (uline) wattroff(vidWin,A_UNDERLINE);
 	      if (bold) wattroff(vidWin,A_BOLD);
