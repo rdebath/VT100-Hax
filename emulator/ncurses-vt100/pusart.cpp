@@ -105,8 +105,17 @@ void PUSART::write_command(uint8_t cmd) {
 }
 
 void PUSART::write_data(uint8_t dat) {
-  xoff = (dat == '\023');
-  if (dat == '\023' || dat == '\021') return;
+  if ((dat>0 && dat<' ') || dat == '\177') {
+    struct termios config;
+    if(tcgetattr(pty_fd, &config) >= 0) {
+      if (dat == config.c_cc[VINTR])
+	tcflush(pty_fd, TCIOFLUSH);
+    }
+    if (dat == '\023' || dat == '\021') {
+	xoff = (dat == '\023');
+	return;
+    }
+  }
   if (write(pty_fd,&dat,1) < 0) {
     close(pty_fd);
     pty_fd = -1;
