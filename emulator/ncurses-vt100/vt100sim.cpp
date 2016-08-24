@@ -72,7 +72,8 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   const int regw = 12;
   const int regh = 8;
 
-  if (memw > std_x -regw - 20) memw = 7 + 16*3 - 1 + 2; // Okay, make that 16
+  if (memw > std_x -regw - 18) memw = 7 + 16*3 - 1 + 2; // Okay, make that 16
+  if (memw > std_x -regw - 18) memw = 7 + 8*3 - 1 + 2; // Okay, make that 8
   const int msgw = std_x - (regw+memw); // message area: std_x - memory area - register area (12)
 
   if (std_x > 134)
@@ -744,7 +745,7 @@ void Vt100Sim::dispVideo() {
   want_y = std::min(want_y,std_y-12);
   const int vpos = std::min(27,std_y-12);
 
-  if (std_x > want_x+2) {want_x +=2; have_border = 1; }
+  if (std_x >= want_x+2) {want_x +=2; have_border = 1; }
   if (want_x > std_x) want_x = std_x;
 
   if (want_x != mx || want_y != my) {
@@ -860,9 +861,12 @@ static int dec_mcs[] = {
   wrefresh(vidWin);
 }
 
-void displayFlag(const char* text, bool on) {
+void displayFlag(const char* text, int on) {
   if (on) {
-    wattron(statusBar,COLOR_PAIR(3));
+    if (on == 1)
+      wattron(statusBar,COLOR_PAIR(3));
+    else
+      wattron(statusBar,COLOR_PAIR(1));
     wattron(statusBar,A_BOLD);
   } else {
     wattron(statusBar,COLOR_PAIR(2));
@@ -876,7 +880,7 @@ void displayFlag(const char* text, bool on) {
 void Vt100Sim::dispStatus() {
   // ONLINE LOCAL KBD LOCK L1 L2 L3 L4
   const static char* ledNames[] = { 
-    "ONLINE", "LOCAL", "KBD LOCK", "L1", "L2", "L3", "L4" };
+    "ONLINE", "LOCAL", "KBD LOCK", "L1", "L2", "L3", "L4", "BEEP " };
   const int lwidth = 8 + 7 + 10 + 4 + 4 + 4 + 4;
   int mx, my;
   werase(statusBar);
@@ -884,7 +888,11 @@ void Vt100Sim::dispStatus() {
   wmove(statusBar,0,mx-lwidth);
   uint8_t flags = kbd.get_status();
   displayFlag(ledNames[0], (flags & (1<<5)) == 0 );
-  displayFlag(ledNames[1], (flags & (1<<5)) != 0 );
+  if ((flags & (1<<7)) != 0) {
+    displayFlag(ledNames[7], 2);
+  } else {
+    displayFlag(ledNames[1], (flags & (1<<5)) != 0 );
+  }
   displayFlag(ledNames[2], (flags & (1<<4)) != 0 );
   displayFlag(ledNames[3], (flags & (1<<3)) != 0 );
   displayFlag(ledNames[4], (flags & (1<<2)) != 0 );
