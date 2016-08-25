@@ -882,6 +882,7 @@ void Vt100Sim::dispStatus() {
   const static char* ledNames[] = { 
     "ONLINE", "LOCAL", "KBD LOCK", "L1", "L2", "L3", "L4", "BEEP " };
   const int lwidth = 8 + 7 + 10 + 4 + 4 + 4 + 4;
+  const int awidth = 2 + 7 + 3 + 7 + 5;
   int mx, my;
   werase(statusBar);
   getmaxyx(statusBar,my,mx);
@@ -900,7 +901,11 @@ void Vt100Sim::dispStatus() {
   displayFlag(ledNames[6], (flags & (1<<0)) != 0 );
 
   // Mode information
-  wmove(statusBar,0,mx/3);
+  char * ptyn = uart.pty_name();
+  int posn = strlen(ptyn);
+  posn = (mx-lwidth-awidth-posn)/2;
+  if (posn<0) posn = 0;
+  wmove(statusBar,0,posn);
   wattrset(statusBar,A_BOLD);
   wprintw(statusBar,"| ");
   if (controlMode) {
@@ -919,7 +924,7 @@ void Vt100Sim::dispStatus() {
     wprintw(statusBar,"STOPPED");
     wattroff(statusBar,A_REVERSE);
   }
-  wprintw(statusBar," | %s |",uart.pty_name());
+  wprintw(statusBar," | %s |",ptyn);
   wrefresh(statusBar);
 }
 
