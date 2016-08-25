@@ -3,8 +3,8 @@
 #include "vt100sim.h"
 #include "optionparser.h"
 #include <ncurses.h>
-#ifdef _XOPEN_CURSES
 #include <string.h>
+#ifdef _XOPEN_CURSES
 #include <langinfo.h>
 #endif
 
@@ -23,7 +23,7 @@ const option::Descriptor usage[] = {
   { HELP, 0, "h", "help", option::Arg::None, "--help, -h\tPrint usage and exit" },
   { RUN, 0, "r", "run", option::Arg::None, "--run, -r\tImmediately run at startup"},
   { BREAKPOINT, 0, "b", "break", checkBP, "--break, -b\tInsert breakpoint"},
-  { NOAVO, 0, "N", "noavo", option::Arg::None, "--noavo, -b\tDisable AVO flag."},
+  { NOAVO, 0, "N", "noavo", option::Arg::None, "--noavo, -N \tDisable AVO flag."},
   {0,0,0,0,0,0}
 };
 
@@ -39,12 +39,13 @@ int main(int argc, char *argv[])
   option::Option options[stats.options_max], buffer[stats.buffer_max];
   option::Parser parse(usage, argc, argv, options, buffer);
   if (parse.error()) return 1;
-  if (options[HELP] || argc == 0) {
+  if (options[HELP]) {
     option::printUsage(std::cout, usage);
     return 0;
   }
   bool running = options[RUN];  
-  if (parse.nonOptionsCount() < 1)
+  if (argc == 0) running = true;
+  if (parse.nonOptionsCount() < 1 || strcmp(parse.nonOptions()[0],"-") == 0)
       sim = new Vt100Sim(0,running,!options[NOAVO]);
   else
       sim = new Vt100Sim(parse.nonOptions()[0],running,!options[NOAVO]);
