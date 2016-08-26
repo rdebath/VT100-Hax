@@ -84,20 +84,19 @@ Vt100Sim::~Vt100Sim() {
 class Signal {
 private:
     bool value;
-    bool has_change;
-    uint16_t period_half;
-    uint16_t ticks;
+    uint32_t period_half;
+    uint32_t ticks;
 public:
-    Signal(uint16_t period);
-    bool add_ticks(uint16_t delta);
+    Signal(uint32_t period);
+    bool add_ticks(uint32_t delta);
     bool get_value() { return value; }
-    void change_period(uint16_t period) { period_half = period/2; }
+    void change_period(uint32_t period) { period_half = period/2; }
 };
 
-Signal::Signal(uint16_t period) : value(false),has_change(false),period_half(period/2),ticks(0) {
+Signal::Signal(uint32_t period) : value(false),period_half(period/2),ticks(0) {
 }
 
-bool Signal::add_ticks(uint16_t delta) {
+bool Signal::add_ticks(uint32_t delta) {
     ticks += delta;
     if (ticks >= period_half) {
         ticks -= period_half;
@@ -114,7 +113,9 @@ bool Signal::add_ticks(uint16_t delta) {
 Signal lba4(22);
 Signal lba7(182);
 Signal vertical(46084);
-Signal uartclk(5000); // uart clock is super arbitrary
+Signal uartclk(2880);   // uart clock is 9600 baud
+			// The VT100 CPU can process data at a bit over
+			// 4800 baud, so this will be sufficient.
 
 void Vt100Sim::init() {
     i_flag = 1;
@@ -236,6 +237,37 @@ void Vt100Sim::ioOut(BYTE addr, BYTE data) {
       uart.write_command(data);
       break;
     case 0x02:
+      {
+	/*
+	  BAUD rates 0xTTTTRRRR
+	  Transmit/receive rates 0x0..0xF
+	*/
+	static int baud_clock_divisors[16] = {
+	3456,   // 50
+	2304,   // 75
+	1571,   // 110
+	1285,   // 134.5
+	1152,   // 150
+	864,    // 200
+	576,    // 300
+	288,    // 600
+	144,    // 1200
+	96,     // 1800
+	86,     // 2000
+	72,     // 2400
+	48,     // 3600
+	36,     // 4800
+	18,     // 9600
+	9,      // 19200
+	};
+
+	static int lastbaud = 0;
+	if (lastbaud != data) {
+	  /* Clock divider is always set to 16. We are sending 1+8+1 bits */
+	  uartclk.change_period(160* baud_clock_divisors[data&0xF]);
+	  lastbaud = data;
+	}
+      }
       break;
     case 0x82:
         kbd.set_status(data);
@@ -648,7 +680,7 @@ void Vt100Sim::step()
   if (int_int == 0) { int_data = 0xc7; }
   const uint16_t t = t_ticks - start;
   if (bright != 0xF0) rt_ticks += t;
-  if (uartclk.add_ticks(t)) {
+  if (uartclk.add_ticks(t) && uartclk.get_value()) {
     if (uart.clock()) {
       int_data |= 0xd7;
       int_int = 1;

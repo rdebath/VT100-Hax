@@ -124,6 +124,40 @@ void PUSART::write_command(uint8_t cmd) {
    * The VT100 only ever uses XXXXXX10, or x16.
    */
 
+#if 0
+  // Decode command bytes ...
+  if (mode_select_mode) {
+    fprintf(stderr, "PSUART MODE 0x%02x"
+	    ", STOP %s" ", PARITY %s" ", %s" ", CHAR %s" ", CLK %s" "\n",
+      cmd,
+      (cmd&0xC0) == 0x00 ? "invalid":
+      (cmd&0xC0) == 0x40 ? "1 bit":
+      (cmd&0xC0) == 0x80 ? "1.5 bit":
+      (cmd&0xC0) == 0xC0 ? "2 bit": "",
+      (cmd&0x20) == 0 ? "odd": "even",
+      (cmd&0x10) == 0 ? "disabled": "enabled",
+      (cmd&0x0C) == 0x00 ? "5 bits":
+      (cmd&0x0C) == 0x04 ? "6 bits":
+      (cmd&0x0C) == 0x08 ? "7 bits":
+      (cmd&0x0C) == 0x0C ? "8 bits": "",
+      (cmd&0x03) == 0x00 ? "SYNC":
+      (cmd&0x03) == 0x01 ? "x1":
+      (cmd&0x03) == 0x02 ? "x16":
+      (cmd&0x03) == 0x03 ? "x64": "");
+  } else {
+    fprintf(stderr, "PSUART CMD 0x%x%s%s%s%s%s%s%s%s\n",
+      cmd,
+      (cmd&1)?"":", !TE",
+      (cmd&2)?", DTR":", !DTR",
+      (cmd&4)?"":", !RE",
+      (cmd&8)?", BREAK":"",
+      (cmd&0x10)?", CLR":"",
+      (cmd&0x20)?"":", !RTS",
+      (cmd&0x40)?", RESET":"",
+      (cmd&0x80)?", SYNC":"");
+  }
+#endif
+
   if (mode_select_mode) {
     mode_select_mode = false;
     mode = cmd; // like we give a wet turd
@@ -152,6 +186,7 @@ void PUSART::write_data(uint8_t dat) {
     }
     if (dat == '\023' || dat == '\021') {
 	xoff = (dat == '\023');
+	// fprintf(stderr, "PSUART FLOW %s\n", xoff?"xoff":"xon");
 	return;
     }
   }
