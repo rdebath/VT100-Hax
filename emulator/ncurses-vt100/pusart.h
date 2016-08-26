@@ -15,12 +15,14 @@ private:
   bool has_rx_rdy;
   bool xoff;
   int child_pid;
+  bool iscols132;
 public:
   PUSART();
   // High if ready to transmit a byte
   bool xmit_ready();
   void write_command(uint8_t b);
   void write_data(uint8_t b);
+  void write_cols(bool cols132);
   bool clock();
   bool rx_ready();
   uint8_t read_data();

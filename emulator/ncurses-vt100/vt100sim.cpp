@@ -46,6 +46,7 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   cols132 = 0;
   refresh50 = 0;
   interlaced = 0;
+  bright = 0xF0;
 
   //breakpoints.insert(8);
   //breakpoints.insert(0xb);
@@ -296,6 +297,7 @@ void Vt100Sim::ioOut(BYTE addr, BYTE data) {
       } else {
          interlaced = 1;
 	 cols132 = ((data & 0x10) != 0);
+	 uart.write_cols(cols132);
       }
       break;
 

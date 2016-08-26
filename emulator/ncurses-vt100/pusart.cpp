@@ -47,6 +47,10 @@ void PUSART::start_shell() {
   config.c_cc[VTIME] = 0;
   if(tcsetattr(pty_fd, TCSAFLUSH, &config) < 0) {}
 
+  struct winsize ws = {0};
+  ws.ws_row = 24; ws.ws_col = 80;
+  ioctl(pty_fd, TIOCSWINSZ, &ws);
+
   child_pid = fork();
 
   if (child_pid == 0) {
@@ -123,6 +127,16 @@ void PUSART::write_data(uint8_t dat) {
     close(pty_fd);
     pty_fd = -1;
   }
+}
+
+void PUSART::write_cols(bool cols132) {
+  if (pty_fd == -1) return;
+  if (cols132 == iscols132) return;
+  iscols132 = cols132;
+
+  struct winsize ws = {0};
+  ws.ws_row = 24; ws.ws_col = cols132?132:80;
+  ioctl(pty_fd, TIOCSWINSZ, &ws);
 }
 
 uint8_t PUSART::read_command() {
