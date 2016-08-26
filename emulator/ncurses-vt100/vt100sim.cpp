@@ -628,7 +628,7 @@ void Vt100Sim::step()
   cpu_8080();
   if (int_int == 0) { int_data = 0xc7; }
   const uint16_t t = t_ticks - start;
-  rt_ticks += t;
+  if (bright != 0xF0) rt_ticks += t;
   if (uartclk.add_ticks(t)) {
     if (uart.clock()) {
       int_data |= 0xd7;

@@ -56,10 +56,12 @@ void Keyboard::set_status(uint8_t status)
         clocks_until_next = 160+160;
     }
 
-    if (status & 0x80) {
+    if ((status & (1<<6)) == 0 || !beeping) {
+      if (status & 0x80) {
 	if (!beeping) beep();
 	if (tx_buf_count == 0) beeping = (beeping+1) % 48;
-    } else beeping = 0;
+      } else beeping = 0;
+    }
     if (tx_buf_count == 0) tx_buf_count = 160;
 }
 
