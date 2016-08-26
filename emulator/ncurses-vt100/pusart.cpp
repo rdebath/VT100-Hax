@@ -96,18 +96,50 @@ void PUSART::start_shell() {
 bool PUSART::xmit_ready() { return has_xmit_ready; }
 
 void PUSART::write_command(uint8_t cmd) {
+  /*
+   * At reset the device is in 'mode select' mode and the next command byte
+   * is a 'mode' byte that describes the character format.
+   *
+   * After that the device is it's normal mode with the following flags:
+   * 0: Transmit Enable
+   * 1: DTR Line
+   * 2: Receive Enable
+   * 3: Send Break
+   * 4: Error reset (clear serial error indicators)
+   * 5: RTS Line
+   * 6: RESET -> Next command must be a mode as at reset.
+   * 7: "Hunt Mode", for Sync communications not normal RS-232 async
+   *
+   * The VT100 asserts RTS and TE at all times.
+   * It asserts DTR when the 'Online' flag is active.
+   * It asserts the RE at all times except during a 'hang-up'
+   *
+   * Command 0x2f is BREAK  (cmd & 0x08)
+   * Command 0x2d is hangup (cmd & 0x02) == 0
+   * Command 0x25 is Offline
+   * Command 0x27 is Online
+   * Command 0x40 is RESET
+   *
+   * The two LSB of the 'mode' byte are a divisor for the input clock.
+   * The VT100 only ever uses XXXXXX10, or x16.
+   */
+
   if (mode_select_mode) {
     mode_select_mode = false;
     mode = cmd; // like we give a wet turd
-    if (pty_fd == -1)
-	start_shell();
   } else {
     command = cmd;
     if (cmd & 1<<6) { // INTERNAL RESET
       mode_select_mode = true;
     }
-    // Command 0x2f is BREAK  (cmd & 0x08)
-    // Command 0x2d is hangup (cmd & 0x02) == 0
+    // Start the shell when the VT100 first goes online.
+    if ((cmd & 3) == 3 && pty_fd == -1)
+      start_shell();
+
+    if (cmd == 0x2d && pty_fd != -1) {
+	close(pty_fd);
+	pty_fd = -1;
+    }
   }
 }
 
