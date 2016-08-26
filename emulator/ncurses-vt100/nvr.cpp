@@ -1,6 +1,8 @@
 #include "nvr.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <ncurses.h>
+#include <string>
 
 /*
  * The NVRAM is 1400 bit 'flash' device with 100 14-bit words.
@@ -12,6 +14,8 @@
  * The write is an expensive operation taking 20 milliseconds and
  * a 35Volt power line.
  */
+
+#define NVRAMFILE ".vt100sim.nvr.txt"
 
 typedef enum {
     STANDBY = 0b111,
@@ -26,6 +30,11 @@ typedef enum {
 
 extern WINDOW* msgWin;
 
+/* This is a saved NVRAM configuration that we use if we can't open the
+ * NVRAMFILE or it's contents are mis-formatted.
+ *
+ * The VT100 uses the first 51 elements and has a simple checksum on them.
+ */
 uint16_t romcontents[100] = {
 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80,
 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80, 0x2e80,
@@ -41,6 +50,10 @@ uint16_t romcontents[100] = {
 
 NVR::NVR() : address_reg(0xffff), data_reg(0), latch_last(STANDBY << 1)
 {
+    std::string name(getenv("HOME"));
+    name += "/" NVRAMFILE;
+    if (load(name.c_str())) return;
+
     for (uint8_t idx = 0; idx < 100; idx++) {
         contents[idx] = romcontents[idx];
     }
@@ -87,9 +100,17 @@ void NVR::clock(bool rising) {
     case WRITE:
     {
         uint8_t addr = compute_addr(address_reg);
-        contents[addr] = data_reg & 0x3fff;
         //wprintw(msgWin,"NVR write %x <- %x\n",addr,data_reg);wrefresh(msgWin);
-	save( (char*) /* CPP is Dumb */ "/tmp/vt100.nvr");
+	if (addr != last_address || contents[addr] != (data_reg & 0x3fff)) {
+	    contents[addr] = data_reg & 0x3fff;
+
+	    if (addr>49) { // The VT100 writes 0..50
+		std::string name(getenv("HOME"));
+		name += "/" NVRAMFILE;
+		save(name.c_str());
+	    }
+	}
+	last_address = addr;
     }
         break;
     case READ:
@@ -112,18 +133,29 @@ bool NVR::data() {
     return out;
 }
 
-void NVR::load(char* path) {
-    FILE* f = fopen(path,"rb");
-    fread(contents,sizeof(uint16_t),100,f);
-    fclose(f);
+bool NVR::load(const char * path) {
+    FILE* f = fopen(path,"r");
+    if (f) {
+	int i;
+	for(i=0; i<100; i++) {
+	    if (fscanf(f, "%" SCNx16, contents+i) != 1)
+		return false;
+	}
+	fclose(f);
+	return true;
+    } else
+	return false;
 }
 
-void NVR::save(char* path) {
-    FILE* f = fopen(path,"wb");
-    // fwrite(contents,sizeof(uint16_t),100,f);
+void NVR::save(const char * path) {
+    FILE* f = fopen(path,"w");
     int i;
+    if (!f) {
+	wprintw(msgWin,"Cannot save NVR file %s\n", path);
+	return;
+    }
     for(i=0; i<100; i++) {
-	fprintf(f, "0x%04x,", contents[i]);
+	fprintf(f, "%04x", contents[i]);
 	if (i % 10 == 9) fprintf(f, "\n"); else fprintf(f, " ");
     }
     fclose(f);

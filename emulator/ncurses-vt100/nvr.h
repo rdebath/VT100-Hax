@@ -1,7 +1,7 @@
 #ifndef NVR_H
 #define NVR_H
 
-#include <stdint.h>
+#include <inttypes.h>
 
 // Emulate an ER1400 chip in the VT100
 class NVR
@@ -14,14 +14,15 @@ public:
     void clock(bool rising);
 
     // persistence
-    void load(char* path);
-    void save(char* path);
+    bool load(const char * path);
+    void save(const char * path);
 private:
     uint32_t address_reg; // 20 bits
     uint16_t data_reg; // 14 bits
     uint16_t contents[100];
     uint8_t latch_last;
     bool out; // value of the output line
+    uint32_t last_address;
 };
 
 #endif // NVR_H
