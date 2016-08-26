@@ -872,7 +872,7 @@ void Vt100Sim::dispVideo() {
 	    int attrs = enable_avo?p[0x1000]:0xF;
 	    p++;
 	    if (y > 0 && x<mx && !(scroll_fix && inscroll)) {
-	      bool inverse = (c & 128);
+	      bool inverse = !!(c & 128);
 	      bool blink = !(attrs & 0x1);
 	      bool uline = !(attrs & 0x2);
 	      bool bold = !(attrs & 0x4);
@@ -880,7 +880,9 @@ void Vt100Sim::dispVideo() {
 	      c &= 0x7F;
 	      x++;
 
-	      if (screen_rev) inverse = ~inverse;
+	      if (!enable_avo && base_attr) { uline = inverse; inverse = 0; }
+
+	      if (screen_rev) inverse = !inverse;
 
 	      if (inverse) wattron(vidWin,A_REVERSE);
 	      if (uline) wattron(vidWin,A_UNDERLINE);
