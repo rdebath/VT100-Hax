@@ -755,6 +755,7 @@ void Vt100Sim::dispVideo() {
   }
   wattron(vidWin,COLOR_PAIR(4));
   uint8_t y = -2;
+  bool is_setup = false, is_setupB = false;
   for (uint8_t i = 1; i < 27 + (scroll_latch!=0); i++) {
         char* p = (char*)ram + start;
         char* maxp = p + 133;
@@ -767,6 +768,13 @@ void Vt100Sim::dispVideo() {
 	    else
 		wattron(vidWin,COLOR_PAIR(4));
 	}
+
+	if (y == 1) {
+	  is_setup = (scroll_latch==0 && memcmp(p, "SET-UP A\177", 9) == 0);
+	  is_setupB = (scroll_latch==0 && memcmp(p, "SET-UP B\177", 9) == 0);
+	  is_setup = is_setup || is_setupB;
+	}
+
         while (*p != 0x7f && p != maxp) {
             unsigned char c = *p;
 	    int attrs = enable_avo?p[0x1000]:0xF;
@@ -843,6 +851,7 @@ static int dec_mcs[] = {
 	  break;
 	}
         // at terminator
+	if (y>=4 && y<=22) is_setup = (is_setup && 0 == p-(char*)ram-start);
         p++;
         unsigned char a1 = *(p++);
         unsigned char a2 = *(p++);
@@ -853,6 +862,81 @@ static int dec_mcs[] = {
         if (start == next) break;
         start = next;
     }
+
+  if (is_setup) {
+
+    wmove(vidWin, 5,have_border);
+    wprintw(vidWin,"Use the arrow keys, return and space to move cursor position.");
+    if(!is_setupB) {
+      wmove(vidWin, 7,have_border);
+      wprintw(vidWin,"                                                0 => Reset");
+      wmove(vidWin, 8,have_border);
+      wprintw(vidWin,"                                                1 => ");
+      wmove(vidWin, 9,have_border);
+      wprintw(vidWin,"                                                2 => Toggle TAB");
+      wmove(vidWin,10,have_border);
+      wprintw(vidWin,"                                                3 => Clear all TABs");
+      wmove(vidWin,11,have_border);
+      wprintw(vidWin,"                                                4 => Online/Local");
+      wmove(vidWin,12,have_border);
+      wprintw(vidWin,"                                                5 => Setup B");
+      wmove(vidWin,13,have_border);
+      wprintw(vidWin,"                                                6 =>");
+      wmove(vidWin,14,have_border);
+      wprintw(vidWin,"                                                7 =>");
+      wmove(vidWin,15,have_border);
+      wprintw(vidWin,"                                                8 =>");
+      wmove(vidWin,16,have_border);
+      wprintw(vidWin,"                                                9 => Toggle 80/132");
+      wmove(vidWin,17,have_border);
+      wprintw(vidWin,"");
+      wmove(vidWin,18,have_border);
+      wprintw(vidWin,"                                                Shift-S => Save");
+      wmove(vidWin,19,have_border);
+      wprintw(vidWin,"                                                Shift-R => Recall");
+      wmove(vidWin,20,have_border);
+      wprintw(vidWin,"                                              ");
+      wmove(vidWin,21,have_border);
+      wprintw(vidWin,"                                              ");
+      wmove(vidWin,22,have_border);
+      wprintw(vidWin,"                                              ");
+    } else {
+      wmove(vidWin, 7,have_border);
+      wprintw(vidWin,"  X     Scroll 1-Smooth                         0 => Reset");
+      wmove(vidWin, 8,have_border);
+      wprintw(vidWin,"  .X    Repeat 1-On                             1 => ");
+      wmove(vidWin, 9,have_border);
+      wprintw(vidWin,"  . X   Screen 1-LightBG                        2 =>");
+      wmove(vidWin,10,have_border);
+      wprintw(vidWin,"  .  X  Cursor 1-Block                          3 =>");
+      wmove(vidWin,11,have_border);
+      wprintw(vidWin,"  .  .    X     Margin Bell                     4 => Online/Local");
+      wmove(vidWin,12,have_border);
+      wprintw(vidWin,"  .  .    .X    Keyclick 1-On                   5 => Setup A");
+      wmove(vidWin,13,have_border);
+      wprintw(vidWin,"  .  .    . X   1=Ansi/0=VT52                   6 => Toggle this");
+      wmove(vidWin,14,have_border);
+      wprintw(vidWin,"  .  .    .  X  FlowCtrl 1-On                   7 => Next Xmit Speed");
+      wmove(vidWin,15,have_border);
+      wprintw(vidWin,"  .  .    .  .    X     UK-Ascii 1-On           8 => Next Rcv Speed");
+      wmove(vidWin,16,have_border);
+      wprintw(vidWin,"  .  .    .  .    .X    LineWrap 1-On           9 =>");
+      wmove(vidWin,17,have_border);
+      wprintw(vidWin,"  .  .    .  .    . X   1-Crlf, 0-Cr");
+      wmove(vidWin,18,have_border);
+      wprintw(vidWin,"  .  .    .  .    .  X  1-Interlace             Shift-S => Save");
+      wmove(vidWin,19,have_border);
+      wprintw(vidWin,"  .  .    .  .    .  .    X     Parity 1-Even   Shift-R => Recall");
+      wmove(vidWin,20,have_border);
+      wprintw(vidWin,"  .  .    .  .    .  .    .X    Parity Sense    Shift-A => Answerback");
+      wmove(vidWin,21,have_border);
+      wprintw(vidWin,"  .  .    .  .    .  .    . X   BPC 1=8Bit");
+      wmove(vidWin,22,have_border);
+      wprintw(vidWin,"  .  .    .  .    .  .    .  X  Refresh 1=50Hz");
+    }
+
+  }
+
   wattroff(vidWin,COLOR_PAIR(4));
   if (have_border) box(vidWin,0,0);
   mvwprintw(vidWin,0,1,"Video [bright %x]",bright);
