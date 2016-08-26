@@ -37,7 +37,7 @@ private:
   bool invalidated;
   long long rt_ticks;
   struct timeval last_sync;
-  int vscan_tick, refresh_clock;
+  int vscan_tick, refresh_clock, key_stuck;
   int scroll_latch, last_latch;
   int screen_rev;
   int base_attr;

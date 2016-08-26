@@ -169,12 +169,15 @@ void Vt100Sim::init() {
 
     wprintw(msgWin,"Function Key map:\n");
     wprintw(msgWin,"F1..F4 -> PF1..PF4\n");
-    wprintw(msgWin,"F6 -> Break\n");
-    wprintw(msgWin,"F7 -> S-Break\n");
-    wprintw(msgWin,"F8 -> Escape\n");
+    wprintw(msgWin,"F5 -> Break\n");
     wprintw(msgWin,"F9 -> Setup\n");
     wprintw(msgWin,"F10 -> Cmd Mode\n");
-    wprintw(msgWin,"F11 -> Keycodes\n");
+    wprintw(msgWin,"F11 -> Escape\n");
+    wprintw(msgWin,"F12 -> Backspace\n");
+    wprintw(msgWin,"F13 -> Linefeed\n");
+    wprintw(msgWin,"F14 -> Keycodes\n");
+    wprintw(msgWin,"F15 -> Hangup\n");
+
 }
 
 BYTE Vt100Sim::ioIn(BYTE addr) {
@@ -318,7 +321,7 @@ std::map<int,uint8_t> make_code_map() {
   m[KEY_LEFT] = 0x20;
   // 0x21 -> nul
   m[KEY_DOWN] = 0x22;
-  m[KEY_BREAK] = 0x23; m[KEY_F(6)] = 0x23; m[KEY_F(7)] = 0xA3;
+  m[KEY_BREAK] = 0x23; m[KEY_F(5)] = 0x23; m[KEY_F(15)] = 0xA3;
 
   m['`'] = 0x24; m['~'] = 0xa4;
   m['-'] = 0x25; m['_'] = 0xa5;
@@ -326,14 +329,14 @@ std::map<int,uint8_t> make_code_map() {
   m['7'] = 0x27; m['&'] = 0xa7;
   m['4'] = 0x28; m['$'] = 0xa8;
   m['3'] = 0x29; m['#'] = 0xa9;
-  m[KEY_CANCEL] = 0x2a;	m[KEY_F(8)] = 0x2a; // Escape Key
+  m[KEY_CANCEL] = 0x2a; m[KEY_F(11)] = 0x2a; m[0x1b] = 0x2a; // Escape Key
 
   // 0x2b, 0x2c, 0x2d, 0x2e, 0x2f (Mirror of next 5)
 
   m[KEY_UP] = 0x30;
   m[KEY_F(3)] = 0x31;
   m[KEY_F(1)] = 0x32;
-  m[KEY_BACKSPACE] = 0x33;
+  m[KEY_BACKSPACE] = 0x33; m[KEY_F(12)] = 0x33;
   m['='] = 0x34; m['+'] = 0xb4;
   m['0'] = 0x35; m[')'] = 0xb5;
   m['8'] = 0x36; m['*'] = 0xb6;
@@ -344,11 +347,11 @@ std::map<int,uint8_t> make_code_map() {
 
   // 0x3b, 0x3c, 0x3d, 0x3e, 0x3f (Mirror of next 5)
 
-  // 0x40 -> '7'	(Keypad ^[Ow)
+  m[KEY_F(27)] = 0x40; m[KEY_A1] = 0x40; m[KEY_HOME] = 0x40; // 0x40 -> Keypad-'7'
   m[KEY_F(4)] = 0x41;
   m[KEY_F(2)] = 0x42;
-  // 0x43 -> '0'
-  m['\n'] = 0x44; // Linefeed key:
+  m[KEY_F(20)] = 0x43; m[KEY_IC] = 0x43; // 0x43 -> Keypad-'0'
+  m['\n'] = 0x44; m[KEY_F(13)] = 0x44; // Linefeed key:
   m['\\'] = 0x45; m['|'] = 0xc5;
   m['l'] = 0x46;
   m['k'] = 0x47;
@@ -358,10 +361,10 @@ std::map<int,uint8_t> make_code_map() {
 
   // 0x4b, 0x4c, 0x4d, 0x4e, 0x2f (Mirror of next 5)
 
-  // 0x50 -> '8'    (Keypad ^[Ox)
-  // 0x51 -> ^M	    (Keypad Enter)
-  // 0x52 -> '2'
-  // 0x53 -> '1'
+  m[KEY_F(28)] = 0x50; // 0x50 -> Keypad-'8'    (Keypad ^[Ox)
+  m[KEY_F(32)] = 0x51; // 0x51 -> ^M	    (Keypad Enter)
+  m[KEY_F(22)] = 0x52; // 0x52 -> Keypad-'2'
+  m[KEY_F(21)] = 0x53; m[KEY_C1] = 0x53; m[KEY_END] = 0x53; // 0x53 -> '1'
   // 0x54 -> nul
   m['\''] = 0x55; m['"'] = 0xd5;
   m[';'] = 0x56; m[':'] = 0xd6;
@@ -372,10 +375,10 @@ std::map<int,uint8_t> make_code_map() {
 
   // 0x5b, 0x5c, 0x5d, 0x5e, 0x5f
 
-  // 0x60 -> '.'
-  // 0x61 -> ','
-  // 0x62 -> '5'
-  // 0x63 -> '4'
+  m[KEY_F(33)] = 0x60; // 0x60 -> Keypad-'.'
+  m[KEY_F(31)] = 0x61; // 0x61 -> Keypad-','
+  m[KEY_F(25)] = 0x62; m[KEY_B2] = 0x62; // 0x62 -> Keypad-'5'
+  m[KEY_F(24)] = 0x63; // 0x63 -> Keypad-'4'
   // 0x64 -> ^M	    (Return Key)
   m['\r'] = 0x64;
   m['.'] = 0x65; m['>'] = 0xe5;
@@ -383,14 +386,14 @@ std::map<int,uint8_t> make_code_map() {
   m['n'] = 0x67;
   m['b'] = 0x68;
   m['x'] = 0x69;
-  // 0x6a -> NoSCROLL
+  m[KEY_F(6)] = 0x6a; // 0x6a -> NoSCROLL
 
   // 0x6b, 0x6c, 0x6d, 0x6e, 0x6f (Mirror of next 5)
 
-  // 0x70 -> '9'
-  // 0x71 -> '3'
-  // 0x72 -> '6'
-  // 0x73 -> '-'
+  m[KEY_F(29)] = 0x70; m[KEY_A3] = 0x70; m[KEY_PPAGE] = 0x70; // 0x70 -> Keypad-'9'
+  m[KEY_F(23)] = 0x71; m[KEY_C3] = 0x71; m[KEY_NPAGE] = 0x71; // 0x71 -> Keypad-'3'
+  m[KEY_F(26)] = 0x72; // 0x72 -> Keypad-'6'
+  m[KEY_F(30)] = 0x73; // 0x73 -> Keypad-'-'
   // 0x74 -> nul
   m['/'] = 0x75; m['?'] = 0xf5;
   m['m'] = 0x76;
@@ -484,24 +487,36 @@ void Vt100Sim::run() {
       if (needsUpdate && refresh_clock>3) { update(); refresh_clock=0; }
 
       last_latch = scroll_latch;
-      if (!kbd.busy_scanning())
+      if (controlMode || !kbd.busy_scanning()) {
 	  ch = getch();
+	  key_stuck = 0;
+      } else if (key_stuck < 5) {
+	  key_stuck++;
+      } else {
+	  wprintw(msgWin, "Keyboard STUCK\n");
+	  controlMode = true;
+      }
 
       has_breakpoints = (breakpoints.size() != 0);
     } else if (!running) {
       if (needsUpdate) update();
       ch = getch();
       has_breakpoints = (breakpoints.size() != 0);
+      controlMode = true;
     }
     if (ch != ERR) {
       if (ch == KEY_F(10)) { // Control Mode key
 	controlMode = !controlMode;
-	invalidated = true;
-      } else if (controlMode) {
+	needsUpdate = invalidated = true;
+      } else if (controlMode &&
+	    ch != KEY_F(5) && ch != KEY_F(15) && ch != KEY_F(9)) {
 	if (ch == 'q' || ch == 4 || ch == 3) {
 	  werase(statusBar);
 	  wrefresh(statusBar);
 	  return;
+	}
+	else if (ch == '\f') {
+	  needsUpdate = invalidated = true;
 	}
 	else if (ch == ' ') {
 	  running = !running;
@@ -546,40 +561,60 @@ void Vt100Sim::run() {
 	  // set up breakpoints
 	  gettimeofday(&last_sync, 0);	// CPU was frozen
 	}
+	needsUpdate = true;
       }
       else {
         static int kstat = 0, ksum = 0;
-	if (kstat || ch == KEY_F(11)) {
-	    if (ch == KEY_F(11)) {
+	if (controlMode) {
+	    controlMode = !controlMode;
+	    invalidated = true;
+	}
+
+	if (kstat || ch == KEY_F(14)) {
+	    if (ch == KEY_F(14)) {
 		kstat = 1; ksum = 0;
 	    } else if (ch == '\n' || ch == '\r') {
-		//wprintw(msgWin,"KC=%02x\n", ksum); wrefresh(msgWin);
-		if (ksum & 0x80) {
-		  keypress(0x7d);	// Shift Key
-		  ksum &= 0x7f;
-		}
+		ksum |= (kstat & 0xF80);
+		if (ksum & 0x80) keypress(0x7d);	// Shift Key
+		if (ksum & 0x100) keypress(0x7c);	// Ctrl Key
+		ksum &= 0x7f;
 		if (ksum)
 		    keypress(ksum);
 		ksum = kstat = 0;
 	    } else if (ch >='0' && ch <='9') {
 		ksum = ksum * 10 + ch - '0';
+	    } else if (ch >='s') {
+		kstat |= 0x80;
+	    } else if (ch >='c') {
+		kstat |= 0x100;
 	    } else
 		kstat = 0;
 	} else {
 	    uint8_t kc = code[ch];
 	    if (kc == 0 && ch >= 0 && ch < 32) {
-		kc = code[ch+'`'];
+		kc = code[ch+'@'] & 0x7F;
+		if (ch == 0 ) kc = 0x77;        // Ctrl-Space -> ^@
+		if (ch == '\036') kc = 0x24;    // Ctrl-` -> ^^
+		if (ch == '\037') kc = 0x75;    // Ctrl-/ -> ^_
 		if (kc) {
 	          //wprintw(msgWin,"KC=7c (Control)\n");
 		  keypress(0x7c);	// Control Key
 		}
+	    }
+	    if (kc == 0 && ch == KEY_F(16)) {
+	      keypress(0x7c);	// Control break, send answerback.
+	      kc = 0x23;
 	    }
 	    if (kc & 0x80) {
 	      //wprintw(msgWin,"KC=7d (Shift)\n");
 	      keypress(0x7d);	// Shift Key
 	      kc &= 0x7f;
 	    }
-	    //wprintw(msgWin,"KC=%02x < %02x\n", kc, ch); wrefresh(msgWin);
+	    // If the key we've generated is on the number pad we're after an
+	    // application keypad key. Poke the memory to force it.
+	    // PS: You didn't see me do that!
+	    if ((kc&0xF) < 4 && (kc&0x70) >= 0x40 && ram[0x2178] == 0)
+	      ram[0x2178] = 1;
 	    if (kc)
 	      keypress(kc);
 	}
