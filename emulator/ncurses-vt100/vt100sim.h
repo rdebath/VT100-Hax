@@ -34,6 +34,7 @@ private:
   bool dc12;
   bool controlMode;
   bool enable_avo;
+  bool invalidated;
   long long rt_ticks;
   struct timeval last_sync;
   int vscan_tick, refresh_clock;
@@ -44,6 +45,7 @@ private:
   int cols132;
   int refresh50;
   int interlaced;
+  int stdscr_x, stdscr_y;
 public:
   void getString(const char* prompt, char* buffer, uint8_t sz);
   void step();
@@ -52,6 +54,7 @@ public:
   void clearBP(uint16_t bp);
   void addBP(uint16_t bp);
   void clearAllBPs();
+  void makeScr();
 public:
     void dispRegisters();
     void dispVideo();

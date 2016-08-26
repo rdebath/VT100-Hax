@@ -47,6 +47,7 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   refresh50 = 0;
   interlaced = 0;
   bright = 0xF0;
+  invalidated = true;
 
   //breakpoints.insert(8);
   //breakpoints.insert(0xb);
@@ -65,40 +66,14 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   clearok(curscr, 1);
   wrefresh(stdscr);
 
-  // Status bar: bottom line of the screen
-  statusBar = newwin(1,std_x,--std_y,0);
-  const int vht = std::min(26,std_y-12); // video area height (max 26 rows)
-  int memw = 7 + 32*3 - 1 + 2; // memory area width: big enough for 32B across
-  const int regw = 12;
-  const int regh = 8;
-
-  if (memw > std_x -regw - 18) memw = 7 + 16*3 - 1 + 2; // Okay, make that 16
-  if (memw > std_x -regw - 18) memw = 7 + 8*3 - 1 + 2; // Okay, make that 8
-  const int msgw = std_x - (regw+memw); // message area: std_x - memory area - register area (12)
-
-  if (std_x > 134)
-    vidWin = newwin(vht,134,std_y-vht,0);
-  else
-    vidWin = newwin(vht,std_x,std_y-vht,0);
-  regWin = newwin(regh,regw,0,0);
-  bpWin = newwin(std_y-(vht+regh),regw,regh,0);
-  memWin = newwin(std_y-vht,memw,0,regw);
-  msgWin = newwin(std_y-vht,msgw,0,regw+memw);
-
-  scrollok(msgWin,1);
-  box(regWin,0,0);
-  mvwprintw(regWin,0,1,"Registers");
-  box(memWin,0,0);
-  mvwprintw(memWin,0,1,"Mem");
-  mvwprintw(vidWin,0,1,"Video (init)");
-  box(bpWin,0,0);
-  mvwprintw(bpWin,0,1,"Brkpts");
+  /* The colour parts of the attributes we want to use */
   init_pair(1,COLOR_RED,COLOR_BLACK);
   init_pair(2,COLOR_BLUE,COLOR_BLACK);
   init_pair(3,COLOR_YELLOW,COLOR_BLACK);
   init_pair(4,COLOR_GREEN,COLOR_BLACK);
-  wattron(regWin,COLOR_PAIR(1));
-  wattron(memWin,COLOR_PAIR(2));
+
+  // All the windows we need.
+  makeScr();
 }
 
 Vt100Sim::~Vt100Sim() {
@@ -200,7 +175,6 @@ void Vt100Sim::init() {
     wprintw(msgWin,"F9 -> Setup\n");
     wprintw(msgWin,"F10 -> Cmd Mode\n");
     wprintw(msgWin,"F11 -> Keycodes\n");
-    wrefresh(msgWin);
 }
 
 BYTE Vt100Sim::ioIn(BYTE addr) {
@@ -480,6 +454,7 @@ void Vt100Sim::run() {
 	wrefresh(msgWin);
 	controlMode = true;
 	running = false;
+	invalidated = true;
       }
       if (rt_ticks > CPUHZ/100) {
         struct timeval now;
@@ -521,9 +496,11 @@ void Vt100Sim::run() {
     if (ch != ERR) {
       if (ch == KEY_F(10)) { // Control Mode key
 	controlMode = !controlMode;
-	dispStatus();
+	invalidated = true;
       } else if (controlMode) {
 	if (ch == 'q' || ch == 4 || ch == 3) {
+	  werase(statusBar);
+	  wrefresh(statusBar);
 	  return;
 	}
 	else if (ch == ' ') {
@@ -538,12 +515,12 @@ void Vt100Sim::run() {
 	else if (ch == 'b') {
 	  char bpbuf[10];
 	  getString("Addr. of breakpoint: ",bpbuf,4);
-	  dispStatus();
+	  invalidated = true;
 	  uint16_t bp;
 	  if (hexParse(bpbuf,4,bp)) {
 	    addBP(bp);
 	    dispBPs();
-	    mvwprintw(statusBar,0,0,"Breakpoint addded at %s\n",bpbuf); 
+	    mvwprintw(statusBar,0,0,"Breakpoint added at %s\n",bpbuf); 
 	  } else {
 	    mvwprintw(statusBar,0,0,"Bad breakpoint %s\n",bpbuf); 
 	  }
@@ -553,7 +530,7 @@ void Vt100Sim::run() {
 	else if (ch == 'd') {
 	  char bpbuf[10];
 	  getString("Addr. of bp to remove: ",bpbuf,4);
-	  dispStatus();
+	  invalidated = true;
 	  uint16_t bp;
 	  if (hexParse(bpbuf,4,bp)) {
 	    if (breakpoints.count(bp) == 0) {
@@ -613,13 +590,16 @@ void Vt100Sim::run() {
 
 void Vt100Sim::getString(const char* prompt, char* buf, uint8_t sz) {
   uint8_t l = strlen(prompt);
+  werase(statusBar);
   mvwprintw(statusBar,0,0,prompt);
   echo();
   curs_set(1);
+  leaveok(statusBar, false);
   wgetnstr(statusBar,buf,sz);
   noecho();
   curs_set(0);
-  dispStatus();
+  leaveok(statusBar, true);
+  invalidated = true;
 }
 
 void Vt100Sim::step()
@@ -638,7 +618,7 @@ void Vt100Sim::step()
       if (uart.shell_pid() < 0)
       {
 	controlMode = true;
-	dispStatus();
+	invalidated = true;
       }
     }
   }
@@ -662,32 +642,119 @@ void Vt100Sim::step()
   needsUpdate = true;
 }
 
-void Vt100Sim::update() {
+void Vt100Sim::makeScr() {
   int std_x, std_y;
-  int stat_x0, stat_y0, stat_x, stat_y;
-  getmaxyx(stdscr,std_y,std_x);
-  getmaxyx(statusBar,stat_y,stat_x);
-  getbegyx(statusBar,stat_y0,stat_x0);
+  int vid_x = (cols132?132:80);
 
-  needsUpdate = false;
-  if (stat_y0 != std_y-1){
-    mvwin(statusBar, std_y-1, 0);
-    touchwin(regWin);
-    touchwin(memWin);
-    touchwin(vidWin);
-    touchwin(msgWin);
-    touchwin(statusBar);
-    touchwin(bpWin);
-    wclear(newscr);
-    clearok(curscr,1);
-    wrefresh(msgWin);
+  getmaxyx(stdscr,std_y,std_x);
+
+  if (!invalidated && stdscr_x == std_x && stdscr_y == std_y) {
+    int my,mx = 0;
+    if (vidWin) getmaxyx(vidWin,my,mx);
+    if (std_x < vid_x || mx == vid_x || mx == vid_x+2)
+      return;
   }
 
-  dispRegisters();
-  dispMemory();
-  dispStatus();
-  dispBPs();
-  dispVideo();
+  stdscr_x = std_x; stdscr_y = std_y;
+  invalidated = false;
+
+  // Status bar: bottom line of the screen
+  if (statusBar) delwin(statusBar);
+  statusBar = newwin(1,std_x,std_y-1,0);
+
+  // Register window is fixed size.
+  const int regw = 11;
+  const int regh = 8;
+  if (!regWin) regWin = newwin(regh,regw,0,0);
+
+  // The video window is 24..26 lines by 80..134 columns
+  if (vidWin) delwin(vidWin);
+  const int vidpos = (std_y<=27?0:std_y-27);
+  const int vidwt = std::min(vid_x+2,std_x);
+  int vidht = std::min(26,std_y); // video area height (max 26 rows)
+  if (std_y == 25 || std_y == 26) vidht--;
+
+  vidWin = newwin(vidht,vidwt,vidpos,0);
+
+  // Guess a nice division between the memory window and the message window.
+  int memw = 7 + 32*3; // memory area width: big enough for 32B across
+  if (memw > std_x -regw - 18) memw = 7 + 16*3; // Okay, make that 16
+  if (memw > std_x -regw - 18) memw = 7 + 8*3; // Okay, make that 8
+  const int msgw = std_x - (regw+memw); // message area: std_x - memory area - register area (12)
+
+  int memht = std::max(12,std_y-vidht-1);
+  if (std_y < 39) memht = std::max(12,std_y-1);
+
+  if (bpWin) delwin(bpWin);
+  if (memWin) delwin(memWin);
+  bpWin = newwin(memht-regh,regw,regh,0);
+  memWin = newwin(memht,memw,0,regw);
+
+#ifdef NCURSES_VERSION
+  if (!msgWin)
+    msgWin = newwin(memht,msgw,0,regw+memw);
+  else {
+    wresize(msgWin, memht,msgw);
+    mvwin(msgWin, 0,regw+memw);
+  }
+#else
+  if (msgWin) delwin(msgWin);
+  msgWin = newwin(memht,msgw,0,regw+memw);
+#endif
+
+  scrollok(msgWin,1);
+
+  leaveok(statusBar, true);
+  leaveok(regWin, true);
+  leaveok(vidWin, true);
+  leaveok(bpWin, true);
+  leaveok(memWin, true);
+  leaveok(msgWin, true);
+
+  wattroff(regWin,COLOR_PAIR(1));
+  box(regWin,0,0);
+  mvwprintw(regWin,0,1,"Registers");
+  wattron(regWin,COLOR_PAIR(1));
+
+  box(memWin,0,0);
+  mvwprintw(memWin,0,1,"Mem");
+  mvwprintw(vidWin,0,1,"Video (init)");
+  box(bpWin,0,0);
+  mvwprintw(bpWin,0,1,"Brkpts");
+
+  touchwin(regWin);
+  touchwin(memWin);
+  touchwin(vidWin);
+  touchwin(msgWin);
+  touchwin(statusBar);
+  touchwin(bpWin);
+  wclear(newscr);
+  clearok(curscr,1);
+}
+
+void Vt100Sim::update() {
+
+  needsUpdate = false;
+
+  makeScr();
+  if (stdscr_y >= 39) {
+    wrefresh(msgWin);
+    dispRegisters();
+    dispMemory();
+    dispBPs();
+    dispVideo();
+    dispStatus();
+  } else if (controlMode) {
+    wrefresh(msgWin);
+    dispRegisters();
+    dispMemory();
+    dispBPs();
+    dispStatus();
+  } else {
+    dispVideo();
+    if (stdscr_y > 24)
+      dispStatus();
+  }
 }
 
 void Vt100Sim::keypress(uint8_t keycode)
@@ -726,10 +793,8 @@ void Vt100Sim::dispVideo() {
   int lattr = 3;
   int inscroll = 0;
 
-  int have_border = 0;
-  int std_y,std_x;
+  int have_border = 0, have_title = 0;
   int want_x = (cols132?132:80);
-  int want_y = 26;
 
   getmaxyx(vidWin,my,mx);
   werase(vidWin);
@@ -740,30 +805,20 @@ void Vt100Sim::dispVideo() {
       return;
   }
 
-  getmaxyx(stdscr,std_y,std_x);
-  --std_y;
+  if (mx >= want_x+2 && my >= 26) have_border = 1;
+  if (my >= 25) have_title = 1;
 
-  want_y = std::min(want_y,std_y-12);
-  const int vpos = std::min(26,std_y-12);
-
-  if (std_x >= want_x+2) {want_x +=2; have_border = 1; }
-  if (want_x > std_x) want_x = std_x;
-
-  if (want_x != mx || want_y != my) {
-	wnoutrefresh(vidWin);	/* Wipe area of newscr */
-	delwin(vidWin);
-	vidWin = newwin(want_y,want_x,std_y-vpos,0);
-  }
+  // BTW: The VT100 is white on black, not green on black.
   wattron(vidWin,COLOR_PAIR(4));
-  int y = -2;
+  int y = -2, x = 0;
   bool scroll_fix = (last_latch!=0);
   bool is_setup = false, is_setupB = false;
   for (uint8_t i = 1; i < 28 && y < 25; i++) {
         char* p = (char*)ram + start;
         char* maxp = p + 133;
 	//if (*p != 0x7f) y++;
-	y++;
-	wmove(vidWin,y,have_border);
+	y++; x=0;
+	wmove(vidWin,y+have_title-1,have_border);
 	if (scroll_latch || last_latch) {
 	    if (inscroll)
 		wattron(vidWin,COLOR_PAIR(1));
@@ -781,13 +836,14 @@ void Vt100Sim::dispVideo() {
             unsigned char c = *p;
 	    int attrs = enable_avo?p[0x1000]:0xF;
 	    p++;
-	    if (y > 0 && !(scroll_fix && inscroll)) {
+	    if (y > 0 && x<mx && !(scroll_fix && inscroll)) {
 	      bool inverse = (c & 128);
 	      bool blink = !(attrs & 0x1);
 	      bool uline = !(attrs & 0x2);
 	      bool bold = !(attrs & 0x4);
 	      bool altchar = !(attrs & 0x8);
 	      c &= 0x7F;
+	      x++;
 
 	      if (screen_rev) inverse = ~inverse;
 
@@ -867,84 +923,87 @@ static int dec_mcs[] = {
     }
 
   if (is_setup) {
-
-    wmove(vidWin, 5,have_border);
+    y = have_title+4;
+    wmove(vidWin,y++,have_border);
+    y++;
     wprintw(vidWin,"Use the arrow keys, return and space to move cursor position.");
     if(!is_setupB) {
-      wmove(vidWin, 7,have_border);
-      wprintw(vidWin,"                                                0 => Reset");
-      wmove(vidWin, 8,have_border);
-      wprintw(vidWin,"                                                1 => ");
-      wmove(vidWin, 9,have_border);
-      wprintw(vidWin,"                                                2 => Toggle TAB");
-      wmove(vidWin,10,have_border);
-      wprintw(vidWin,"                                                3 => Clear all TABs");
-      wmove(vidWin,11,have_border);
-      wprintw(vidWin,"                                                4 => Online/Local");
-      wmove(vidWin,12,have_border);
-      wprintw(vidWin,"                                                5 => Setup B");
-      wmove(vidWin,13,have_border);
-      wprintw(vidWin,"                                                6 =>");
-      wmove(vidWin,14,have_border);
-      wprintw(vidWin,"                                                7 =>");
-      wmove(vidWin,15,have_border);
-      wprintw(vidWin,"                                                8 =>");
-      wmove(vidWin,16,have_border);
-      wprintw(vidWin,"                                                9 => Toggle 80/132");
-      wmove(vidWin,17,have_border);
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"The up and down arrows control the brightness.   0 => Reset");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"(on a real VT100!)                               1 => ");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"                                                 2 => Toggle TAB");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"                                                 3 => Clear all TABs");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"                                                 4 => Online/Local");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"                                                 5 => Setup B");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"                                                 6 =>");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"                                                 7 =>");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"                                                 8 =>");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"                                                 9 => Toggle 80/132");
+      wmove(vidWin,y++,have_border);
       wprintw(vidWin,"");
-      wmove(vidWin,18,have_border);
-      wprintw(vidWin,"                                                Shift-S => Save");
-      wmove(vidWin,19,have_border);
-      wprintw(vidWin,"                                                Shift-R => Recall");
-      wmove(vidWin,20,have_border);
-      wprintw(vidWin,"                                              ");
-      wmove(vidWin,21,have_border);
-      wprintw(vidWin,"                                              ");
-      wmove(vidWin,22,have_border);
-      wprintw(vidWin,"                                              ");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"                                                 Shift-S => Save");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"                                                 Shift-R => Recall");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"");
     } else {
-      wmove(vidWin, 7,have_border);
-      wprintw(vidWin,"  X     Scroll 1-Smooth                         0 => Reset");
-      wmove(vidWin, 8,have_border);
-      wprintw(vidWin,"  .X    Repeat 1-On                             1 => ");
-      wmove(vidWin, 9,have_border);
-      wprintw(vidWin,"  . X   Screen 1-LightBG                        2 =>");
-      wmove(vidWin,10,have_border);
-      wprintw(vidWin,"  .  X  Cursor 1-Block                          3 =>");
-      wmove(vidWin,11,have_border);
-      wprintw(vidWin,"  .  .    X     Margin Bell                     4 => Online/Local");
-      wmove(vidWin,12,have_border);
-      wprintw(vidWin,"  .  .    .X    Keyclick 1-On                   5 => Setup A");
-      wmove(vidWin,13,have_border);
-      wprintw(vidWin,"  .  .    . X   1=Ansi/0=VT52                   6 => Toggle this");
-      wmove(vidWin,14,have_border);
-      wprintw(vidWin,"  .  .    .  X  FlowCtrl 1-On                   7 => Next Xmit Speed");
-      wmove(vidWin,15,have_border);
-      wprintw(vidWin,"  .  .    .  .    X     UK-Ascii 1-On           8 => Next Rcv Speed");
-      wmove(vidWin,16,have_border);
-      wprintw(vidWin,"  .  .    .  .    .X    LineWrap 1-On           9 =>");
-      wmove(vidWin,17,have_border);
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  X     Scroll 1-Smooth                          0 => Reset");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .X    Repeat 1-On                              1 => ");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  . X   Screen 1-LightBG                         2 =>");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .  X  Cursor 1-Block                           3 =>");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .  .    X     Margin Bell                      4 => Online/Local");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .  .    .X    Keyclick 1-On                    5 => Setup A");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .  .    . X   1=Ansi/0=VT52                    6 => Toggle this");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .  .    .  X  FlowCtrl 1-On                    7 => Next Xmit Speed");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .  .    .  .    X     UK-Ascii 1-On            8 => Next Rcv Speed");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .  .    .  .    .X    LineWrap 1-On            9 =>");
+      wmove(vidWin,y++,have_border);
       wprintw(vidWin,"  .  .    .  .    . X   1-Crlf, 0-Cr");
-      wmove(vidWin,18,have_border);
-      wprintw(vidWin,"  .  .    .  .    .  X  1-Interlace             Shift-S => Save");
-      wmove(vidWin,19,have_border);
-      wprintw(vidWin,"  .  .    .  .    .  .    X     Parity 1-Even   Shift-R => Recall");
-      wmove(vidWin,20,have_border);
-      wprintw(vidWin,"  .  .    .  .    .  .    .X    Parity Sense    Shift-A => Answerback");
-      wmove(vidWin,21,have_border);
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .  .    .  .    .  X  1-Interlace              Shift-S => Save");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .  .    .  .    .  .    X     Parity 1-Even    Shift-R => Recall");
+      wmove(vidWin,y++,have_border);
+      wprintw(vidWin,"  .  .    .  .    .  .    .X    Parity Sense     Shift-A => Answerback");
+      wmove(vidWin,y++,have_border);
       wprintw(vidWin,"  .  .    .  .    .  .    . X   BPC 1=8Bit");
-      wmove(vidWin,22,have_border);
+      wmove(vidWin,y++,have_border);
       wprintw(vidWin,"  .  .    .  .    .  .    .  X  Refresh 1=50Hz");
     }
 
   }
 
   wattroff(vidWin,COLOR_PAIR(4));
-  if (have_border) box(vidWin,0,0);
-  mvwprintw(vidWin,0,1,"Video [bright %x]",bright);
-  if (scroll_latch) wprintw(vidWin,"[Scroll %d]",scroll_latch);
-  // if (blink_ff) wprintw(vidWin,"[BLINK]");
+  if (have_title) {
+    if (have_border) box(vidWin,0,0);
+    mvwprintw(vidWin,0,1,"Video [bright %x]",bright);
+    if (scroll_latch) wprintw(vidWin,"[Scroll %d]",scroll_latch);
+    // if (blink_ff) wprintw(vidWin,"[BLINK]");
+  }
   wrefresh(vidWin);
 }
 
