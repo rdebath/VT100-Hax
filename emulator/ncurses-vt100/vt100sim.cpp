@@ -67,7 +67,7 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
 
   // Status bar: bottom line of the screen
   statusBar = newwin(1,std_x,--std_y,0);
-  const int vht = std::min(27,std_y-12); // video area height (max 27 rows)
+  const int vht = std::min(26,std_y-12); // video area height (max 26 rows)
   int memw = 7 + 32*3 - 1 + 2; // memory area width: big enough for 32B across
   const int regw = 12;
   const int regh = 8;
@@ -503,11 +503,12 @@ void Vt100Sim::run() {
       rt_ticks = 0;
     }
     int ch = ERR;
-    if (vscan_tick) {
+    if (vscan_tick>0) {
       vscan_tick--;
       refresh_clock++;
       if (needsUpdate && refresh_clock>3) { update(); refresh_clock=0; }
 
+      last_latch = scroll_latch;
       if (!kbd.busy_scanning())
 	  ch = getch();
 
@@ -728,7 +729,7 @@ void Vt100Sim::dispVideo() {
   int have_border = 0;
   int std_y,std_x;
   int want_x = (cols132?132:80);
-  int want_y = (scroll_latch?27:26);
+  int want_y = 26;
 
   getmaxyx(vidWin,my,mx);
   werase(vidWin);
@@ -743,7 +744,7 @@ void Vt100Sim::dispVideo() {
   --std_y;
 
   want_y = std::min(want_y,std_y-12);
-  const int vpos = std::min(27,std_y-12);
+  const int vpos = std::min(26,std_y-12);
 
   if (std_x >= want_x+2) {want_x +=2; have_border = 1; }
   if (want_x > std_x) want_x = std_x;
@@ -754,15 +755,16 @@ void Vt100Sim::dispVideo() {
 	vidWin = newwin(want_y,want_x,std_y-vpos,0);
   }
   wattron(vidWin,COLOR_PAIR(4));
-  uint8_t y = -2;
+  int y = -2;
+  bool scroll_fix = (last_latch!=0);
   bool is_setup = false, is_setupB = false;
-  for (uint8_t i = 1; i < 27 + (scroll_latch!=0); i++) {
+  for (uint8_t i = 1; i < 28 && y < 25; i++) {
         char* p = (char*)ram + start;
         char* maxp = p + 133;
 	//if (*p != 0x7f) y++;
 	y++;
 	wmove(vidWin,y,have_border);
-	if (scroll_latch) {
+	if (scroll_latch || last_latch) {
 	    if (inscroll)
 		wattron(vidWin,COLOR_PAIR(1));
 	    else
@@ -779,7 +781,7 @@ void Vt100Sim::dispVideo() {
             unsigned char c = *p;
 	    int attrs = enable_avo?p[0x1000]:0xF;
 	    p++;
-	    if (y > 0) {
+	    if (y > 0 && !(scroll_fix && inscroll)) {
 	      bool inverse = (c & 128);
 	      bool blink = !(attrs & 0x1);
 	      bool uline = !(attrs & 0x2);
@@ -851,6 +853,7 @@ static int dec_mcs[] = {
 	  break;
 	}
         // at terminator
+	if (scroll_fix && inscroll) { y--; scroll_fix = false; }
 	if (y>=4 && y<=22) is_setup = (is_setup && 0 == p-(char*)ram-start);
         p++;
         unsigned char a1 = *(p++);
