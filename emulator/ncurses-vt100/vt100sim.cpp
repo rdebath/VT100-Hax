@@ -203,6 +203,13 @@ BYTE Vt100Sim::ioIn(BYTE addr) {
 	if (enable_avo)
 	    flags = 0x04;
 
+	/* "Standard Terminal Port" enabled.
+	 * If this is set the host is inside the VT100's case.
+	 * This means the that VT100 assumes that XON/XOFF flow
+	 * control MUST be used and you cannot turn it off in
+	 * SET-UP B. */
+	if (true) flags |= 0x08;
+
         if (lba7.get_value()) {
             flags |= 0x40;
         }
