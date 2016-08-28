@@ -91,6 +91,7 @@ public:
     Signal(uint16_t period);
     bool add_ticks(uint16_t delta);
     bool get_value() { return value; }
+    void change_period(uint16_t period) { period_half = period/2; }
 };
 
 Signal::Signal(uint16_t period) : value(false),has_change(false),period_half(period/2),ticks(0) {
@@ -275,6 +276,8 @@ void Vt100Sim::ioOut(BYTE addr, BYTE data) {
       if (data & 0x20) {
          interlaced = 0;
 	 refresh50 = ((data & 0x10) != 0);
+	 if (refresh50) vertical.change_period(55296);
+	 else		vertical.change_period(46084);
       } else {
          interlaced = 1;
 	 cols132 = ((data & 0x10) != 0);
@@ -848,17 +851,20 @@ void Vt100Sim::dispVideo() {
   int y = -2, x = 0;
   bool scroll_fix = (last_latch!=0);
   bool is_setup = false, is_setupB = false;
-  for (uint8_t i = 1; i < 28 && y < 25; i++) {
+  if (refresh50) y -= 3;
+  for (uint8_t i = 1; i < 31 && y < 25; i++) {
         char* p = (char*)ram + start;
         char* maxp = p + 133;
 	//if (*p != 0x7f) y++;
 	y++; x=0;
-	wmove(vidWin,y+have_title-1,have_border);
-	if (scroll_latch || last_latch) {
-	    if (inscroll)
-		wattron(vidWin,COLOR_PAIR(1));
-	    else
-		wattron(vidWin,COLOR_PAIR(4));
+	if (y>0) {
+	    wmove(vidWin,y+have_title-1,have_border);
+	    if (scroll_latch || last_latch) {
+		if (inscroll)
+		    wattron(vidWin,COLOR_PAIR(1));
+		else
+		    wattron(vidWin,COLOR_PAIR(4));
+	    }
 	}
 
 	if (y == 1) {
@@ -921,7 +927,7 @@ static int dec_mcs[] = {
 	0x00f8, 0x00f9, 0x00fa, 0x00fb, 0x00fc, 0x00ff, 0x2426, 0xFFFD
 	};
 
-		if (lattr!=3 && utf8_term && (c == 30 || (c>=' ' && c<='~'))) {
+		if (lattr!=3 && utf8_term && (c == 30 || (c>' ' && c<='~'))) {
 		    wchar_t ubuf[2] = { c - ' ' + 0xFF00, '\0' };
 		    if (c == 30) ubuf[0] = 0xFFE1;
 		    waddwstr(vidWin,ubuf);
