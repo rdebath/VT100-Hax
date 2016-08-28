@@ -23,7 +23,7 @@ NVR/LBA7: 15.734 kHz (63.556 uS); estimate at 8 * LBA4
 LBA4 period : 7.945uS
 Even line: 
 Kbd transmission time : 1.27mS/B
-Vertical freq: ~60 Hz
+Vertical freq: ~60 Hz or 50Hz
 Dot clock: 24 MHz in 132-char mode; 16 MHz in 80-char mode
 PSUART: 2.76480 MHz (Div9)
 Processor: 2.76480 MHz (Div9)
@@ -75,6 +75,14 @@ RAM Map
  0x206a  | 0x206e  |   3B   | New keys pressed buffer
  0x20f6  | 0x20f8  |   2B   | 0x22d0 during init?
  0x2014  | 0x2015  |   1B   | 0xff during init?
+ 0x207b  |         |   1B   | In setup screen (by observation)
+ 0x20f8  |         |   1B   | Cursor column (by observation)
+ 0x20f9  |         |   1B   | Cursor row (by observation)
+ 0x2145  |         |   1B   | Bitmap of LEDs L1..4
+ 0x2159  | 0x215a  |   2B   | Attribute to set for cursor (by observation)
+ 0x2178  |         |   1B   | Application keypad set. (by modification)
+ 0x21ba  |         |   1B   | Cursor is lit (by observation)
+ 0x21bc  |         |   1B   | Application Arrow keys set. (by observation)
 0x22d0  | 0x2c00  | 2352B  | Screen RAM
 
 0x22bb through 0x22d0 appear to be unused!!!
