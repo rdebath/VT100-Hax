@@ -596,6 +596,26 @@ void Vt100Sim::run() {
 	  // set up breakpoints
 	  gettimeofday(&last_sync, 0);	// CPU was frozen
 	}
+	else if (ch == 's') {
+	  char path[128];
+	  getString("Save to: ",path,sizeof path);
+	  invalidated = true;
+
+	  FILE* f = fopen(path,"w");
+	  int i;
+	  if (!f) {
+	      wprintw(msgWin,"Cannot save mem file %s\n", path);
+	  } else {
+	    for(i=0; i<8192; i++) {
+		unsigned char c = ram[0x2000+i];
+		fprintf(f, "%02x", c);
+		if (i % 16 == 15) fprintf(f, "\n"); else fprintf(f, " ");
+	    }
+	    fclose(f);
+	    wprintw(msgWin,"File saved\n");
+	  }
+	  gettimeofday(&last_sync, 0);	// CPU was frozen
+	}
 	needsUpdate = true;
       }
       else {
