@@ -1083,7 +1083,7 @@ static int dec_mcs[] = {
   wattroff(vidWin,COLOR_PAIR(4));
   if (have_title) {
     if (have_border) box(vidWin,0,0);
-    mvwprintw(vidWin,0,1,"Video [bright %x]",bright);
+    mvwprintw(vidWin,0,1,"Video [bright %d%%]",(32-bright)*100/32);
     if (scroll_latch) wprintw(vidWin,"[Scroll %d]",scroll_latch);
     // if (blink_ff) wprintw(vidWin,"[BLINK]");
   }
