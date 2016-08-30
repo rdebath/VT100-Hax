@@ -1,8 +1,8 @@
 #include "nvr.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <ncurses.h>
 #include <string>
+#include "wmessage.h"
 
 /*
  * The NVRAM is 1400 bit 'flash' device with 100 14-bit words.
@@ -27,8 +27,6 @@ typedef enum {
     SHIFT_OUT = 0b010,
     UNUSED = 0b011
 } Commands;
-
-extern WINDOW* msgWin;
 
 /* This is a saved NVRAM configuration that we use if we can't open the
  * NVRAMFILE or it's contents are mis-formatted.
@@ -151,7 +149,7 @@ void NVR::save(const char * path) {
     FILE* f = fopen(path,"w");
     int i;
     if (!f) {
-	wprintw(msgWin,"Cannot save NVR file %s\n", path);
+	wmessage("Cannot save NVR file %s\n", path);
 	return;
     }
     for(i=0; i<100; i++) {

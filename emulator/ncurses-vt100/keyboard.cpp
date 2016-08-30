@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "8080/sim.h"
 #include "8080/simglb.h"
-#include <ncurses.h>
+#include "wmessage.h"
 
 Keyboard::Keyboard() : state(KBD_IDLE), latch(0)
 {
@@ -15,8 +15,6 @@ uint8_t Keyboard::get_latch()
 }
 
 bool Keyboard::get_tx_buf_empty() { return !tx_buf_count; }
-
-extern WINDOW* msgWin;
 
 /*
  * The VT100 triggers keyboard scans by setting bit (1<<6) in the status.
@@ -58,7 +56,7 @@ void Keyboard::set_status(uint8_t status)
 
     if ((status & (1<<6)) == 0 || !beeping) {
       if (status & 0x80) {
-	if (!beeping) beep();
+	if (!beeping) wmessage("\007");
 	if (tx_buf_count == 0) beeping = (beeping+1) % 48;
       } else beeping = 0;
     }
@@ -142,8 +140,7 @@ bool Keyboard::clock(bool rising)
         return false;
         break;
     default:
-      wprintw(msgWin,"Bad state\n");wrefresh(msgWin);
-      
+      wmessage("Bad state in keyboard.clock\n");
     }
     return false;
 }

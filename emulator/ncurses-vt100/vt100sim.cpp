@@ -4,13 +4,22 @@
 #include "8080/simglb.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <ncurses.h>
 #include <time.h>
 #include <signal.h>
 #include <map>
 #include <ctype.h>
+
+#ifdef _XOPEN_CURSES
+#include <locale.h>
+#include <langinfo.h>
+#endif
+
 #include "default_rom.h"
+#include "wmessage.h"
 
 extern "C" {
 extern void int_on(void), int_off(void);
@@ -27,6 +36,9 @@ extern int load_file(char *);
 
 Vt100Sim* sim;
 
+#ifdef _XOPEN_CURSES
+static bool utf8_term;
+#endif
 WINDOW* regWin;
 WINDOW* memWin;
 WINDOW* vidWin;
@@ -48,6 +60,11 @@ Vt100Sim::Vt100Sim(const char* romPath, bool running, bool avo_on) :
   interlaced = 0;
   bright = 0xF0;
   invalidated = true;
+
+#ifdef _XOPEN_CURSES
+  setlocale(LC_ALL, "");
+  utf8_term = (!strcmp("UTF-8", nl_langinfo(CODESET)));
+#endif
 
   //breakpoints.insert(8);
   //breakpoints.insert(0xb);
@@ -959,7 +976,6 @@ void Vt100Sim::dispVideo() {
 		waddch(vidWin,' ');
 	      } else  {
 #ifdef _XOPEN_CURSES
-extern int utf8_term;
 static int vt100_chars[] = {
 	0x0020, 0x2666, 0x2592, 0x2409, 0x240c, 0x240d, 0x240a, 0x00b0,
 	0x00b1, 0x2424, 0x240b, 0x2518, 0x2510, 0x250c, 0x2514, 0x253c,
@@ -1233,6 +1249,46 @@ void Vt100Sim::dispMemory() {
   }
   wrefresh(memWin);
 }
+
+int
+wmessage(const char *fmt, ...)
+{
+    int n;
+    char mbuf[80];
+    char *p = mbuf, *np = 0;
+    va_list ap;
+
+    /* Try to print in the predefined space */
+    va_start(ap, fmt);
+    n = vsnprintf(mbuf, sizeof mbuf, fmt, ap);
+    va_end(ap);
+
+    /* Did the printf error somehow ? */
+    if (n < 0) return n;
+
+    /* If that was too big try again with more space */
+    if (n >= sizeof mbuf) {
+	int sz = n+1;
+	p = np = new char[sz];
+	if (!np) return -1;
+
+	n = vsnprintf(np, sz, fmt, ap);
+	if (n<0) { /* Huh!! */
+	    // free(np);
+	    delete [] np;
+	    return n;
+	}
+    }
+
+    if (*p == '\007') { beep(); p++; }
+    if (*p) {
+	if (wprintw(msgWin, "%s", p) == ERR)
+	    n = -1;
+    }
+    if (np) delete [] np;
+    return n;
+}
+
 
 extern "C" {
 BYTE io_in(BYTE addr);
